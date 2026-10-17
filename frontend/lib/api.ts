@@ -1,12 +1,18 @@
+import { authToken, clearSession, getSession } from "@/lib/session";
 import type {
+  Account,
+  AuthResponse,
   CheckinMetrics,
   CheckinRequest,
   CheckinResponse,
   ClinicianPatient,
-  Me,
-  OnboardRequest,
-  OnboardResponse,
+  EpdsQuestions,
+  EpdsResult,
+  Overview,
   PhotoReading,
+  Profile,
+  ProfileOut,
+  RedFlagLevel,
   Slot,
   TrendPoint,
 } from "@/lib/types";
@@ -16,18 +22,52 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const wait = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, init);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json() as Promise<T>;
+/** Error with the HTTP status and the backend's `detail` message, for showing to people. */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message);
+  }
 }
 
-function postJson<T>(path: string, body: unknown): Promise<T> {
+async function raw(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = authToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      if (typeof body.detail === "string") detail = body.detail;
+      else if (Array.isArray(body.detail) && body.detail[0]?.msg) detail = body.detail[0].msg;
+    } catch {
+      /* not JSON */
+    }
+    // An expired or revoked login: drop it so the app shows the sign-in choices again.
+    if (res.status === 401 && getSession()?.kind === "user") clearSession();
+    throw new ApiError(res.status, detail);
+  }
+  return res;
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await raw(path, init);
+  return (res.status === 204 ? undefined : await res.json()) as T;
+}
+
+function sendJson<T>(method: string, path: string, body: unknown): Promise<T> {
   return request<T>(path, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+function postJson<T>(path: string, body: unknown): Promise<T> {
+  return sendJson<T>("POST", path, body);
 }
 
 /** Blob (from MediaRecorder) to raw base64, which is what POST /checkin expects. */
@@ -95,22 +135,44 @@ const EMPTY_METRICS: CheckinMetrics = {
   mentions: [],
 };
 
-export async function onboard(input: OnboardRequest): Promise<OnboardResponse> {
-  if (USE_MOCK) {
-    await wait();
-    return { patient_id: input.patient_id ?? "mock-patient", categories: ["postpartum_high_bp", "post_cesarean"] };
+// --- Accounts --------------------------------------------------------------------------
+export const register = (username: string, password: string) =>
+  postJson<AuthResponse>("/auth/register", { username, password });
+
+export const login = (username: string, password: string) =>
+  postJson<AuthResponse>("/auth/login", { username, password });
+
+/** Revokes the token on the server. Never throws: logging out must always work locally. */
+export async function logout(): Promise<void> {
+  try {
+    await raw("/auth/logout", { method: "POST" });
+  } catch {
+    /* offline or already expired */
   }
-  return postJson("/onboard", input);
 }
 
-/** The patient that belongs to this login, or null if they have not onboarded yet (404). */
-export async function getMe(clerkUserId: string): Promise<Me | null> {
-  if (USE_MOCK) return null;
-  const res = await fetch(`${BASE}/me?clerk_user_id=${encodeURIComponent(clerkUserId)}`);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json() as Promise<Me>;
+export const getAccount = () => request<Account>("/auth/me");
+
+// --- Profile ------------------------------------------------------------------------------
+export const onboard = (profile: Profile) => postJson<ProfileOut>("/onboard", profile);
+
+export const updateProfile = (profile: Profile) => sendJson<ProfileOut>("PUT", "/profile", profile);
+
+export function getProfile(patientId?: string): Promise<ProfileOut> {
+  const q = patientId ? `?patient_id=${encodeURIComponent(patientId)}` : "";
+  return request<ProfileOut>(`/profile${q}`);
 }
+
+export const getOverview = (patientId: string) => request<Overview>(`/patients/${patientId}/overview`);
+
+// --- Weekly mood check (EPDS) -------------------------------------------------------------
+export const getEpdsQuestions = () => request<EpdsQuestions>("/epds/questions");
+
+export const submitEpds = (patientId: string, answers: number[]) =>
+  postJson<EpdsResult>("/epds", { patient_id: patientId, answers });
+
+export const epdsFollowup = (patientId: string, answer: "yes" | "no" | "unsure") =>
+  postJson<{ level: RedFlagLevel; response: string }>("/epds/followup", { patient_id: patientId, answer });
 
 export async function checkin(
   patientId: string,
@@ -213,12 +275,11 @@ export async function getClinicianPatients(): Promise<ClinicianPatient[]> {
   return request("/clinician/patients");
 }
 
-/** Deletes everything Tidewell holds for this patient. Endpoint is a proposal until P1/P2 confirm it. */
+/** Deletes the patient record, Backboard memories and the account itself (backend ends every session). */
 export async function deleteMyData(patientId: string): Promise<void> {
   if (USE_MOCK) {
     await wait(700);
     return;
   }
-  const res = await fetch(`${BASE}/patients/${patientId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  await raw(`/patients/${patientId}`, { method: "DELETE" });
 }

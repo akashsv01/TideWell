@@ -1,23 +1,80 @@
 // ---------------------------------------------------------------------------
-// Part 1 mirrors backend/app/schemas.py. The team agreed to rename user_id to
-// patient_id and add tiers to the check-in response, so those two follow the plan
-// even if schemas.py has not been updated yet. FastAPI sends every field, so unset
-// values arrive as null.
+// Part 1 mirrors backend/app/schemas.py and schemas_data.py. FastAPI sends every field,
+// so unset values arrive as null.
 // ---------------------------------------------------------------------------
 
 export type DeliveryType = "vaginal" | "c-section";
+export type FeedingType = "breastfeeding" | "formula" | "mixed";
+export type Language = "en" | "es";
 export type Bleeding = "none" | "light" | "heavy";
 
-export interface OnboardRequest {
-  patient_id?: string; // a UUID; omit and the backend creates one. Use the Clerk user id later.
-  birth_date: string; // YYYY-MM-DD
-  delivery_type: DeliveryType;
-  conditions: string[];
-  breastfeeding: boolean;
-  support_phone: string | null;
-  language: string; // "en"
-  support_consent?: boolean; // explicit permission to text the support person in an emergency
-  clerk_user_id?: string | null; // links the new patient to the signed-in login
+/** Baseline profile: collected once at onboarding, editable in Settings (backend Profile). */
+export interface Profile {
+  consent_granted: boolean;
+  delivery_date: string; // YYYY-MM-DD
+  gestation_weeks: number | null;
+  delivery_method: DeliveryType;
+  feeding_type: FeedingType;
+  history_mental_health: boolean;
+  history_pregnancy_complications: string[];
+  language_preference: Language;
+  support_person_name: string | null;
+  support_person_phone: string | null; // E.164
+  support_sms_consent: boolean;
+  name: string | null;
+}
+
+export interface ProfileOut extends Profile {
+  patient_id: string;
+  day_postpartum: number;
+  categories: string[];
+  demo: boolean;
+}
+
+export interface AuthResponse {
+  token: string;
+  username: string;
+  patient_id: string | null;
+}
+
+export interface Account {
+  username: string;
+  patient_id: string | null;
+}
+
+export interface Overview {
+  patient_id: string;
+  demo: boolean;
+  name: string | null;
+  day_postpartum: number;
+  delivery_method: DeliveryType;
+  feeding_type: FeedingType | null;
+  history_mental_health: boolean;
+  history_pregnancy_complications: string[];
+  epds_due: boolean;
+  last_epds_score: number | null;
+  last_epds_date: string | null;
+}
+
+export interface EpdsQuestion {
+  number: number;
+  text: string;
+  options: string[];
+}
+
+export interface EpdsQuestions {
+  citation: string;
+  followup_question: string;
+  questions: EpdsQuestion[];
+}
+
+export interface EpdsResult {
+  score: number;
+  item10: number;
+  band: "low" | "watch" | "amber";
+  level: RedFlagLevel | null;
+  needs_followup: boolean;
+  response: string | null;
 }
 
 export interface CheckinRequest {
@@ -68,11 +125,16 @@ export interface CategoryTier {
 
 export interface TrendPoint {
   day: string; // YYYY-MM-DD
+  day_postpartum?: number | null;
   mood: number | null;
   pain: number | null;
+  incision_pain?: number | null;
   sleep_hrs: number | null;
+  headache?: boolean;
   bp_sys: number | null;
   bp_dia: number | null;
+  epds_score?: number | null; // weekly; null on other days
+  item_10_alert?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,18 +151,6 @@ export interface Citation {
 
 export interface Slot {
   slot: string; // ISO timestamp
-}
-
-export interface Me {
-  patient_id: string;
-  name: string | null;
-  days_postpartum: number | null;
-  delivery_type: DeliveryType | null;
-}
-
-export interface OnboardResponse {
-  patient_id: string;
-  categories: string[];
 }
 
 export interface PhotoReading {

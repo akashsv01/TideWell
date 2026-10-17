@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Orb from "@/components/Orb";
 import UrgentCard from "@/components/UrgentCard";
 import { checkin, replyAudioSrc } from "@/lib/api";
-import { usePatientId } from "@/lib/identity";
+import { usePatientId } from "@/lib/session";
 import {
   getSpokenReplies,
   spokenRepliesServerValue,
@@ -15,7 +15,7 @@ import { btnPrimary, focusRing } from "@/lib/ui";
 import { useRecorder } from "@/lib/useRecorder";
 
 export default function CheckinPanel() {
-  const { patientId } = usePatientId();
+  const patientId = usePatientId();
   const { state, seconds, levelRef, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CheckinResponse | null>(null);

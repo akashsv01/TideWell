@@ -2,41 +2,43 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AUTH_ENABLED } from "@/lib/auth";
-import { chooseDemoAccount, usePatientId } from "@/lib/identity";
+import { startDemo, useSession } from "@/lib/session";
 import { btnPrimary, focusRing } from "@/lib/ui";
 
-// Welcome screen buttons. With sign-in enabled, new people create an account first and then
-// answer the onboarding questions; without it, onboarding alone creates their patient record.
-export default function WelcomeActions() {
+// Welcome-page buttons: create an account, sign in, or look around as the demo parent.
+export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "dark" }) {
   const router = useRouter();
-  const { patientId } = usePatientId();
-  const link = `rounded-md py-2 text-lg font-semibold underline underline-offset-4 ${focusRing}`;
+  const { session } = useSession();
+  const link = `rounded-md py-2 text-lg font-semibold underline underline-offset-4 ${
+    tone === "dark" ? "text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white" : focusRing
+  }`;
 
   function tryDemo() {
-    chooseDemoAccount();
+    startDemo();
     router.push("/home");
   }
 
   return (
-    <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-      {patientId ? (
+    <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+      {session?.kind === "user" ? (
         <Link href="/home" className={btnPrimary}>
           Continue to check-in
         </Link>
       ) : (
-        <Link href={AUTH_ENABLED ? "/sign-up" : "/onboarding"} className={btnPrimary}>
+        <Link href="/register" className={btnPrimary}>
           Get started
         </Link>
       )}
-      {AUTH_ENABLED && !patientId && (
-        <Link href="/sign-in" className={link}>
-          I already have an account
+      {!session && (
+        <Link href="/login" className={link}>
+          I have an account
         </Link>
       )}
-      <button type="button" onClick={tryDemo} className={link}>
-        Try the demo
-      </button>
+      {session?.kind !== "user" && (
+        <button type="button" onClick={tryDemo} className={link}>
+          Try the demo
+        </button>
+      )}
     </div>
   );
 }

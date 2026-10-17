@@ -3,48 +3,70 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { onboard } from "@/lib/api";
-import { getClerkUserId, setPatientId } from "@/lib/identity";
-import type { DeliveryType } from "@/lib/types";
+import { ApiError, onboard } from "@/lib/api";
+import {
+  COMPLICATIONS,
+  CONSENT_TEXT,
+  DELIVERY,
+  FEEDING,
+  LANGUAGES,
+  digits,
+  profileProblem,
+  toE164,
+  todayIso,
+  yearAgoIso,
+} from "@/lib/profile";
+import { setOwnPatient, useSession } from "@/lib/session";
+import type { DeliveryType, FeedingType, Language, Profile } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
-// Five short steps. Each screen asks one thing, in plain words.
-// TODO (Person 4): confirm the condition list, the consent wording and the category keys.
+// One question per screen, in plain words. Consent comes first, before any health question.
+// Everything here becomes the baseline profile (backend Profile), editable later in Settings.
 
-const TOTAL = 5;
+const STEPS = [
+  "Before we start",
+  "A little about you",
+  "When was your baby born?",
+  "How many weeks pregnant were you?",
+  "How did you give birth?",
+  "How are you feeding your baby?",
+  "Have you ever had depression or anxiety?",
+  "Did any of these happen in your pregnancy?",
+  "Who should we tell if you need urgent care?",
+  "Ready to start",
+] as const;
+const TOTAL = STEPS.length;
 
-const CONDITIONS = [
-  { value: "gestational_hypertension", label: "High blood pressure or preeclampsia in pregnancy" },
-  { value: "gestational_diabetes", label: "Gestational diabetes" },
-  { value: "depression_anxiety", label: "Depression or anxiety, now or in the past" },
-];
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const yearAgoIso = () => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - 1);
-  return d.toISOString().slice(0, 10);
-};
-
-const digits = (s: string) => s.replace(/\D/g, "");
-
-const choice =
-  "flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 border-navy/25 bg-white px-4 py-3 text-lg transition-colors peer-checked:border-tide-deep peer-checked:bg-tide-deep peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-navy peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-foam";
+export const choice =
+  "flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 border-navy/25 bg-white px-4 py-3 text-lg transition-colors duration-150 peer-checked:border-tide-deep peer-checked:bg-tide-deep peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-navy peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-foam";
+const field = `mt-3 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`;
 
 export default function Onboarding() {
   const router = useRouter();
+  const { session, ready } = useSession();
   const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1); // which way the step slides in
-  const [birthDate, setBirthDate] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryType | "">("");
-  const [conditions, setConditions] = useState<string[]>([]);
-  const [breastfeeding, setBreastfeeding] = useState<"yes" | "no" | "">("");
-  const [phone, setPhone] = useState("");
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [consent, setConsent] = useState(false);
+  const [name, setName] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [weeks, setWeeks] = useState("");
+  const [method, setMethod] = useState<DeliveryType | "">("");
+  const [feeding, setFeeding] = useState<FeedingType | "">("");
+  const [mental, setMental] = useState<"yes" | "no" | "">("");
+  const [complications, setComplications] = useState<string[]>([]);
+  const [language, setLanguage] = useState<Language>("en");
+  const [supportName, setSupportName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const firstRender = useRef(true);
+
+  // Onboarding saves to your account, so it needs one. The demo has its own fixed profile.
+  useEffect(() => {
+    if (ready && session?.kind !== "user") router.replace("/register");
+  }, [ready, session, router]);
 
   // After each step change, move focus to the new heading so screen readers start there.
   useEffect(() => {
@@ -55,23 +77,55 @@ export default function Onboarding() {
     headingRef.current?.focus();
   }, [step]);
 
+  const profile: Profile = {
+    consent_granted: consent,
+    delivery_date: deliveryDate,
+    gestation_weeks: weeks ? Number(weeks) : null,
+    delivery_method: method as DeliveryType,
+    feeding_type: feeding as FeedingType,
+    history_mental_health: mental === "yes",
+    history_pregnancy_complications: complications,
+    language_preference: language,
+    support_person_name: supportName.trim() || null,
+    support_person_phone: toE164(phone),
+    support_sms_consent: Boolean(phone.trim() && smsConsent),
+    name: name.trim() || null,
+  };
+
   function validate(): string | null {
-    if (step === 0) {
-      if (!birthDate) return "Choose the date your baby was born.";
-      if (birthDate > todayIso()) return "That date is in the future. Choose the day your baby was born.";
-      if (birthDate < yearAgoIso()) return "Tidewell is for the first year after birth. Choose a date in the last 12 months.";
+    switch (step) {
+      case 0:
+        return consent ? null : "Tick the box to continue. Tidewell can't keep your check-ins without your permission.";
+      case 2:
+        if (!deliveryDate) return "Choose the date your baby was born.";
+        if (deliveryDate > todayIso()) return "That date is in the future. Choose the day your baby was born.";
+        if (deliveryDate < yearAgoIso()) return "Tidewell is for the first year after birth. Choose a date in the last 12 months.";
+        return null;
+      case 3:
+        if (!weeks) return null; // optional
+        return Number(weeks) >= 20 && Number(weeks) <= 45 ? null : "Enter a number of weeks between 20 and 45, or leave it blank.";
+      case 4:
+        return method ? null : "Choose how you gave birth.";
+      case 5:
+        return feeding ? null : "Choose how you are feeding your baby.";
+      case 6:
+        return mental ? null : "Choose yes or no. Either answer is okay.";
+      case 8:
+        if (!phone.trim()) return null;
+        if (digits(phone).length < 10) return "Enter the full phone number, including area code.";
+        if (!supportName.trim()) return "Add their first name.";
+        if (!smsConsent) return "Tick the box to say it is okay to text this person, or clear the number to skip.";
+        return null;
+      case 9:
+        return profileProblem(profile, phone);
+      default:
+        return null;
     }
-    if (step === 1 && !delivery) return "Choose how you gave birth.";
-    if (step === 2 && !breastfeeding) return "Choose yes or no for breastfeeding.";
-    if (step === 3 && phone.trim()) {
-      if (digits(phone).length < 10) return "Enter the full phone number, including area code.";
-      if (!consent) return "Tick the box to say it is okay to text this person, or clear the number to skip.";
-    }
-    return null;
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
     const problem = validate();
     setError(problem);
     if (problem) return;
@@ -82,22 +136,15 @@ export default function Onboarding() {
     }
     setSaving(true);
     try {
-      const res = await onboard({
-        // No patient_id: the backend creates a new patient (or, when signed in, updates the one
-        // linked to this login). Every screen then uses the id it returns.
-        clerk_user_id: getClerkUserId(),
-        birth_date: birthDate,
-        delivery_type: delivery as DeliveryType,
-        conditions,
-        breastfeeding: breastfeeding === "yes",
-        support_phone: phone.trim() ? `+1${digits(phone).slice(-10)}` : null,
-        support_consent: Boolean(phone.trim() && consent),
-        language: "en",
-      });
-      setPatientId(res.patient_id);
+      const res = await onboard(profile);
+      setOwnPatient(res.patient_id);
       router.push("/home");
-    } catch {
-      setError("We couldn't save your answers. Check your connection and try again.");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status !== 401
+          ? `We couldn't save your answers: ${err.message}`
+          : "We couldn't save your answers. Check your connection and try again."
+      );
       setSaving(false);
     }
   }
@@ -108,13 +155,7 @@ export default function Onboarding() {
     setStep((s) => Math.max(0, s - 1));
   }
 
-  const heading = [
-    "When was your baby born?",
-    "How did you give birth?",
-    "A few things that help us look out for you",
-    "Who should we tell if you need urgent care?",
-    "Ready to start",
-  ][step];
+  const skippable = (step === 3 && !weeks) || (step === 7 && !complications.length) || (step === 8 && !phone.trim());
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-10">
@@ -128,8 +169,8 @@ export default function Onboarding() {
       </header>
       <div aria-hidden="true" className="h-2 overflow-hidden rounded-full bg-navy/10">
         <div
-          className="h-full rounded-full bg-tide-deep transition-[width] duration-500 ease-out"
-          style={{ width: `${((step + 1) / TOTAL) * 100}%` }}
+          className="h-full origin-left rounded-full bg-tide-deep transition-transform duration-300 ease-out"
+          style={{ transform: `scaleX(${(step + 1) / TOTAL})` }}
         />
       </div>
 
@@ -141,11 +182,48 @@ export default function Onboarding() {
           className={`mt-8 flex flex-1 flex-col ${direction < 0 ? "motion-safe:animate-step-back" : "motion-safe:animate-step-in"} motion-reduce:animate-fade-in`}
         >
           <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
-            {heading}
+            {STEPS[step]}
           </h1>
 
           <div className="mt-6 flex-1">
             {step === 0 && (
+              <div className="space-y-5">
+                <p className="text-lg leading-relaxed">
+                  A few questions help Tidewell look out for you. It takes about two minutes. Tidewell is
+                  not a doctor and does not diagnose. If something feels like an emergency, call 911.
+                </p>
+                <div>
+                  <input id="consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="peer sr-only" />
+                  <label htmlFor="consent" className={`${choice} items-start`}>
+                    {CONSENT_TEXT}
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div>
+                <label htmlFor="name" className="text-lg font-semibold">
+                  First name or nickname <span className="font-normal text-navy/80">(optional)</span>
+                </label>
+                <input id="name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" maxLength={80} className={field} />
+                <fieldset className="mt-8">
+                  <legend className="text-lg font-semibold">Language for your check-ins</legend>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    {LANGUAGES.map((l) => (
+                      <div key={l.value}>
+                        <input id={`lang-${l.value}`} type="radio" name="language" value={l.value} checked={language === l.value} onChange={() => setLanguage(l.value)} className="peer sr-only" />
+                        <label htmlFor={`lang-${l.value}`} className={`${choice} justify-center`} lang={l.value}>
+                          {l.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
+            )}
+
+            {step === 2 && (
               <div>
                 <label htmlFor="birth" className="text-lg font-semibold">
                   Date of birth
@@ -153,40 +231,57 @@ export default function Onboarding() {
                 <p id="birth-hint" className="mt-1 text-base text-navy/80">
                   We use this to know how far along your recovery is.
                 </p>
-                <input
-                  id="birth"
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  aria-describedby="birth-hint"
-                  aria-invalid={error ? true : undefined}
-                  className={`mt-3 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`}
-                />
+                <input id="birth" type="date" value={deliveryDate} min={yearAgoIso()} max={todayIso()} onChange={(e) => setDeliveryDate(e.target.value)} aria-describedby="birth-hint" aria-invalid={error ? true : undefined} className={field} />
               </div>
             )}
 
-            {step === 1 && (
+            {step === 3 && (
+              <div>
+                <label htmlFor="weeks" className="text-lg font-semibold">
+                  Weeks of pregnancy at birth <span className="font-normal text-navy/80">(optional)</span>
+                </label>
+                <p id="weeks-hint" className="mt-1 text-base text-navy/80">
+                  A full-term pregnancy is about 39 to 40 weeks. Skip this if you are not sure.
+                </p>
+                <input id="weeks" type="number" inputMode="numeric" min={20} max={45} value={weeks} onChange={(e) => setWeeks(e.target.value)} aria-describedby="weeks-hint" aria-invalid={error ? true : undefined} className={field} />
+              </div>
+            )}
+
+            {step === 4 && (
+              <Choices legend="How did you give birth?" name="delivery" value={method} onChange={(v) => setMethod(v as DeliveryType)} options={DELIVERY} />
+            )}
+
+            {step === 5 && (
+              <Choices legend="How are you feeding your baby?" name="feeding" value={feeding} onChange={(v) => setFeeding(v as FeedingType)} options={FEEDING} />
+            )}
+
+            {step === 6 && (
+              <div className="space-y-4">
+                <p className="text-lg leading-relaxed">
+                  Before or during pregnancy. This helps Tidewell check in on your mood more carefully. It
+                  stays private.
+                </p>
+                <Choices legend="Have you ever had depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]} />
+              </div>
+            )}
+
+            {step === 7 && (
               <fieldset>
-                <legend className="sr-only">How did you give birth?</legend>
-                <div className="space-y-3">
-                  {(
-                    [
-                      ["vaginal", "Vaginal birth"],
-                      ["c-section", "C-section"],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <div key={value}>
+                <legend className="text-lg font-semibold">Pick any that apply, or none.</legend>
+                <div className="mt-3 space-y-3">
+                  {COMPLICATIONS.map((c) => (
+                    <div key={c.value}>
                       <input
-                        id={`delivery-${value}`}
-                        type="radio"
-                        name="delivery"
-                        value={value}
-                        checked={delivery === value}
-                        onChange={() => setDelivery(value)}
+                        id={`cond-${c.value}`}
+                        type="checkbox"
+                        checked={complications.includes(c.value)}
+                        onChange={(e) =>
+                          setComplications((prev) => (e.target.checked ? [...prev, c.value] : prev.filter((v) => v !== c.value)))
+                        }
                         className="peer sr-only"
                       />
-                      <label htmlFor={`delivery-${value}`} className={choice}>
-                        {label}
+                      <label htmlFor={`cond-${c.value}`} className={choice}>
+                        {c.label}
                       </label>
                     </div>
                   ))}
@@ -194,109 +289,41 @@ export default function Onboarding() {
               </fieldset>
             )}
 
-            {step === 2 && (
-              <div className="space-y-8">
-                <fieldset>
-                  <legend className="text-lg font-semibold">Did any of these happen? Pick any that apply, or none.</legend>
-                  <div className="mt-3 space-y-3">
-                    {CONDITIONS.map((c) => (
-                      <div key={c.value}>
-                        <input
-                          id={`cond-${c.value}`}
-                          type="checkbox"
-                          checked={conditions.includes(c.value)}
-                          onChange={(e) =>
-                            setConditions((prev) =>
-                              e.target.checked ? [...prev, c.value] : prev.filter((v) => v !== c.value)
-                            )
-                          }
-                          className="peer sr-only"
-                        />
-                        <label htmlFor={`cond-${c.value}`} className={choice}>
-                          {c.label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset>
-                  <legend className="text-lg font-semibold">Are you breastfeeding?</legend>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    {(
-                      [
-                        ["yes", "Yes"],
-                        ["no", "No"],
-                      ] as const
-                    ).map(([value, label]) => (
-                      <div key={value}>
-                        <input
-                          id={`bf-${value}`}
-                          type="radio"
-                          name="breastfeeding"
-                          value={value}
-                          checked={breastfeeding === value}
-                          onChange={() => setBreastfeeding(value)}
-                          className="peer sr-only"
-                        />
-                        <label htmlFor={`bf-${value}`} className={`${choice} justify-center`}>
-                          {label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-            )}
-
-            {step === 3 && (
+            {step === 8 && (
               <div>
                 <p className="text-lg leading-relaxed">
                   Pick someone you trust: a partner, a parent, a friend. This is optional, and you can skip it.
                 </p>
-                <label htmlFor="phone" className="mt-6 block text-lg font-semibold">
+                <label htmlFor="sname" className="mt-6 block text-lg font-semibold">
+                  Their first name
+                </label>
+                <input id="sname" value={supportName} onChange={(e) => setSupportName(e.target.value)} maxLength={80} autoComplete="off" className={field} />
+                <label htmlFor="phone" className="mt-5 block text-lg font-semibold">
                   Their phone number
                 </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="off"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  aria-invalid={error ? true : undefined}
-                  className={`mt-2 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`}
-                />
+                <input id="phone" type="tel" inputMode="tel" autoComplete="off" value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={error ? true : undefined} className={field} />
                 {phone.trim() && (
                   <div className="mt-5">
-                    <input
-                      id="consent"
-                      type="checkbox"
-                      checked={consent}
-                      onChange={(e) => setConsent(e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <label htmlFor="consent" className={`${choice} items-start`}>
-                      It is okay for Tidewell to text this person if my check-ins show I need urgent care.
+                    <input id="sms" type="checkbox" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} className="peer sr-only" />
+                    <label htmlFor="sms" className={`${choice} items-start`}>
+                      It is okay for Tidewell to text this person if my check-ins show I need emergency care.
                     </label>
                   </div>
                 )}
               </div>
             )}
 
-            {step === 4 && (
+            {step === 9 && (
               <dl className="divide-y divide-navy/10 rounded-3xl bg-sand/70 px-5 text-lg">
-                <Row term="Baby born" value={birthDate ? new Date(`${birthDate}T00:00:00`).toLocaleDateString("en-US", { dateStyle: "long" }) : ""} />
-                <Row term="Birth" value={delivery === "c-section" ? "C-section" : "Vaginal birth"} />
-                <Row
-                  term="Pregnancy"
-                  value={
-                    conditions.length
-                      ? CONDITIONS.filter((c) => conditions.includes(c.value)).map((c) => c.label).join("; ")
-                      : "Nothing to flag"
-                  }
-                />
-                <Row term="Breastfeeding" value={breastfeeding === "yes" ? "Yes" : "No"} />
-                <Row term="Urgent contact" value={phone.trim() ? phone.trim() : "None"} />
+                <Row term="Name" value={name.trim() || "Not given"} />
+                <Row term="Baby born" value={deliveryDate ? new Date(`${deliveryDate}T00:00:00`).toLocaleDateString("en-US", { dateStyle: "long" }) : ""} />
+                <Row term="Weeks of pregnancy" value={weeks || "Not given"} />
+                <Row term="Birth" value={DELIVERY.find((d) => d.value === method)?.label ?? ""} />
+                <Row term="Feeding" value={FEEDING.find((f) => f.value === feeding)?.label ?? ""} />
+                <Row term="Depression or anxiety before" value={mental === "yes" ? "Yes" : "No"} />
+                <Row term="Pregnancy" value={complications.length ? COMPLICATIONS.filter((c) => complications.includes(c.value)).map((c) => c.label).join("; ") : "Nothing to flag"} />
+                <Row term="Urgent contact" value={phone.trim() ? `${supportName.trim()}, ${phone.trim()}` : "None"} />
+                <Row term="Language" value={LANGUAGES.find((l) => l.value === language)?.label ?? ""} />
               </dl>
             )}
 
@@ -309,21 +336,48 @@ export default function Onboarding() {
 
           <div className="mt-8 flex flex-col gap-3">
             <button type="submit" aria-disabled={saving} className={btnPrimary}>
-              {step === TOTAL - 1 ? (saving ? "Saving" : "Start my first check-in") : step === 3 && !phone.trim() ? "Skip this step" : "Continue"}
+              {step === TOTAL - 1 ? (saving ? "Saving" : "Start my first check-in") : skippable ? "Skip this step" : "Continue"}
             </button>
-            {step > 0 ? (
+            {step > 0 && (
               <button type="button" onClick={back} className={btnOutline}>
                 Back
               </button>
-            ) : (
-              <Link href="/" className={btnOutline}>
-                Back
-              </Link>
             )}
           </div>
         </form>
       </main>
     </div>
+  );
+}
+
+export function Choices({
+  legend,
+  name,
+  value,
+  onChange,
+  options,
+}: {
+  legend: string;
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; hint?: string }[];
+}) {
+  return (
+    <fieldset>
+      <legend className="sr-only">{legend}</legend>
+      <div className="space-y-3">
+        {options.map((o) => (
+          <div key={o.value}>
+            <input id={`${name}-${o.value}`} type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="peer sr-only" />
+            <label htmlFor={`${name}-${o.value}`} className={`${choice} justify-between`}>
+              <span>{o.label}</span>
+              {o.hint && <span className="text-base opacity-80">{o.hint}</span>}
+            </label>
+          </div>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

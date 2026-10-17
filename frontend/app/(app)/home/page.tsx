@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CheckinPanel from "@/components/CheckinPanel";
+import TodayCard from "@/components/TodayCard";
 
 export const metadata: Metadata = { title: "Check in" };
 
@@ -7,6 +8,9 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center">
       <h1 className="mt-2 text-center font-display text-4xl leading-tight">How are you today?</h1>
+      <div className="mt-3 w-full">
+        <TodayCard />
+      </div>
       <div className="mt-6 flex w-full flex-1 flex-col">
         <CheckinPanel />
       </div>

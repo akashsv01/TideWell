@@ -1,48 +1,57 @@
 "use client";
 
-import { SignOutButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
-import { deleteMyData } from "@/lib/api";
-import { AUTH_ENABLED } from "@/lib/auth";
-import { chooseDemoAccount, isDemo, setPatientId, useClerkUserId, usePatientId } from "@/lib/identity";
+import ProfileEditor from "@/components/ProfileEditor";
+import { deleteMyData, logout } from "@/lib/api";
 import {
   getSpokenReplies,
   setSpokenReplies,
   spokenRepliesServerValue,
   subscribeSpokenReplies,
 } from "@/lib/prefs";
-import { btnOutline, focusRing } from "@/lib/ui";
+import { clearSession, useSession } from "@/lib/session";
+import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
-type DeleteState = "idle" | "confirm" | "deleting" | "done" | "error";
+type DeleteState = "idle" | "confirm" | "deleting" | "error";
 
 export default function SettingsPanel() {
   const router = useRouter();
-  const { patientId } = usePatientId();
-  const { clerkUserId } = useClerkUserId();
-  const demo = isDemo(patientId);
-  const spoken = useSyncExternalStore(
-    subscribeSpokenReplies,
-    getSpokenReplies,
-    spokenRepliesServerValue
-  );
+  const { session } = useSession();
+  const spoken = useSyncExternalStore(subscribeSpokenReplies, getSpokenReplies, spokenRepliesServerValue);
   const [del, setDel] = useState<DeleteState>("idle");
+  const demo = session?.kind === "demo";
+  const patientId = session?.patientId ?? null;
+
+  async function signOut() {
+    await logout();
+    clearSession();
+    router.push("/");
+  }
 
   async function confirmDelete() {
     if (!patientId) return;
     setDel("deleting");
     try {
-      await deleteMyData(patientId);
-      setDel("done");
-      setPatientId(null); // nothing left to show; RequirePatient offers to start again
+      await deleteMyData(patientId); // also deletes the account and ends every session
+      clearSession();
+      router.push("/?deleted=1");
     } catch {
       setDel("error");
     }
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-14">
       <h1 className="font-display text-4xl leading-tight">Settings</h1>
+
+      <section aria-labelledby="details-title" className="motion-safe:animate-section-in">
+        <h2 id="details-title" className="font-display text-2xl">
+          Your details
+        </h2>
+        <div className="mt-3">{patientId && <ProfileEditor patientId={patientId} demo={demo} />}</div>
+      </section>
 
       <section aria-labelledby="voice-title">
         <h2 id="voice-title" className="font-display text-2xl">
@@ -64,11 +73,11 @@ export default function SettingsPanel() {
             aria-labelledby="spoken-label"
             aria-describedby="spoken-hint"
             onClick={() => setSpokenReplies(!spoken)}
-            className={`relative h-9 w-16 shrink-0 rounded-full transition-colors ${spoken ? "bg-tide-deep" : "bg-navy/40"} ${focusRing}`}
+            className={`relative h-9 w-16 shrink-0 rounded-full transition-colors duration-150 ${spoken ? "bg-tide-deep" : "bg-navy/40"} ${focusRing}`}
           >
             <span
               aria-hidden="true"
-              className={`absolute left-1 top-1 size-7 rounded-full bg-white shadow transition-transform ${spoken ? "translate-x-7" : ""}`}
+              className={`absolute left-1 top-1 size-7 rounded-full bg-white shadow transition-transform duration-150 ease-out ${spoken ? "translate-x-7" : ""}`}
             />
           </button>
         </div>
@@ -83,16 +92,13 @@ export default function SettingsPanel() {
         </p>
         <ul className="mt-4 space-y-2 text-lg">
           <li>
-            <a href="tel:911" className={`rounded font-semibold underline underline-offset-4 ${focusRing}`}>
-              Call 911
-            </a>{" "}
-            for an emergency.
+            <a href="tel:911" className={`rounded font-semibold underline underline-offset-4 ${focusRing}`}>Call 911</a> for an emergency.
           </li>
           <li>
-            <a href="tel:988" className={`rounded font-semibold underline underline-offset-4 ${focusRing}`}>
-              Call or text 988
-            </a>{" "}
-            if you are thinking of harming yourself or your baby.
+            <a href="tel:988" className={`rounded font-semibold underline underline-offset-4 ${focusRing}`}>Call or text 988</a> if you are thinking of harming yourself or your baby.
+          </li>
+          <li>
+            <a href="tel:18338526262" className={`rounded font-semibold underline underline-offset-4 ${focusRing}`}>1-833-852-6262</a>, the National Maternal Mental Health Hotline, any time.
           </li>
         </ul>
       </section>
@@ -101,95 +107,80 @@ export default function SettingsPanel() {
         <h2 id="account-title" className="font-display text-2xl">
           Account
         </h2>
-        <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
-          {demo
-            ? "You are looking at Maya, our demo parent. Nothing you do here is about you."
-            : "Your check-ins and trends are saved to your own Tidewell record."}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {demo ? (
-            <button
-              type="button"
-              onClick={() => {
-                setPatientId(null);
-                router.push(AUTH_ENABLED && !clerkUserId ? "/sign-up" : "/onboarding");
-              }}
-              className={btnOutline}
-            >
-              Set up my own account
-            </button>
-          ) : (
-            <button type="button" onClick={chooseDemoAccount} className={btnOutline}>
-              Switch to the demo
-            </button>
-          )}
-          {AUTH_ENABLED && clerkUserId && (
-            <SignOutButton redirectUrl="/">
-              <button type="button" className={btnOutline}>
-                Sign out
+        {demo ? (
+          <>
+            <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
+              You are looking at Maya, our demo parent. Nothing you do here is saved to an account of yours.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/register" onClick={() => clearSession()} className={btnPrimary}>
+                Create my own account
+              </Link>
+              <button type="button" onClick={() => { clearSession(); router.push("/"); }} className={btnOutline}>
+                Exit demo
               </button>
-            </SignOutButton>
-          )}
-        </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-lg">
+              Signed in as <strong>{session?.kind === "user" ? session.username : ""}</strong>.
+            </p>
+            <button type="button" onClick={signOut} className={`${btnOutline} mt-4`}>
+              Log out
+            </button>
+          </>
+        )}
       </section>
 
-      <section aria-labelledby="data-title">
-        <h2 id="data-title" className="font-display text-2xl">
-          Your data
-        </h2>
-        <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
-          You can delete your check-ins, trends and answers at any time. This cannot be undone.
-        </p>
-
-        <div className="mt-4" aria-live="polite">
-          {demo && del === "idle" && (
-            <p className="rounded-3xl bg-sand/70 p-5 text-lg">
-              The demo account can&apos;t be deleted. Switch to your own account to manage your data.
-            </p>
-          )}
-          {!demo && del === "idle" && (
-            <button type="button" onClick={() => setDel("confirm")} className={btnOutline}>
-              Delete my data
-            </button>
-          )}
-          {(del === "confirm" || del === "deleting") && (
-            <div className="rounded-3xl bg-sand/70 p-5">
-              <p className="text-lg font-semibold">Delete everything Tidewell has about you?</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => del === "confirm" && confirmDelete()}
-                  aria-disabled={del === "deleting"}
-                  className={`inline-flex min-h-12 items-center rounded-full bg-alert px-6 font-semibold text-white aria-disabled:opacity-60 ${focusRing}`}
-                >
-                  {del === "deleting" ? "Deleting" : "Yes, delete it"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => del === "confirm" && setDel("idle")}
-                  aria-disabled={del === "deleting"}
-                  className={`inline-flex min-h-12 items-center rounded-full border-2 border-navy px-6 font-semibold aria-disabled:opacity-60 ${focusRing}`}
-                >
-                  Keep my data
+      {!demo && (
+        <section aria-labelledby="data-title">
+          <h2 id="data-title" className="font-display text-2xl">
+            Your data
+          </h2>
+          <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
+            Delete your account, check-ins, trends and answers. This cannot be undone.
+          </p>
+          <div className="mt-4" aria-live="polite">
+            {del === "idle" && (
+              <button type="button" onClick={() => setDel("confirm")} className={btnOutline}>
+                Delete my account and data
+              </button>
+            )}
+            {(del === "confirm" || del === "deleting") && (
+              <div className="rounded-3xl bg-sand/70 p-5 motion-safe:animate-reply-in">
+                <p className="text-lg font-semibold">Delete everything Tidewell has about you?</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => del === "confirm" && confirmDelete()}
+                    aria-disabled={del === "deleting"}
+                    className={`inline-flex min-h-12 items-center rounded-full bg-alert px-6 font-semibold text-white aria-disabled:opacity-60 ${focusRing}`}
+                  >
+                    {del === "deleting" ? "Deleting" : "Yes, delete it"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => del === "confirm" && setDel("idle")}
+                    aria-disabled={del === "deleting"}
+                    className={`inline-flex min-h-12 items-center rounded-full border-2 border-navy px-6 font-semibold aria-disabled:opacity-60 ${focusRing}`}
+                  >
+                    Keep my data
+                  </button>
+                </div>
+              </div>
+            )}
+            {del === "error" && (
+              <div role="alert" className="rounded-3xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
+                <p>We couldn&apos;t delete your data. Please try again.</p>
+                <button type="button" onClick={() => setDel("confirm")} className={`mt-3 ${btnOutline}`}>
+                  Try again
                 </button>
               </div>
-            </div>
-          )}
-          {del === "done" && (
-            <p className="rounded-3xl bg-sand/70 p-5 text-lg" role="status">
-              Your data has been deleted.
-            </p>
-          )}
-          {del === "error" && (
-            <div role="alert" className="rounded-3xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
-              <p>We couldn&apos;t delete your data. Please try again.</p>
-              <button type="button" onClick={() => setDel("confirm")} className={`mt-3 ${btnOutline}`}>
-                Try again
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
