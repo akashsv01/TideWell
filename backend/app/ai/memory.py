@@ -1,82 +1,159 @@
-"""Backboard memory wrapper (one Backboard assistant per Tidewell user).
+"""Backboard memory: one Backboard assistant (+ current thread) per patient.
 
-Confirmed API (backboard-sdk, async):
+Confirmed API (backboard-sdk 1.5.x, async; signatures checked via inspect):
   client = BackboardClient(api_key=...)
-  a = await client.create_assistant(name=..., system_prompt=...)        -> a.assistant_id
-  t = await client.create_thread(assistant_id)                          -> t.thread_id
-  r = await client.send_message(content, thread_id=..., assistant_id=..., memory="Auto",
-                                llm_provider="google", model_name=...) -> r.content, r.memory_operation_id
-  await client.get_memory_operation_status(operation_id)                -> "COMPLETED" | "IN_PROGRESS" | "ERROR"
-Memory is stored per ASSISTANT, not per thread, and memory="Auto" must be passed on every turn.
+  await client.create_assistant(name=..., system_prompt=...)              -> Assistant.assistant_id
+  await client.create_thread(assistant_id)                                 -> Thread.thread_id
+  await client.add_message(thread_id, content=..., memory="Auto", send_to_llm="false")
+                                                                           -> stores + extracts memory, no LLM call
+  await client.search_memories(assistant_id, query=..., limit=5)           -> {"memories": [{"content", "score"}], ...}
+  await client.get_thread(thread_id)                                       -> Thread.messages[].content
+Memory lives on the ASSISTANT (not the thread) and memory="Auto" must be passed every turn.
+Verified live 2026-10-17: Backboard's free credit covers Memory & RAG but NOT LLM chat
+(send_message returns a billing notice as .content). So Backboard stores/searches memory and
+Gemini writes the reply. With paid Backboard credit, send_message(..., llm_provider="google") also works.
 Docs: https://docs.backboard.io/sdk/first-message  |  https://docs.backboard.io/sdk/memory
+
+Sync wrappers (chat, recall, get_or_create) are for P2's FastAPI routes; async versions are
+prefixed with "a" (achat, arecall, aget_or_create) for async routes.
 """
 import asyncio
 import json
-from typing import Optional
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Coroutine, Optional, TypeVar
 
 from backboard import BackboardClient
 
+from app.ai.prompts import CARE_NAVIGATOR_SYSTEM_PROMPT
 from app.config import BACKEND_DIR, get_settings
 
-SYSTEM_PROMPT = (
-    "You are Tidewell, a warm, calm postpartum care companion. You remember what the parent has told you. "
-    "You never diagnose. Keep replies short and kind."
-)
-LLM_PROVIDER = "google"
+log = logging.getLogger(__name__)
+T = TypeVar("T")
 
-# TODO(phase1): move this user -> assistant/thread map into Tiger Data.
-_STORE = BACKEND_DIR / ".backboard_users.json"
+# --- Mapping store -------------------------------------------------------------
+# TODO(P2): replace with a `backboard_assistant_id` (+ `backboard_thread_id`) column on `patients`.
+# Only get_mapping/save_mapping need to change.
+_STORE = BACKEND_DIR / ".data" / "backboard_ids.json"
 
 
-def _load() -> dict:
+def _read_all() -> dict:
     return json.loads(_STORE.read_text()) if _STORE.exists() else {}
 
 
-def _save(data: dict) -> None:
+def get_mapping(patient_id: str) -> dict:
+    """{"assistant_id": ..., "thread_id": ...} for a patient, or {} if none yet."""
+    return _read_all().get(patient_id, {})
+
+
+def save_mapping(patient_id: str, mapping: dict) -> None:
+    data = _read_all()
+    data[patient_id] = mapping
+    _STORE.parent.mkdir(parents=True, exist_ok=True)
     _STORE.write_text(json.dumps(data, indent=2))
 
 
+# --- Async core -------------------------------------------------------------------
 def _client() -> BackboardClient:
     return BackboardClient(api_key=get_settings().backboard_api_key)
 
 
-async def get_or_create_assistant(patient_id: str) -> str:
-    data = _load()
-    if aid := data.get(patient_id, {}).get("assistant_id"):
-        return aid
-    a = await _client().create_assistant(name=f"tidewell-{patient_id}", system_prompt=SYSTEM_PROMPT)
-    data[patient_id] = {"assistant_id": str(a.assistant_id)}
-    _save(data)
-    return str(a.assistant_id)
-
-
-async def get_or_create_thread(patient_id: str, new: bool = False) -> str:
-    """Return the user's current thread. new=True starts a fresh thread (memory still carries over)."""
-    assistant_id = await get_or_create_assistant(patient_id)
-    data = _load()
-    if not new and (tid := data[patient_id].get("thread_id")):
-        return tid
-    t = await _client().create_thread(assistant_id)
-    data[patient_id]["thread_id"] = str(t.thread_id)
-    _save(data)
-    return str(t.thread_id)
-
-
-async def chat(patient_id: str, message: str, thread_id: Optional[str] = None, wait_for_memory: bool = False) -> str:
+async def aget_or_create(patient_id: str, new_thread: bool = False) -> str:
+    """Return the patient's Backboard assistant_id, creating the assistant and a thread if needed.
+    new_thread=True starts a fresh thread; memory still carries over because it lives on the assistant."""
+    m = get_mapping(patient_id)
     client = _client()
-    assistant_id = await get_or_create_assistant(patient_id)
-    thread_id = thread_id or await get_or_create_thread(patient_id)
-    r = await client.send_message(
-        message,
-        thread_id=thread_id,
-        memory="Auto",
-        llm_provider=LLM_PROVIDER,
-        model_name=get_settings().gemini_model,
+    if not m.get("assistant_id"):
+        a = await client.create_assistant(name=f"tidewell-{patient_id}", system_prompt=CARE_NAVIGATOR_SYSTEM_PROMPT)
+        m = {"assistant_id": str(a.assistant_id)}
+    if new_thread or not m.get("thread_id"):
+        t = await client.create_thread(m["assistant_id"])
+        m["thread_id"] = str(t.thread_id)
+    save_mapping(patient_id, m)
+    return m["assistant_id"]
+
+
+async def achat(patient_id: str, message: str) -> str:
+    """Memory-grounded reply: search past memories, store this message in Backboard (no LLM),
+    and have Gemini write the reply. Not the full Care Navigator (that is agent.py)."""
+    await aget_or_create(patient_id)
+    m = get_mapping(patient_id)
+    client = _client()
+    memories, _ = await asyncio.gather(
+        arecall(patient_id, message),
+        client.add_message(m["thread_id"], content=message, memory="Auto", send_to_llm="false"),
     )
-    if wait_for_memory and getattr(r, "memory_operation_id", None):
-        for _ in range(30):  # memory extraction is async on Backboard's side
-            status = await client.get_memory_operation_status(r.memory_operation_id)
-            if str(getattr(status, "status", status)).upper() != "IN_PROGRESS":
-                break
-            await asyncio.sleep(1)
-    return r.content or ""
+    return await asyncio.to_thread(_gemini_reply, message, memories)
+
+
+def _gemini_reply(message: str, memories: list[str]) -> str:
+    from google.genai import types
+
+    from app.ai._gemini import get_client
+
+    remembered = "\n".join(f"- {x}" for x in memories) or "- (nothing yet)"
+    r = get_client().models.generate_content(
+        model=get_settings().gemini_model,
+        contents=f"What you remember about this person from past conversations:\n{remembered}\n\nThey say: {message}",
+        config=types.GenerateContentConfig(system_instruction=CARE_NAVIGATOR_SYSTEM_PROMPT, temperature=0.4),
+    )
+    return (r.text or "").strip()
+
+
+def _memory_texts(raw: Any) -> list[str]:
+    """search_memories returns a dict whose exact shape is undocumented; accept common shapes."""
+    if isinstance(raw, dict):
+        items = raw.get("memories") or raw.get("results") or raw.get("data") or []
+    else:
+        items = raw or []
+    out = []
+    for it in items:
+        if isinstance(it, dict):
+            text = it.get("content") or it.get("memory") or it.get("text")
+        else:
+            text = getattr(it, "content", None)
+        if text:
+            out.append(str(text))
+    return out
+
+
+async def arecall(patient_id: str, query: str, limit: int = 5) -> list[str]:
+    """Memories relevant to `query`. Falls back to the thread's recent messages if search fails or is empty."""
+    m = get_mapping(patient_id)
+    if not m.get("assistant_id"):
+        return []
+    client = _client()
+    try:
+        found = _memory_texts(await client.search_memories(m["assistant_id"], query=query, limit=limit))
+        if found:
+            return found
+    except Exception as e:  # noqa: BLE001
+        log.warning("search_memories failed (%s); falling back to recent messages", e)
+    if not m.get("thread_id"):
+        return []
+    thread = await client.get_thread(m["thread_id"])
+    return [f"{msg.role}: {msg.content}" for msg in (thread.messages or [])[-limit:] if msg.content]
+
+
+# --- Sync wrappers (safe from plain scripts and from sync or async FastAPI routes) --------
+_pool = ThreadPoolExecutor(max_workers=4)
+
+
+def _run(coro: Coroutine[Any, Any, T]) -> T:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    return _pool.submit(asyncio.run, coro).result()  # already inside an event loop
+
+
+def get_or_create(patient_id: str, new_thread: bool = False) -> str:
+    return _run(aget_or_create(patient_id, new_thread))
+
+
+def chat(patient_id: str, message: str) -> str:
+    return _run(achat(patient_id, message))
+
+
+def recall(patient_id: str, query: str, limit: int = 5) -> list[str]:
+    return _run(arecall(patient_id, query, limit))
