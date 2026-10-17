@@ -40,32 +40,32 @@ def _client() -> BackboardClient:
     return BackboardClient(api_key=get_settings().backboard_api_key)
 
 
-async def get_or_create_assistant(user_id: str) -> str:
+async def get_or_create_assistant(patient_id: str) -> str:
     data = _load()
-    if aid := data.get(user_id, {}).get("assistant_id"):
+    if aid := data.get(patient_id, {}).get("assistant_id"):
         return aid
-    a = await _client().create_assistant(name=f"tidewell-{user_id}", system_prompt=SYSTEM_PROMPT)
-    data[user_id] = {"assistant_id": str(a.assistant_id)}
+    a = await _client().create_assistant(name=f"tidewell-{patient_id}", system_prompt=SYSTEM_PROMPT)
+    data[patient_id] = {"assistant_id": str(a.assistant_id)}
     _save(data)
     return str(a.assistant_id)
 
 
-async def get_or_create_thread(user_id: str, new: bool = False) -> str:
+async def get_or_create_thread(patient_id: str, new: bool = False) -> str:
     """Return the user's current thread. new=True starts a fresh thread (memory still carries over)."""
-    assistant_id = await get_or_create_assistant(user_id)
+    assistant_id = await get_or_create_assistant(patient_id)
     data = _load()
-    if not new and (tid := data[user_id].get("thread_id")):
+    if not new and (tid := data[patient_id].get("thread_id")):
         return tid
     t = await _client().create_thread(assistant_id)
-    data[user_id]["thread_id"] = str(t.thread_id)
+    data[patient_id]["thread_id"] = str(t.thread_id)
     _save(data)
     return str(t.thread_id)
 
 
-async def chat(user_id: str, message: str, thread_id: Optional[str] = None, wait_for_memory: bool = False) -> str:
+async def chat(patient_id: str, message: str, thread_id: Optional[str] = None, wait_for_memory: bool = False) -> str:
     client = _client()
-    assistant_id = await get_or_create_assistant(user_id)
-    thread_id = thread_id or await get_or_create_thread(user_id)
+    assistant_id = await get_or_create_assistant(patient_id)
+    thread_id = thread_id or await get_or_create_thread(patient_id)
     r = await client.send_message(
         message,
         thread_id=thread_id,

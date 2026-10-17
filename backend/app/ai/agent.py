@@ -6,6 +6,6 @@ from app.schemas import CheckinMetrics
 
 
 class CareNavigator:
-    def run(self, user_id: str, transcript: str, metrics: CheckinMetrics) -> str:
+    def run(self, patient_id: str, transcript: str, metrics: CheckinMetrics) -> str:
         # TODO(phase1): Gemini tool-calling loop (see extract.py header) + memory.chat()
         return "Thanks for checking in today. I've noted how you're feeling. I'll have more for you soon."
