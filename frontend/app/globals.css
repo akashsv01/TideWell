@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Tidewell design tokens.
+   Light theme only for now. A night mode for 3 a.m. feeds is a good Phase 2 idea. */
+@theme {
+  --color-navy: #0b2545;
+  --color-tide: #13828a;
+  --color-tide-deep: #0e6a70;
+  --color-tide-light: #6fd0d4;
+  --color-foam: #f4f9f9;
+  --color-sand: #efe3c8;
+  --color-alert: #b3261e;
+  /* Chart colors. Validated together for color-blind separation (scripts/validate_palette.js). */
+  --color-chart-teal: #06909a;
+  --color-chart-amber: #c4761b;
+
+  --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Young Serif", ui-serif, Georgia, serif;
+
+  --animate-drift: drift 18s linear infinite;
+  --animate-rise: rise 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-breathe: breathe 6s ease-in-out infinite;
+  --animate-ripple: ripple 2.6s ease-out infinite;
+  --animate-step-in: step-in 0.28s ease-out both;
+
+  @keyframes drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes rise {
+    from {
+      transform: translateY(2.5rem);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
+  @keyframes ripple {
+    from {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    to {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
+  @keyframes step-in {
+    from {
+      transform: translateX(1rem);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-foam);
+  color: var(--color-navy);
+  font-family: var(--font-sans);
+}
+
+/* While Tidewell is thinking, the orb's water runs faster. */
+.orb[data-state="busy"] .wave-layer {
+  animation-duration: 4s !important;
+}
+
+/* People who ask their device for less motion get none. Waves stay as still pictures. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
