@@ -24,6 +24,17 @@ DANGEROUS = [
     ("I have a fever and the pain in my incision is like a nine", "fever"),
     ("my left calf is really swollen and red", "leg"),
     ("It was better yesterday, but now I'm seeing spots again", "vision"),
+    # Added from the CDC Hear Her list
+    ("my temperature was 101.2 this morning", "fever"),
+    ("I think I'm running a fever", "fever"),
+    ("my face and hands puffed up out of nowhere tonight", "swelling of face"),
+    ("my fingers are so swollen I can't get my rings off", "swelling of face"),
+    ("I have this sharp stomach pain that won't go away", "belly"),
+    ("my heart keeps racing even when I'm lying down", "heartbeat"),
+    ("I've been really dizzy every time I stand up", "dizziness"),
+    ("I can't keep anything down, I keep throwing up", "nausea"),
+    ("my right arm is swollen and red", "leg or arm"),
+    ("I'm so exhausted I can't take care of the baby", "tiredness"),
 ]
 
 SAFE = [
@@ -39,6 +50,12 @@ SAFE = [
     "Breastfeeding hurts a little at the start of each feed",
     "Mild headache this morning but it went away after coffee",
     "The spots in my eyes went away",
+    "No fever today, temperature was 98.6",
+    "temperature was 99.1 so I think I'm fine",
+    "I'm so tired, the baby was up every two hours",
+    "my feet are a little swollen at the end of the day",
+    "my stomach is a bit crampy while feeding",
+    "not dizzy anymore since I started drinking more water",
 ]
 
 BP_CASES = [
@@ -77,7 +94,7 @@ def test_self_harm_is_never_negated():
 # --- Gemini backup (mocked) -------------------------------------------------
 RULES_MISS = [
     "I feel like my family would honestly be happier if I just disappeared",
-    "my face and hands puffed up out of nowhere tonight",
+    "something just feels really wrong with my body and I'm scared",
     "I'm so confused, I couldn't remember my own address earlier",
 ]
 

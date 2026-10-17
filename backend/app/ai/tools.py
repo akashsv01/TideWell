@@ -33,27 +33,28 @@ def get_trends(patient_id: str, days: int = 7) -> list[dict]:
 
 
 def search_guidelines(query: str, k: int = 3) -> list[dict]:
-    """Top-k guideline chunks. Phase 3: pgvector cosine search over guideline_chunks."""
+    """Top-k guideline chunks: {source, url, section, content} (same keys as clinical_assets/guidelines.json
+    and the guideline_chunks table). Phase 3: pgvector cosine search over guideline_chunks."""
     chunks = [
         {
             "source": "CDC Hear Her",
             "url": "https://www.cdc.gov/hearher/maternal-warning-signs/index.html",
             "section": "Urgent maternal warning signs",
-            "text": "A headache that won't go away or gets worse over time, and changes in vision, can be warning "
+            "content": "A headache that won't go away or gets worse over time, and changes in vision, can be warning "
                     "signs up to a year after delivery. Get medical care right away if you have these.",
         },
         {
             "source": "CDC",
             "url": "https://www.cdc.gov/maternal-infant-health/postpartum/index.html",
             "section": "High blood pressure after pregnancy",
-            "text": "High blood pressure can develop or get worse after birth. Regular blood pressure checks after "
+            "content": "High blood pressure can develop or get worse after birth. Regular blood pressure checks after "
                     "delivery help catch it early; talk with your provider if readings are rising.",
         },
         {
             "source": "NIH",
             "url": "https://www.nichd.nih.gov/health/topics/postpartum",
             "section": "Sleep and mood after birth",
-            "text": "Very little sleep can affect mood after birth. Ongoing low mood, worry, or trouble sleeping even "
+            "content": "Very little sleep can affect mood after birth. Ongoing low mood, worry, or trouble sleeping even "
                     "when the baby sleeps are worth raising with a health care provider.",
         },
     ]

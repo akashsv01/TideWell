@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 # TODO(clinical): P4 is verifying these against ACOG / CDC. PLACEHOLDER VALUES, do not ship as-is.
 SEVERE_BP_SYS = 160  # TODO verify: systolic at/above this is a red flag
 SEVERE_BP_DIA = 110  # TODO verify: diastolic at/above this is a red flag
-SEVERE_PAIN = 7  # TODO verify: pain score (0-10) that counts as "severe" when combined with fever
+FEVER_F = 100.4  # CDC Hear Her: "fever of 100.4 F or higher" (verified 2026-10-17)
 # ---------------------------------------------------------------------------
 
 GEMINI_TIMEOUT_S = 3
@@ -147,21 +147,61 @@ RULES: list[tuple[str, list[str], bool]] = [
         r"\blost\s+consciousness\b",
         r"\bcollapsed\b",
     ], True),
-    ("swollen, red or painful leg", [
-        r"\b(swollen|swelling|red|hot|warm|painful)\b[^.]{0,25}\b(leg|calf|calves|thigh)\b",
-        r"\b(leg|calf|calves|thigh)\b[^.]{0,25}\b(swollen|swelling|red|hot|warm to the touch)\b",
+    ("swollen, red or painful leg or arm", [
+        r"\b(swollen|swelling|red|hot|warm|painful)\b[^.]{0,25}\b(legs?|calf|calves|thighs?|arms?)\b",
+        r"\b(legs?|calf|calves|thighs?|arms?)\b[^.]{0,25}\b(swollen|swelling|red|hot|warm to the touch)\b",
+        r"\b(severe|terrible|awful|unbearable|really\s+bad)\s+pain\s+in\s+(my\s+)?(leg|calf|thigh|arm)\b",
+    ], True),
+    # --- Added from the CDC Hear Her list (cdc.gov/hearher/maternal-warning-signs) -----------------
+    ("extreme swelling of face or hands", [
+        r"\b(swollen|swelling|puffy|puffed(\s+up)?|puffiness|bloated)\b[^.]{0,25}\b(face|hands?|fingers|eyes|eyelids)\b",
+        r"\b(face|hands?|fingers|eyes|eyelids)\b[^.]{0,25}\b(swollen|swelling|puffy|puffed(\s+up)?|so\s+swollen)\b",
+        r"\bcan'?t\s+(get|take)\s+(my\s+)?rings?\s+off\b",
+    ], True),
+    ("severe belly pain", [
+        rf"\b(severe|terrible|awful|horrible|unbearable|excruciating|intense|sharp|really\s+bad)\s+{_W}?(belly|stomach|abdominal|tummy|abdomen|pelvic)\s+pain\b",
+        r"\b(belly|stomach|abdomen|tummy)\b[^.]{0,30}\b(killing me|unbearable|won'?t stop hurting|hurts so (bad|much))\b",
+        r"\b(belly|stomach|abdominal|tummy)\s+pain\b[^.]{0,40}\b(won'?t|doesn'?t|isn'?t|not)\s+(go(ing)?\s+away|stop|getting better)\b",
+    ], True),
+    ("fast or pounding heartbeat", [
+        r"\b(heart|heartbeat|pulse)\b[^.]{0,20}\b(racing|pounding|fluttering|skipping|irregular|beating\s+(so\s+|really\s+)?fast|going\s+(so\s+|really\s+)?fast)\b",
+        r"\b(racing|pounding)\s+heart\b",
+        r"\bpalpitations?\b",
+    ], True),
+    ("dizziness", [
+        r"\b(dizzy|dizziness|light-?\s?headed(ness)?|woozy|vertigo)\b",
+        r"\b(room|everything)\s+(is\s+|was\s+|keeps\s+)?spinning\b",
+    ], True),
+    ("severe nausea or vomiting", [
+        r"\b(can'?t|cannot)\s+stop\s+(throwing\s+up|vomiting|puking)\b",
+        r"\b(keep|kept|been|keeps)\s+(throwing\s+up|vomiting|puking)\b",
+        r"\b(vomiting|throwing\s+up)\s+(all\s+day|nonstop|non-stop|everything|constantly)\b",
+        r"\b(severe|terrible|really\s+bad|constant)\s+nausea\b",
+        r"\bcan'?t\s+keep\s+(anything|food|water|fluids|liquids)\s+down\b",
+    ], True),
+    # Narrow on purpose: ordinary "I'm so tired" is near-universal postpartum and must not trigger 911.
+    ("overwhelming tiredness", [
+        r"\boverwhelming(ly)?\s+(tired|tiredness|exhausted|exhaustion|fatigue)\b",
+        r"\b(tired|exhausted)\b[^.]{0,20}\bcan'?t\s+(get\s+out\s+of\s+bed|stand|stay\s+awake|function|take\s+care\s+of\s+(the|my)\s+baby)\b",
     ], True),
 ]
 _COMPILED = [(r, [re.compile(p, re.IGNORECASE) for p in ps], n) for r, ps, n in RULES]
 
-# Fever + severe pain only flags in combination.
-_FEVER = re.compile(r"\b(fever|feverish|temperature\s+of\s+10[0-5]|10[0-5](\.\d)?\s*degrees|chills)\b", re.I)
-_SEVERE_PAIN = re.compile(
-    r"\b((severe|terrible|awful|horrible|unbearable|excruciating|intense|really\s+bad|so\s+much)\s+(\w+\s+)?pain"
-    r"|pain\b[^.]{0,30}\b(is|at|like|about|around)\s+(like\s+|about\s+|an?\s+)*(7|8|9|10|seven|eight|nine|ten)\b"
-    r"|(incision|belly|stomach|breast)\b[^.]{0,20}\b(killing me|unbearable|so painful))",
-    re.I,
+# Fever (CDC: 100.4 F or higher). A stated temperature decides; otherwise the word "fever" flags.
+_FEVER_WORD = re.compile(r"\b(fever|feverish|febrile|running\s+a\s+temp(erature)?)\b", re.I)
+_TEMP = re.compile(
+    r"\b(temp|temperature|fever|thermometer)\b[^.\d]{0,25}(\d{2,3}(?:\.\d+)?)\s*(degrees?)?\s*([fc])?\b", re.I
 )
+
+
+def _fever(text: str) -> bool:
+    temps = []
+    for m in _TEMP.finditer(text):
+        v, unit = float(m.group(2)), (m.group(4) or "").lower()
+        temps.append(v >= FEVER_F if unit != "c" and v > 45 else 38.0 <= v <= 45)
+    if temps:
+        return any(temps)
+    return _find(_FEVER_WORD, text, True)
 
 
 def _find(pattern: re.Pattern, text: str, negatable: bool) -> bool:
@@ -178,8 +218,8 @@ def check_rules(transcript: str, metrics: Optional[CheckinMetrics] = None) -> Re
         if any(_find(p, text, negatable) for p in patterns):
             return RedFlagResult(True, reason, "rules")
 
-    if _find(_FEVER, text, True) and _find(_SEVERE_PAIN, text, True):
-        return RedFlagResult(True, "fever with severe pain", "rules")
+    if _fever(text):
+        return RedFlagResult(True, "fever of 100.4 F or higher", "rules")
 
     if metrics is not None:
         if (metrics.bp_sys or 0) >= SEVERE_BP_SYS or (metrics.bp_dia or 0) >= SEVERE_BP_DIA:
@@ -188,8 +228,8 @@ def check_rules(transcript: str, metrics: Optional[CheckinMetrics] = None) -> Re
             return RedFlagResult(True, "heavy bleeding", "rules")
         if metrics.vision_change:
             return RedFlagResult(True, "blurry or changed vision", "rules")
-        if metrics.fever and max(metrics.pain or 0, metrics.incision_pain or 0) >= SEVERE_PAIN:
-            return RedFlagResult(True, "fever with severe pain", "rules")
+        if metrics.fever:
+            return RedFlagResult(True, "fever of 100.4 F or higher", "rules")
     return SAFE
 
 
@@ -203,8 +243,9 @@ _GEMINI_PROMPT = (
     "You are a safety screener for a postpartum check-in app. You do not diagnose. "
     "Decide if the parent's words describe ANY urgent maternal warning sign, even if phrased indirectly or "
     "casually: thoughts of harming themself or the baby or not wanting to live; vision changes; severe or "
-    "persistent headache; chest pain or trouble breathing; heavy bleeding or large clots; seizure; fainting; "
-    "fever with severe pain; a swollen, red or painful leg; sudden severe swelling of face or hands; "
+    "persistent headache; chest pain, trouble breathing or a fast-beating heart; heavy bleeding or large clots; "
+    "seizure; fainting or dizziness; fever of 100.4 F or higher; severe belly pain; severe nausea or vomiting; "
+    "a swollen, red or painful leg or arm; extreme swelling of face or hands; overwhelming tiredness; "
     "extreme confusion. Ignore symptoms the person says are absent or resolved. If you are unsure, answer "
     "urgent=true. reason is a short plain phrase naming the sign, or null."
 )
