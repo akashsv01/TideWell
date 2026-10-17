@@ -1,0 +1,32 @@
+# Render Blueprint for the Tidewell API. In Render: New > Blueprint > pick this repo.
+# Secrets are marked sync: false, so Render asks for them once in the dashboard; nothing secret lives here.
+services:
+  - type: web
+    name: tidewell-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Applies the (idempotent) migrations, then serves. Seed Maya once by hand: python scripts/seed_maya.py
+    startCommand: python scripts/migrate.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.7"
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_FAST_MODEL
+        value: gemini-3.5-flash-lite
+      - key: ELEVENLABS_VOICE_ID
+        value: EXAVITQu4vr4xnSDxMaL
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: BACKBOARD_API_KEY
+        sync: false
+      - key: TIGER_DATABASE_URL
+        sync: false
+      # Comma-separated. Set to your Vercel URL(s), e.g. https://tidewell.vercel.app
+      - key: FRONTEND_ORIGINS
+        sync: false

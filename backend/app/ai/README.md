@@ -62,6 +62,6 @@ The frontend should show the two as visibly different cards, using `CheckinRespo
 
 ## What P2 needs to add
 
-- **Database column:** add `backboard_assistant_id TEXT` and `backboard_thread_id TEXT` to `patients`. Until then, the IDs live in `backend/.data/backboard_ids.json` (gitignored). The swap only touches `get_mapping` and `save_mapping` in `memory.py`.
+- **Backboard ids:** stored on `patients.backboard_assistant_id` / `backboard_thread_id`; the gitignored `backend/.data/backboard_ids.json` is only a fallback when there is no database.
 - **Thresholds:** the blood pressure cutoffs in `red_flags.py` (160/110 on its own, or 140/90 with a severe headache or upper belly pain) come from `guidelines.json` (bp-02, bp-03). They still need clinician sign-off, and `thresholds.md` is empty.
 - **Gemini quota:** a free-tier key allows about 5 requests per minute per model, and a check-in uses 2 to 4 calls. Use a paid key or hackathon credits for the demo.
