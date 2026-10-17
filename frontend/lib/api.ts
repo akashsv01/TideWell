@@ -97,7 +97,7 @@ const EMPTY_METRICS: CheckinMetrics = {
 export async function onboard(input: OnboardRequest): Promise<OnboardResponse> {
   if (USE_MOCK) {
     await wait();
-    return { patient_id: input.patient_id, categories: ["postpartum_high_bp", "post_cesarean"] };
+    return { patient_id: input.patient_id ?? "mock-patient", categories: ["postpartum_high_bp", "post_cesarean"] };
   }
   return postJson("/onboard", input);
 }
@@ -116,6 +116,7 @@ export async function checkin(
         reply_audio_base64: null,
         red_flag: true,
         red_flag_reason: "blurry or changed vision",
+        red_flag_level: "emergency",
         metrics: { ...EMPTY_METRICS, vision_change: true },
       };
     }
@@ -128,7 +129,11 @@ export async function checkin(
       metrics: { ...EMPTY_METRICS, mood: 4, headache: true, bp_sys: 144, bp_dia: 92 },
       citations: [{ source: "CDC Hear Her", url: "https://www.cdc.gov/hearher/" }],
       slots: mockSlots(),
-      tiers: { high_blood_pressure: "amber", depression_anxiety: "watch", post_cesarean: "green" },
+      tiers: [
+        { category: "high_blood_pressure", tier: "amber", reasons: [], next_step: "Offer a visit within 1-3 days" },
+        { category: "depression_anxiety", tier: "watch", reasons: [], next_step: "Repeat mood check in 3 days" },
+        { category: "post_cesarean", tier: "green", reasons: [], next_step: "Routine daily check-in" },
+      ],
     };
   }
   const body: CheckinRequest = { patient_id: patientId };

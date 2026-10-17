@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { onboard } from "@/lib/api";
-import { DEMO_PATIENT_ID } from "@/lib/config";
 import type { DeliveryType } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
@@ -81,12 +80,14 @@ export default function Onboarding() {
     setSaving(true);
     try {
       await onboard({
-        patient_id: DEMO_PATIENT_ID,
+        // No patient_id: the backend creates a new patient, so a demo onboarding never overwrites
+        // Maya's seeded chart. Check-ins still use DEMO_PATIENT_ID until Clerk is wired in.
         birth_date: birthDate,
         delivery_type: delivery as DeliveryType,
         conditions,
         breastfeeding: breastfeeding === "yes",
         support_phone: phone.trim() ? `+1${digits(phone).slice(-10)}` : null,
+        support_consent: Boolean(phone.trim() && consent),
         language: "en",
       });
       router.push("/home");

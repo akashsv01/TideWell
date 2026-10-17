@@ -110,7 +110,13 @@ export default function CheckinPanel() {
   }
 
   // SAFETY: the urgent card shows only fixed text and never the reply text.
-  if (result?.red_flag) return <UrgentCard />;
+  if (result?.red_flag)
+    return (
+      <UrgentCard
+        level={result.red_flag_level ?? "emergency"}
+        supportAlerted={Boolean(result.support_alerted)}
+      />
+    );
 
   const status = recording
     ? "Listening. Tap the button again when you are done."

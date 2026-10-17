@@ -9,13 +9,14 @@ export type DeliveryType = "vaginal" | "c-section";
 export type Bleeding = "none" | "light" | "heavy";
 
 export interface OnboardRequest {
-  patient_id: string; // use the Clerk user id
+  patient_id?: string; // a UUID; omit and the backend creates one. Use the Clerk user id later.
   birth_date: string; // YYYY-MM-DD
   delivery_type: DeliveryType;
   conditions: string[];
   breastfeeding: boolean;
   support_phone: string | null;
   language: string; // "en"
+  support_consent?: boolean; // explicit permission to text the support person in an emergency
 }
 
 export interface CheckinRequest {
@@ -44,12 +45,24 @@ export interface CheckinResponse {
   reply_audio_base64: string | null; // mp3, base64
   red_flag: boolean;
   red_flag_reason: string | null;
+  red_flag_level?: RedFlagLevel | null; // "emergency" = 911 card, "urgent" = call your provider now
+  support_alerted?: boolean; // the support-person SMS actually went out
+  transcript?: string | null; // what the backend heard
   metrics: CheckinMetrics;
   // Not in schemas.py yet. Optional so the real backend still type-checks.
   // Agree the exact shape with P1/P2 before building the citations and booking UI.
   citations?: Citation[];
   slots?: Slot[];
-  tiers?: Record<string, Tier>;
+  tiers?: CategoryTier[];
+}
+
+export type RedFlagLevel = "emergency" | "urgent";
+
+export interface CategoryTier {
+  category: string;
+  tier: Tier;
+  reasons: string[];
+  next_step: string;
 }
 
 export interface TrendPoint {
