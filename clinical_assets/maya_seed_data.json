@@ -1,0 +1,19 @@
+[
+  { "day": 1, "systolic": 118, "diastolic": 78, "sleep_hours": 6.5, "headache": false, "epds_score": 4 },
+  { "day": 2, "systolic": 120, "diastolic": 78, "sleep_hours": 6.0, "headache": false, "epds_score": 4 },
+  { "day": 3, "systolic": 119, "diastolic": 79, "sleep_hours": 5.5, "headache": false, "epds_score": 5 },
+  { "day": 4, "systolic": 122, "diastolic": 80, "sleep_hours": 5.0, "headache": false, "epds_score": 5 },
+  { "day": 5, "systolic": 121, "diastolic": 81, "sleep_hours": 5.5, "headache": false, "epds_score": 6 },
+  { "day": 6, "systolic": 124, "diastolic": 80, "sleep_hours": 4.5, "headache": true,  "epds_score": 6 },
+  { "day": 7, "systolic": 125, "diastolic": 82, "sleep_hours": 5.0, "headache": false, "epds_score": 7 },
+  { "day": 8, "systolic": 124, "diastolic": 81, "sleep_hours": 4.5, "headache": false, "epds_score": 7 },
+  { "day": 9, "systolic": 126, "diastolic": 83, "sleep_hours": 4.0, "headache": false, "epds_score": 8 },
+  { "day": 10, "systolic": 128, "diastolic": 82, "sleep_hours": 4.5, "headache": true,  "epds_score": 8 },
+  { "day": 11, "systolic": 127, "diastolic": 84, "sleep_hours": 3.5, "headache": false, "epds_score": 9 },
+  { "day": 12, "systolic": 129, "diastolic": 85, "sleep_hours": 4.0, "headache": false, "epds_score": 9 },
+  { "day": 13, "systolic": 131, "diastolic": 84, "sleep_hours": 3.5, "headache": true,  "epds_score": 10 },
+  { "day": 14, "systolic": 132, "diastolic": 84, "sleep_hours": 3.0, "headache": false, "epds_score": 11 },
+  { "day": 15, "systolic": 136, "diastolic": 88, "sleep_hours": 3.5, "headache": true,  "epds_score": 11 },
+  { "day": 16, "systolic": 141, "diastolic": 90, "sleep_hours": 3.0, "headache": true,  "epds_score": 11 },
+  { "day": 17, "systolic": 144, "diastolic": 92, "sleep_hours": 2.5, "headache": true,  "epds_score": 12 }
+]

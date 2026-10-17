@@ -8,3 +8,4 @@ google-genai>=1.30
 backboard-sdk
 psycopg[binary,pool]>=3.2
 twilio>=9.0
+pytest>=8
