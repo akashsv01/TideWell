@@ -37,11 +37,15 @@ def main() -> None:
         conn.execute("DELETE FROM patients WHERE id = %s", (mid,))
         conn.execute(
             """INSERT INTO patients (id, name, age, language, birth_date, delivery_type, gestation_weeks,
-                   conditions, breastfeeding, support_phone, support_consent, categories)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   conditions, breastfeeding, support_phone, support_consent, categories,
+                   consent_granted, consent_at, feeding_type, history_mental_health,
+                   pregnancy_complications, support_person_name)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, true, now(), %s,%s,%s,%s)""",
             (mid, p["name"], p["age"], p["language"], p["birth_date"], p["delivery_type"],
              p["gestation_weeks"], p["conditions"], p["breastfeeding"],
-             args.support_phone, bool(args.support_phone), cats),
+             args.support_phone, bool(args.support_phone), cats,
+             p["feeding_type"], p["history_mental_health"], p["pregnancy_complications"],
+             p["support_person_name"]),
         )
         with conn.cursor() as cur:
             cur.executemany(

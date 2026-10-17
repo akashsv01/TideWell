@@ -35,8 +35,12 @@ def patient(today: date | None = None) -> dict:
         "birth_date": today - timedelta(days=DAYS),
         "delivery_type": "c-section",
         "gestation_weeks": 38,
-        "conditions": ["gestational hypertension", "history of depression"],
+        "conditions": ["gestational hypertension", "history of depression or anxiety"],
         "breastfeeding": True,
+        "feeding_type": "breastfeeding",
+        "history_mental_health": True,
+        "pregnancy_complications": ["gestational hypertension"],
+        "support_person_name": "Priya",
     }
 
 

@@ -89,9 +89,13 @@ def patient_context(pid: Optional[UUID]) -> Optional[str]:
     delivery = "a C-section" if c["delivery_type"] == "c-section" else "a vaginal birth"
     weeks = f" at {c['gestation_weeks']} weeks" if c.get("gestation_weeks") else ""
     lines.append(f"Day {c['days_postpartum']} after giving birth, by {delivery}{weeks}.")
-    if c.get("conditions"):
-        lines.append("Health history: " + ", ".join(c["conditions"]) + ".")
-    lines.append("Breastfeeding." if c.get("breastfeeding") else "Not breastfeeding.")
+    if c.get("pregnancy_complications"):
+        lines.append("Pregnancy complications: " + ", ".join(c["pregnancy_complications"]) + ".")
+    if c.get("history_mental_health"):
+        lines.append("Has a history of depression or anxiety.")
+    feeding = c.get("feeding_type") or ("breastfeeding" if c.get("breastfeeding") else "formula")
+    lines.append({"breastfeeding": "Breastfeeding.", "formula": "Formula feeding.",
+                  "mixed": "Mixed breast and formula feeding."}.get(feeding, "") or "")
     w = c.get("week") or {}
     if w.get("checkins"):
         parts = [f"{w['checkins']} check-ins"]

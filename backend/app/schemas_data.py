@@ -1,51 +1,70 @@
 """Request/response models for the data-layer endpoints (Person 2).
 
 Kept separate from app/schemas.py so Person 1 and Person 2 never edit the same file.
-Models that already exist in schemas.py (OnboardRequest, TrendPoint, CheckinMetrics) are reused.
+Shared contract models (Profile, TrendPoint, CheckinMetrics) live in schemas.py.
 """
-import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
-
-from app.schemas import OnboardRequest
-
-_E164 = re.compile(r"^\+[1-9]\d{7,14}$")
+from pydantic import BaseModel, Field
 
 
-class OnboardIn(OnboardRequest):
-    """Person 1's OnboardRequest, with patient_id optional and a few chart fields added."""
-
-    patient_id: Optional[str] = None  # if it is a valid UUID it is used as the id, else one is generated
-    name: Optional[str] = None
-    age: Optional[int] = Field(default=None, ge=12, le=70)
-    gestation_weeks: Optional[int] = Field(default=None, ge=20, le=45)
-    support_consent: bool = Field(default=False, description="Explicit permission to text the support person")
-    clerk_user_id: Optional[str] = Field(default=None, max_length=200, description="Login id; links the account")
-
-    @field_validator("support_phone")
-    @classmethod
-    def _phone_e164(cls, v: Optional[str]) -> Optional[str]:
-        if v is None or v == "":
-            return None
-        v = v.replace(" ", "").replace("-", "")
-        if not _E164.match(v):
-            raise ValueError("support_phone must be in E.164 format, e.g. +12025550123")
-        return v
+# --- Accounts -------------------------------------------------------------------------
+class Credentials(BaseModel):
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[A-Za-z0-9_.-]+$")
+    password: str = Field(min_length=8, max_length=128)
 
 
-class OnboardOut(BaseModel):
+class AuthOut(BaseModel):
+    token: str
+    username: str
+    patient_id: Optional[UUID] = None  # None until onboarding is done
+
+
+class AccountOut(BaseModel):
+    username: str
+    patient_id: Optional[UUID] = None
+
+
+# --- Weekly EPDS --------------------------------------------------------------------------
+class EpdsIn(BaseModel):
     patient_id: UUID
-    categories: list[str]
+    answers: list[int] = Field(min_length=10, max_length=10)  # option index (0-3) per question, in display order
 
 
-class MeOut(BaseModel):
+class EpdsOut(BaseModel):
+    score: int
+    item10: int
+    band: Literal["low", "watch", "amber"]  # thresholds.md: 10-12 watch, 13+ amber
+    level: Optional[Literal["emergency", "urgent"]] = None  # question 10 safety outcome
+    needs_followup: bool = False  # ask "Are you thinking of ending your life or hurting yourself?"
+    response: Optional[str] = None  # fixed text to show when level is set
+
+
+class EpdsFollowupIn(BaseModel):
     patient_id: UUID
+    answer: Literal["yes", "no", "unsure"]
+
+
+class EpdsFollowupOut(BaseModel):
+    level: Literal["emergency", "urgent"]
+    response: str
+
+
+class Overview(BaseModel):
+    """Header facts for the home and tide screens."""
+    patient_id: UUID
+    demo: bool
     name: Optional[str] = None
-    days_postpartum: Optional[int] = None
-    delivery_type: Optional[str] = None
+    day_postpartum: int
+    delivery_method: str
+    feeding_type: Optional[str] = None
+    history_mental_health: bool = False
+    history_pregnancy_complications: list[str] = Field(default_factory=list)
+    epds_due: bool = False
+    last_epds_score: Optional[int] = None
+    last_epds_date: Optional[date] = None
 
 
 class VitalsIn(BaseModel):

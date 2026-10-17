@@ -1,66 +1,100 @@
-"""POST /onboard, GET /me, GET /trends/{patient_id}, POST /vitals, DELETE /patients/{patient_id}."""
-from uuid import UUID, uuid4
+"""Profile and patient data:
+POST /onboard (= PUT /profile), GET /profile, PUT /profile, GET /patients/{id}/overview,
+GET /trends/{patient_id}, POST /vitals, DELETE /patients/{patient_id}.
 
+Access: the demo patient (Maya) is open to everyone; any other patient only to the account that owns
+it (app/auth.py authorize_patient). Onboarding and profile edits need a signed-in account.
+"""
 import logging
+from typing import Optional
+from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
-from app import categories, db, demo_data, notify, store
+from app import auth, categories, db, demo_data, notify, store
 from app.ai import memory, red_flags
-from app.schemas import CheckinMetrics, TrendPoint
-from app.schemas_data import MeOut, OnboardIn, OnboardOut, VitalsIn, VitalsOut
+from app.schemas import CheckinMetrics, Profile, ProfileOut, TrendPoint
+from app.schemas_data import Overview, VitalsIn, VitalsOut
 
 router = APIRouter()
 log = logging.getLogger("tidewell.patients")
 
 
-def _pick_id(patient_id: str | None) -> UUID:
-    try:
-        return UUID(patient_id) if patient_id else uuid4()
-    except ValueError:
-        return uuid4()
-
-
-@router.post("/onboard", response_model=OnboardOut)
-def onboard(body: OnboardIn) -> OnboardOut:
-    cats = categories.assign(body.delivery_type, body.conditions, body.breastfeeding)
-    patient_id = _pick_id(body.patient_id)
-    if db.enabled() and body.clerk_user_id:
-        # A signed-in user who onboards again updates their own chart instead of creating a second one.
-        patient_id = store.patient_id_for_clerk(body.clerk_user_id) or patient_id
-    if db.enabled():
-        store.insert_patient(patient_id, body, cats)
-    return OnboardOut(patient_id=patient_id, categories=cats)
-
-
-@router.get("/me", response_model=MeOut)
-def me(clerk_user_id: str = Query(min_length=1, max_length=200)) -> MeOut:
-    """Which patient belongs to this login. 404 means not onboarded yet: send them to /onboarding.
-    NOTE: trusts the id the frontend sends. Verify the Clerk session token here before real use."""
+def _need_db() -> None:
     if not db.enabled():
-        raise HTTPException(404, "no database configured")
-    pid = store.patient_id_for_clerk(clerk_user_id)
-    ctx = store.patient_context(pid) if pid else None
-    if not ctx:
-        raise HTTPException(404, "not onboarded")
-    return MeOut(patient_id=pid, name=ctx["name"], days_postpartum=ctx["days_postpartum"],
-                 delivery_type=ctx["delivery_type"])
+        raise HTTPException(503, "this needs the database (TIGER_DATABASE_URL)")
+
+
+def _save_profile(body: Profile, user: auth.User) -> ProfileOut:
+    _need_db()
+    if not body.consent_granted:
+        raise HTTPException(422, "consent is required to store your check-ins")
+    cats = categories.assign(body.delivery_method, store.derived_conditions(body),
+                             body.feeding_type in ("breastfeeding", "mixed"))
+    pid = store.upsert_profile(user.id, body, cats)
+    return ProfileOut(**store.get_profile(pid))
+
+
+@router.post("/onboard", response_model=ProfileOut)
+def onboard(body: Profile, user: auth.User = Depends(auth.require_user)) -> ProfileOut:
+    return _save_profile(body, user)
+
+
+@router.put("/profile", response_model=ProfileOut)
+def update_profile(body: Profile, user: auth.User = Depends(auth.require_user)) -> ProfileOut:
+    return _save_profile(body, user)
+
+
+@router.get("/profile", response_model=ProfileOut)
+def read_profile(patient_id: Optional[UUID] = Query(default=None),
+                 user: Optional[auth.User] = Depends(auth.optional_user)) -> ProfileOut:
+    """Your own profile when signed in, or the demo's with ?patient_id=<Maya>."""
+    _need_db()
+    pid = patient_id or (user.patient_id if user else None)
+    if pid is None:
+        raise HTTPException(404, "not onboarded yet")
+    auth.authorize_patient(pid, user)
+    prof = store.get_profile(pid)
+    if not prof:
+        raise HTTPException(404, "not onboarded yet")
+    return ProfileOut(**prof, demo=auth.is_demo(pid))
+
+
+@router.get("/patients/{patient_id}/overview", response_model=Overview)
+def overview(patient_id: UUID, user: Optional[auth.User] = Depends(auth.optional_user)) -> Overview:
+    auth.authorize_patient(patient_id, user)
+    _need_db()
+    prof = store.get_profile(patient_id)
+    if not prof:
+        raise HTTPException(404, "patient not found")
+    last = store.last_epds(patient_id)
+    return Overview(
+        patient_id=patient_id, demo=auth.is_demo(patient_id), name=prof["name"],
+        day_postpartum=prof["day_postpartum"], delivery_method=prof["delivery_method"],
+        feeding_type=prof["feeding_type"], history_mental_health=prof["history_mental_health"],
+        history_pregnancy_complications=prof["history_pregnancy_complications"],
+        epds_due=store.epds_due(prof["day_postpartum"], last),
+        last_epds_score=last["score"] if last else None,
+        last_epds_date=last["time"].date() if last else None,
+    )
 
 
 @router.get("/trends/{patient_id}", response_model=list[TrendPoint])
-def trends(patient_id: UUID, range_: str = Query("21d", alias="range", pattern=r"^\d{1,3}d$")) -> list[dict]:
+def trends(patient_id: UUID, range_: str = Query("21d", alias="range", pattern=r"^\d{1,3}d$"),
+           user: Optional[auth.User] = Depends(auth.optional_user)) -> list[dict]:
+    auth.authorize_patient(patient_id, user)
     days = int(range_[:-1])
     if not db.enabled():
-        return demo_data.trend_points(days)  # mock: Maya's series for any id
+        return demo_data.trend_points(days)  # mock: Maya's series
     if not store.patient_exists(patient_id):
         raise HTTPException(404, "patient not found")
     return store.trends(patient_id, days)
 
 
 @router.post("/vitals", response_model=VitalsOut)
-def add_vitals(body: VitalsIn) -> VitalsOut:
-    """Typed/manual vitals. Runs the same red-flag rules as a check-in, so a typed BP of 170/115
-    gets the urgent response too. Thresholds live in app/ai/red_flags.py (placeholders until verified)."""
+def add_vitals(body: VitalsIn, user: Optional[auth.User] = Depends(auth.optional_user)) -> VitalsOut:
+    """Typed/manual vitals. Runs the same red-flag rules as a check-in."""
+    auth.authorize_patient(body.patient_id, user)
     if body.bp_sys is None and body.bp_dia is None and body.heart_rate is None \
             and body.temp_c is None and body.glucose is None:
         raise HTTPException(422, "send at least one vital sign")
@@ -69,7 +103,6 @@ def add_vitals(body: VitalsIn) -> VitalsOut:
 
     # Rules only: there is no transcript here, so the Gemini backup layer would have nothing to read.
     result = red_flags.check_rules("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))
-    flag, reason = result.flag, result.reason
     if db.enabled():
         if not store.patient_exists(body.patient_id):
             raise HTTPException(404, "patient not found")
@@ -80,24 +113,26 @@ def add_vitals(body: VitalsIn) -> VitalsOut:
             log.exception("could not refresh today's trend bucket")
         if result.level == "emergency":  # support-person SMS is for emergencies only
             notify.send_support_alert(body.patient_id)
-    return VitalsOut(
-        saved=db.enabled(), red_flag=flag, red_flag_reason=reason,
-        urgent_message=result.response,  # EMERGENCY or URGENT fixed text, None when not flagged
-    )
+    return VitalsOut(saved=db.enabled(), red_flag=result.flag, red_flag_reason=result.reason,
+                     urgent_message=result.response)
 
 
 @router.delete("/patients/{patient_id}", status_code=204)
-def delete_my_data(patient_id: UUID) -> Response:
-    """One-tap delete-my-data: database rows and Backboard memories. The demo patient is protected
-    (re-run scripts/seed_maya.py to reset Maya instead)."""
-    if patient_id == demo_data.MAYA_ID:
+def delete_my_data(patient_id: UUID, user: auth.User = Depends(auth.require_user)) -> Response:
+    """Delete-my-data: every row, the Backboard memories and the account itself (which also ends
+    every session). The demo patient is protected (re-run scripts/seed_maya.py to reset Maya)."""
+    if auth.is_demo(patient_id):
         raise HTTPException(409, "the demo patient cannot be deleted")
-    if not db.enabled():
-        raise HTTPException(503, "no database configured")
+    auth.authorize_patient(patient_id, user)
+    _need_db()
     try:
         memory.forget(str(patient_id))  # before the row (and its Backboard ids) is gone
     except Exception:  # noqa: BLE001 - still delete our own copy of the data
         log.exception("could not reset Backboard memories")
-    if not store.delete_patient(patient_id):
-        raise HTTPException(404, "patient not found")
+    store.delete_patient(patient_id)
+    auth.delete_user(user.id)
+    try:
+        store.refresh_all()  # drop the deleted rows from the daily aggregates too
+    except Exception:  # noqa: BLE001
+        log.exception("could not refresh aggregates after delete")
     return Response(status_code=204)

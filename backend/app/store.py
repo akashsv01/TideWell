@@ -5,15 +5,17 @@ Public helpers for Person 1's /checkin pipeline:
     store.get_patient(patient_id)
     store.patient_context(patient_id)                   # chart + last-7-day summary for the reply
     store.get_backboard_ids / set_backboard_ids         # Backboard memory ids per patient
-    store.patient_id_for_clerk(clerk_user_id)           # login -> patient
+    store.upsert_profile / get_profile / overview       # the onboarding baseline profile
 """
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Optional
 from uuid import UUID
 
 from app import db
-from app.schemas import CheckinMetrics
-from app.schemas_data import OnboardIn, VitalsIn
+from app.schemas import CheckinMetrics, Profile
+from app.schemas_data import VitalsIn
+
+MENTAL_HEALTH_CONDITION = "history of depression or anxiety"
 
 
 def patient_exists(patient_id: UUID) -> bool:
@@ -26,42 +28,104 @@ def get_patient(patient_id: UUID) -> Optional[dict]:
         return conn.execute("SELECT * FROM patients WHERE id = %s", (patient_id,)).fetchone()
 
 
-def patient_id_for_clerk(clerk_user_id: str) -> Optional[UUID]:
-    with db.connection() as conn:
-        row = conn.execute("SELECT id FROM patients WHERE clerk_user_id = %s", (clerk_user_id,)).fetchone()
-    return row["id"] if row else None
+def derived_conditions(p: Profile) -> list[str]:
+    """`conditions` feeds the category rules and the reply context."""
+    out = list(p.history_pregnancy_complications)
+    if p.history_mental_health:
+        out.append(MENTAL_HEALTH_CONDITION)
+    return out
 
 
-def insert_patient(patient_id: UUID, body: OnboardIn, categories: list[str]) -> None:
+def upsert_profile(user_id: UUID, p: Profile, categories: list[str]) -> UUID:
+    """Create this account's patient record, or update it. Returns the patient id."""
     with db.connection() as conn:
-        conn.execute(
+        row = conn.execute(
             """
-            INSERT INTO patients (id, name, age, language, birth_date, delivery_type, gestation_weeks,
+            INSERT INTO patients (user_id, name, language, birth_date, delivery_type, gestation_weeks,
                                   conditions, breastfeeding, support_phone, support_consent, categories,
-                                  clerk_user_id)
-            VALUES (%(id)s, %(name)s, %(age)s, %(language)s, %(birth_date)s, %(delivery_type)s,
-                    %(gestation_weeks)s, %(conditions)s, %(breastfeeding)s, %(support_phone)s,
-                    %(support_consent)s, %(categories)s, %(clerk_user_id)s)
-            ON CONFLICT (id) DO UPDATE SET
-                name = EXCLUDED.name, age = EXCLUDED.age, language = EXCLUDED.language,
-                birth_date = EXCLUDED.birth_date, delivery_type = EXCLUDED.delivery_type,
-                gestation_weeks = EXCLUDED.gestation_weeks, conditions = EXCLUDED.conditions,
-                breastfeeding = EXCLUDED.breastfeeding, support_phone = EXCLUDED.support_phone,
-                support_consent = EXCLUDED.support_consent, categories = EXCLUDED.categories,
-                clerk_user_id = COALESCE(EXCLUDED.clerk_user_id, patients.clerk_user_id)
+                                  consent_granted, consent_at, feeding_type, history_mental_health,
+                                  pregnancy_complications, support_person_name)
+            VALUES (%(user_id)s, %(name)s, %(language)s, %(birth_date)s, %(delivery_type)s, %(gestation_weeks)s,
+                    %(conditions)s, %(breastfeeding)s, %(support_phone)s, %(support_consent)s, %(categories)s,
+                    true, now(), %(feeding_type)s, %(history_mental_health)s,
+                    %(complications)s, %(support_name)s)
+            ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO UPDATE SET
+                name = EXCLUDED.name, language = EXCLUDED.language, birth_date = EXCLUDED.birth_date,
+                delivery_type = EXCLUDED.delivery_type, gestation_weeks = EXCLUDED.gestation_weeks,
+                conditions = EXCLUDED.conditions, breastfeeding = EXCLUDED.breastfeeding,
+                support_phone = EXCLUDED.support_phone, support_consent = EXCLUDED.support_consent,
+                categories = EXCLUDED.categories, feeding_type = EXCLUDED.feeding_type,
+                history_mental_health = EXCLUDED.history_mental_health,
+                pregnancy_complications = EXCLUDED.pregnancy_complications,
+                support_person_name = EXCLUDED.support_person_name
+            RETURNING id
             """,
             {
-                "id": patient_id, "name": body.name, "age": body.age, "language": body.language,
-                "birth_date": body.birth_date, "delivery_type": body.delivery_type,
-                "gestation_weeks": body.gestation_weeks, "conditions": body.conditions,
-                "breastfeeding": body.breastfeeding,
-                "support_phone": body.support_phone,
-                # Never record consent without a number to consent about.
-                "support_consent": bool(body.support_consent and body.support_phone),
-                "categories": categories,
-                "clerk_user_id": body.clerk_user_id,
+                "user_id": user_id, "name": p.name, "language": p.language_preference,
+                "birth_date": p.delivery_date, "delivery_type": p.delivery_method,
+                "gestation_weeks": p.gestation_weeks, "conditions": derived_conditions(p),
+                "breastfeeding": p.feeding_type in ("breastfeeding", "mixed"),
+                "support_phone": p.support_person_phone,
+                # Never record SMS consent without a number to consent about.
+                "support_consent": bool(p.support_sms_consent and p.support_person_phone),
+                "categories": categories, "feeding_type": p.feeding_type,
+                "history_mental_health": p.history_mental_health,
+                "complications": p.history_pregnancy_complications,
+                "support_name": p.support_person_name,
             },
+        ).fetchone()
+    return row["id"]
+
+
+def get_profile(patient_id: UUID) -> Optional[dict]:
+    """The profile in API field names, plus day_postpartum and categories. None if unknown."""
+    with db.connection() as conn:
+        r = conn.execute(
+            """
+            SELECT id, name, birth_date, delivery_type, gestation_weeks, feeding_type, breastfeeding,
+                   history_mental_health, pregnancy_complications, language, support_person_name,
+                   support_phone, support_consent, consent_granted, categories,
+                   (current_date - birth_date) AS day_postpartum
+            FROM patients WHERE id = %s
+            """,
+            (patient_id,),
+        ).fetchone()
+    if not r:
+        return None
+    return {
+        "patient_id": str(r["id"]), "name": r["name"], "consent_granted": r["consent_granted"],
+        "delivery_date": r["birth_date"], "gestation_weeks": r["gestation_weeks"],
+        "delivery_method": r["delivery_type"],
+        "feeding_type": r["feeding_type"] or ("breastfeeding" if r["breastfeeding"] else "formula"),
+        "history_mental_health": r["history_mental_health"],
+        "history_pregnancy_complications": r["pregnancy_complications"] or [],
+        "language_preference": r["language"] if r["language"] in ("en", "es") else "en",
+        "support_person_name": r["support_person_name"], "support_person_phone": r["support_phone"],
+        "support_sms_consent": r["support_consent"], "day_postpartum": r["day_postpartum"],
+        "categories": r["categories"] or [],
+    }
+
+
+def owner_of(patient_id: UUID) -> Optional[UUID]:
+    with db.connection() as conn:
+        row = conn.execute("SELECT user_id FROM patients WHERE id = %s", (patient_id,)).fetchone()
+    return row["user_id"] if row else None
+
+
+def save_epds(patient_id: UUID, total: int, item10: int) -> None:
+    with db.connection() as conn:
+        conn.execute(
+            "INSERT INTO epds_scores (time, patient_id, score, item10) VALUES (now(), %s, %s, %s)",
+            (patient_id, total, item10),
         )
+
+
+def last_epds(patient_id: UUID) -> Optional[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            "SELECT time, score, item10 FROM epds_scores WHERE patient_id = %s ORDER BY time DESC LIMIT 1",
+            (patient_id,),
+        ).fetchone()
 
 
 def save_checkin(patient_id: UUID, m: CheckinMetrics, red_flag: bool = False) -> None:
@@ -95,26 +159,49 @@ def save_vitals(v: VitalsIn) -> None:
 
 
 def trends(patient_id: UUID, days: int) -> list[dict]:
-    """Daily points from the two continuous aggregates (real-time, so today is included)."""
+    """Daily points: check-ins and BP from the two continuous aggregates (real-time, so today is
+    included), plus the weekly EPDS score on the day it was taken. day_postpartum is counted from
+    the delivery date."""
     with db.connection() as conn:
         return conn.execute(
             """
-            SELECT COALESCE(c.day, v.day)::date AS day,
+            WITH c AS (SELECT day, mood, pain, incision_pain, sleep_hrs, headache_count FROM daily_checkins
+                       WHERE patient_id = %(p)s AND day >= now() - %(span)s),
+                 v AS (SELECT day, bp_sys, bp_dia FROM daily_metrics
+                       WHERE patient_id = %(p)s AND day >= now() - %(span)s),
+                 e AS (SELECT time_bucket('1 day', time) AS day, max(score) AS score, max(item10) AS item10
+                       FROM epds_scores WHERE patient_id = %(p)s AND time >= now() - %(span)s
+                       GROUP BY 1),
+                 days AS (SELECT day FROM c UNION SELECT day FROM v UNION SELECT day FROM e)
+            SELECT d.day::date AS day,
+                   (d.day::date - (SELECT birth_date FROM patients WHERE id = %(p)s)) AS day_postpartum,
                    round(c.mood)::int AS mood,
                    round(c.pain)::int AS pain,
+                   round(c.incision_pain)::int AS incision_pain,
                    round(c.sleep_hrs::numeric, 1)::float8 AS sleep_hrs,
+                   COALESCE(c.headache_count, 0) > 0 AS headache,
                    round(v.bp_sys)::int AS bp_sys,
-                   round(v.bp_dia)::int AS bp_dia
-            FROM (SELECT day, mood, pain, sleep_hrs FROM daily_checkins
-                  WHERE patient_id = %(p)s AND day >= now() - %(span)s) c
-            FULL OUTER JOIN
-                 (SELECT day, bp_sys, bp_dia FROM daily_metrics
-                  WHERE patient_id = %(p)s AND day >= now() - %(span)s) v
-              ON c.day = v.day
+                   round(v.bp_dia)::int AS bp_dia,
+                   e.score AS epds_score,
+                   COALESCE(e.item10, 0) > 0 AS item_10_alert
+            FROM days d
+            LEFT JOIN c ON c.day = d.day
+            LEFT JOIN v ON v.day = d.day
+            LEFT JOIN e ON e.day = d.day
             ORDER BY 1
             """,
             {"p": patient_id, "span": timedelta(days=days)},
         ).fetchall()
+
+
+def epds_due(day_postpartum: int, last: Optional[dict], today: Optional[date] = None) -> bool:
+    """Weekly from day 7: due when there is no score in the last 7 days."""
+    if day_postpartum < 7:
+        return False
+    if not last:
+        return True
+    today = today or date.today()
+    return (today - last["time"].date()).days >= 7
 
 
 def booked_slots() -> set:
@@ -186,6 +273,7 @@ def patient_context(patient_id: UUID) -> Optional[dict]:
         p = conn.execute(
             """
             SELECT name, birth_date, delivery_type, gestation_weeks, conditions, breastfeeding, language,
+                   feeding_type, history_mental_health, pregnancy_complications,
                    (current_date - birth_date) AS days_postpartum
             FROM patients WHERE id = %s
             """,
@@ -242,3 +330,10 @@ def refresh_today() -> None:
                 " date_trunc('day', now()) + interval '1 day')",
                 (view,),
             )
+
+
+def refresh_all() -> None:
+    """Re-materialise the daily aggregates over all time (after delete-my-data)."""
+    with db.autocommit_connection() as conn:
+        for view in ("daily_checkins", "daily_metrics"):
+            conn.execute("CALL refresh_continuous_aggregate(%s::regclass, NULL, NULL)", (view,))
