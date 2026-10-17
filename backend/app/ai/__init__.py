@@ -17,9 +17,10 @@ from app.schemas import CheckinMetrics
 __all__ = ["transcribe", "check", "extract_metrics", "chat", "speak"]
 
 
-def transcribe(audio_bytes: bytes) -> str:
-    """Speech to text (ElevenLabs scribe_v2). Accepts mp3/webm/wav bytes. Returns "" for silence."""
-    return _stt.transcribe(audio_bytes)
+def transcribe(audio_bytes: bytes, mime: Optional[str] = None) -> str:
+    """Speech to text (ElevenLabs scribe_v2). Pass the browser's MIME type (e.g. "audio/webm").
+    Returns "" for silence."""
+    return _stt.transcribe(audio_bytes, mime)
 
 
 def check(transcript: str, metrics: Optional[CheckinMetrics] = None) -> RedFlagResult:

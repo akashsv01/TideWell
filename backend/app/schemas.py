@@ -20,6 +20,7 @@ class CheckinRequest(BaseModel):
     patient_id: str
     text: Optional[str] = None
     audio_base64: Optional[str] = None
+    audio_mime: Optional[str] = None  # e.g. "audio/webm;codecs=opus" (Chrome) or "audio/mp4" (Safari)
 
 
 class CheckinMetrics(BaseModel):
@@ -52,6 +53,8 @@ class CheckinResponse(BaseModel):
     red_flag: bool = False
     red_flag_reason: Optional[str] = None
     red_flag_level: Optional[Literal["emergency", "urgent"]] = None  # emergency = 911 card, urgent = call provider now
+    support_alerted: bool = False  # True only if the support-person SMS actually went out
+    transcript: Optional[str] = None  # what we heard, so the UI can show it back
     metrics: CheckinMetrics = Field(default_factory=CheckinMetrics)
     tiers: list[CategoryTier] = Field(default_factory=list)
 

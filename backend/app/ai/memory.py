@@ -89,11 +89,10 @@ async def achat(patient_id: str, message: str) -> str:
 def _gemini_reply(message: str, memories: list[str]) -> str:
     from google.genai import types
 
-    from app.ai._gemini import get_client
+    from app.ai._gemini import generate
 
     remembered = "\n".join(f"- {x}" for x in memories) or "- (nothing yet)"
-    r = get_client().models.generate_content(
-        model=get_settings().gemini_model,
+    r = generate(
         contents=f"What you remember about this person from past conversations:\n{remembered}\n\nThey say: {message}",
         config=types.GenerateContentConfig(system_instruction=CARE_NAVIGATOR_SYSTEM_PROMPT, temperature=0.4),
     )

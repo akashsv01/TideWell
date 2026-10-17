@@ -54,9 +54,9 @@ def add_vitals(body: VitalsIn) -> VitalsOut:
         if not store.patient_exists(body.patient_id):
             raise HTTPException(404, "patient not found")
         store.save_vitals(body)
-        if flag:
+        if result.level == "emergency":  # support-person SMS is for emergencies only
             notify.send_support_alert(body.patient_id)
     return VitalsOut(
         saved=db.enabled(), red_flag=flag, red_flag_reason=reason,
-        urgent_message=red_flags.URGENT_RESPONSE if flag else None,
+        urgent_message=result.response,  # EMERGENCY or URGENT fixed text, None when not flagged
     )

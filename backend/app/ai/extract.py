@@ -16,8 +16,7 @@ import json
 
 from google.genai import types
 
-from app.ai._gemini import get_client
-from app.config import get_settings
+from app.ai._gemini import generate
 from app.schemas import CheckinMetrics
 
 SYSTEM = (
@@ -47,9 +46,7 @@ def _sanitize(raw: dict) -> dict:
 
 
 def extract_metrics(transcript: str) -> CheckinMetrics:
-    s = get_settings()
-    response = get_client().models.generate_content(
-        model=s.gemini_model,
+    response = generate(
         contents=transcript,
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM,

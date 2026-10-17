@@ -14,9 +14,8 @@ from dataclasses import dataclass, field
 from google.genai import types
 
 from app.ai import tools
-from app.ai._gemini import get_client
+from app.ai._gemini import generate
 from app.ai.prompts import CARE_NAVIGATOR_SYSTEM_PROMPT
-from app.config import get_settings
 from app.schemas import CheckinMetrics
 
 log = logging.getLogger(__name__)
@@ -33,8 +32,6 @@ class AgentReply:
 
 class CareNavigator:
     def run(self, patient_id: str, transcript: str, metrics: CheckinMetrics) -> AgentReply:
-        model = get_settings().gemini_model
-        client = get_client()
         prompt = (
             f"Today is {tools.TODAY.strftime('%A %B %d, %Y')}.\n"  # Phase 3: date.today()
             f"Today's check-in (spoken): {transcript}\n"
@@ -51,7 +48,7 @@ class CareNavigator:
                 if len(called) >= MAX_TOOL_CALLS:
                     config = config.model_copy(update={"tool_config": types.ToolConfig(
                         function_calling_config=types.FunctionCallingConfig(mode="NONE"))})
-                resp = client.models.generate_content(model=model, contents=contents, config=config)
+                resp = generate(contents, config)
                 calls = resp.function_calls or []
                 if not calls:
                     return AgentReply((resp.text or "").strip() or FALLBACK_REPLY, called)
