@@ -1,0 +1,44 @@
+[
+  {
+    "source": "CDC Hear Her Campaign",
+    "url": "https://www.cdc.gov/hearher/maternal-danger-signs/index.html",
+    "section": "Severe Headache and Vision Changes",
+    "content": "A severe headache that does not go away or gets worse over time, or changes in vision such as blurriness, seeing spots, or flashing lights, are urgent maternal warning signs. These can be symptoms of postpartum preeclampsia, a serious blood pressure condition that requires immediate emergency care."
+  },
+  {
+    "source": "CDC Hear Her Campaign",
+    "url": "https://www.cdc.gov/hearher/maternal-danger-signs/index.html",
+    "section": "Heavy Bleeding",
+    "content": "Heavy postpartum bleeding is a medical emergency. You should seek immediate medical care if you are bleeding heavily, such as soaking through one or more pads in an hour, or passing blood clots the size of an egg or bigger."
+  },
+  {
+    "source": "CDC Hear Her Campaign",
+    "url": "https://www.cdc.gov/hearher/maternal-danger-signs/index.html",
+    "section": "Mental Health and Self-Harm",
+    "content": "Experiencing thoughts of harming yourself or your baby is an urgent medical emergency. Immediate help is required. Reach out to a healthcare provider immediately, call 911, or contact the 988 Suicide & Crisis Lifeline."
+  },
+  {
+    "source": "WHO Postnatal Care Recommendations",
+    "url": "https://www.who.int/publications/i/item/9789240045989",
+    "section": "Post-Cesarean Recovery",
+    "content": "Following a caesarean section, patients should monitor their incision site for signs of infection. Warning signs include worsening localized pain, spreading redness, wound discharge or pus, and a fever. Mild, steadily improving pain is expected during routine recovery."
+  },
+  {
+    "source": "CDC Postpartum and Breastfeeding Guidance",
+    "url": "https://www.cdc.gov/breastfeeding/index.htm",
+    "section": "Breastfeeding Complications",
+    "content": "Breast pain accompanied by a fever, chills, or hard, red, swollen areas on the breast may indicate mastitis, an inflammation or infection of the breast tissue. This often requires medical evaluation and potentially antibiotics. Continued feeding or pumping on the affected side is generally recommended to clear blockages."
+  },
+  {
+    "source": "NIH LactMed",
+    "url": "https://www.ncbi.nlm.nih.gov/books/NBK501922/",
+    "section": "Medication Safety",
+    "content": "Many over-the-counter pain relievers, such as ibuprofen and acetaminophen, are generally considered safe to use while breastfeeding. However, always consult a healthcare provider or the LactMed database before starting new medications, as some drugs can transfer to breast milk and affect the infant."
+  },
+  {
+    "source": "Postpartum Support International",
+    "url": "https://www.postpartum.net/get-help/",
+    "section": "Mental Health Resources",
+    "content": "For non-emergency mental health support, Postpartum Support International (PSI) offers free online support groups, peer mentoring, and a helpline. You can call or text their helpline at 1-800-944-4773 for support and resources. (Note: In an active crisis, call 988 or 911)."
+  }
+]
