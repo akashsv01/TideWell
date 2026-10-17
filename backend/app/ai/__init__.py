@@ -11,7 +11,7 @@ from app.ai import memory as _memory
 from app.ai import red_flags as _red_flags
 from app.ai import stt as _stt
 from app.ai import tts as _tts
-from app.ai.red_flags import URGENT_RESPONSE, RedFlagResult  # noqa: F401 - re-exported for callers
+from app.ai.red_flags import EMERGENCY_RESPONSE, URGENT_RESPONSE, RedFlagResult  # noqa: F401 - re-exported
 from app.schemas import CheckinMetrics
 
 __all__ = ["transcribe", "check", "extract_metrics", "chat", "speak"]
@@ -24,7 +24,8 @@ def transcribe(audio_bytes: bytes) -> str:
 
 def check(transcript: str, metrics: Optional[CheckinMetrics] = None) -> RedFlagResult:
     """Safety check: rules, then a Gemini backup (3 s cap) that can only add a flag. Never raises.
-    If result.flag: skip the agent, reply with URGENT_RESPONSE verbatim and trigger the SMS."""
+    If result.flag: skip the agent and reply with result.response verbatim. result.level is
+    "emergency" (911 card + SMS to support person) or "urgent" (call your provider now card)."""
     return _red_flags.check(transcript, metrics)
 
 

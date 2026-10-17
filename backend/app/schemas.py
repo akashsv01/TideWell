@@ -51,6 +51,7 @@ class CheckinResponse(BaseModel):
     reply_audio_base64: Optional[str] = None
     red_flag: bool = False
     red_flag_reason: Optional[str] = None
+    red_flag_level: Optional[Literal["emergency", "urgent"]] = None  # emergency = 911 card, urgent = call provider now
     metrics: CheckinMetrics = Field(default_factory=CheckinMetrics)
     tiers: list[CategoryTier] = Field(default_factory=list)
 
