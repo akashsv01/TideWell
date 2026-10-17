@@ -15,4 +15,4 @@ node_modules/
 
 # Local artifacts
 backend/scripts/out/
-backend/.backboard_users.json
+backend/.data/

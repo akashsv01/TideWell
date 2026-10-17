@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class OnboardRequest(BaseModel):
-    user_id: str
+    patient_id: str
     birth_date: date
     delivery_type: Literal["vaginal", "c-section"]
     conditions: list[str] = Field(default_factory=list)
@@ -17,7 +17,7 @@ class OnboardRequest(BaseModel):
 
 
 class CheckinRequest(BaseModel):
-    user_id: str
+    patient_id: str
     text: Optional[str] = None
     audio_base64: Optional[str] = None
 
@@ -36,12 +36,24 @@ class CheckinMetrics(BaseModel):
     mentions: list[str] = Field(default_factory=list, description="Other notable symptoms or concerns, short phrases")
 
 
+Tier = Literal["green", "watch", "amber", "red"]
+
+
+class CategoryTier(BaseModel):
+    category: str
+    tier: Tier = "green"
+    reasons: list[str] = Field(default_factory=list)
+    next_step: str = ""
+
+
 class CheckinResponse(BaseModel):
     reply_text: str
     reply_audio_base64: Optional[str] = None
     red_flag: bool = False
     red_flag_reason: Optional[str] = None
+    red_flag_level: Optional[Literal["emergency", "urgent"]] = None  # emergency = 911 card, urgent = call provider now
     metrics: CheckinMetrics = Field(default_factory=CheckinMetrics)
+    tiers: list[CategoryTier] = Field(default_factory=list)
 
 
 class TrendPoint(BaseModel):

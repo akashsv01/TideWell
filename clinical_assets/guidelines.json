@@ -1,0 +1,693 @@
+[
+  {
+    "id": "bp-01",
+    "source": "ACOG - Elevated Blood Pressure in Pregnancy & Up to 6 Weeks Postpartum (urgent care protocol, hosted by Urgent Care Association)",
+    "url": "https://urgentcareassociation.org/wp-content/uploads/ACOG_Elevated-BP-Guideline_UC_FINAL_SECURED.pdf",
+    "section": "Postpartum Blood Pressure 140/90 or Higher",
+    "tier": "AMBER",
+    "category": "quantitative",
+    "action": "contact_provider_same_day",
+    "verification": "numbers checked against ACOG-derived protocol + UT Southwestern; 'same day' and home-recheck wording is my translation, needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my blood pressure was 144 over 92",
+      "my BP is high",
+      "the cuff says 141/90",
+      "blood pressure is creeping up"
+    ],
+    "content": "A postpartum blood pressure of 140/90 mmHg or higher (systolic 140 to 159, or diastolic 90 to 109) is abnormal and can indicate postpartum preeclampsia, even without symptoms. Elevated pressure can appear for the first time after delivery. With a severe headache, blurred vision, or pain in the upper right abdomen or upper stomach it is treated as an emergency. The ACOG-derived protocol covers pregnancy and up to six weeks after delivery.",
+    "app_guidance": "Rest quietly for a few minutes and check again. If it is still 140/90 or higher, contact your provider today, even if you feel fine. If you also have a severe headache, blurry vision, or pain in your upper belly, call 911 or go to the ER now."
+  },
+  {
+    "id": "bp-02",
+    "source": "ACOG - Elevated Blood Pressure in Pregnancy & Up to 6 Weeks Postpartum (urgent care protocol, hosted by Urgent Care Association)",
+    "url": "https://urgentcareassociation.org/wp-content/uploads/ACOG_Elevated-BP-Guideline_UC_FINAL_SECURED.pdf",
+    "section": "Elevated Blood Pressure With Severe Symptoms",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "checked against ACOG-derived protocol",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my head is killing me and my BP is up",
+      "blurry vision and high blood pressure",
+      "pain under my right ribs",
+      "pain in the top of my stomach"
+    ],
+    "content": "Blood pressure of 140 to 159 systolic or 90 to 109 diastolic together with a severe headache, blurred vision, or pain in the upper right abdomen or upper middle stomach is treated as preeclampsia with severe features and needs immediate emergency care.",
+    "app_guidance": "Call 911 or go to the nearest ER now. Tell them you recently gave birth."
+  },
+  {
+    "id": "bp-03",
+    "source": "ACOG - Elevated Blood Pressure in Pregnancy & Up to 6 Weeks Postpartum (urgent care protocol); University of Iowa severe hypertension protocol",
+    "url": "https://urgentcareassociation.org/wp-content/uploads/ACOG_Elevated-BP-Guideline_UC_FINAL_SECURED.pdf",
+    "section": "Severe-Range Blood Pressure 160/110 or Higher",
+    "tier": "RED",
+    "category": "quantitative",
+    "action": "emergency_911_er",
+    "verification": "numbers checked against two protocols; home-recheck wording needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my BP was 165 over 105",
+      "blood pressure is really high",
+      "cuff reads 160",
+      "diastolic is 110"
+    ],
+    "content": "A blood pressure of 160 systolic or higher, or 110 diastolic or higher, is severe-range and counts as preeclampsia with severe features even with no other symptoms. It is confirmed when it lasts 15 minutes or more. Hospital treatment is meant to start within 30 to 60 minutes to lower the risk of stroke.",
+    "app_guidance": "Do not wait for symptoms. Check again while you arrange care, and call 911 or go to the ER if it stays this high or you have any warning symptoms. Tell them you recently gave birth."
+  },
+  {
+    "id": "bp-04",
+    "source": "Kansas Perinatal Quality Collaborative - Acute Hypertension in Pregnancy & Postpartum Algorithm (ACOG-based); UT Southwestern",
+    "url": "https://kansaspqc.kdhe.ks.gov/acute-hypertension-pregnancy-postpartum-algorithm",
+    "section": "Blood Pressure Below 140/90",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary (state quality collaborative); numbers consistent across sources",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my BP was 118 over 76",
+      "is my blood pressure okay",
+      "normal blood pressure"
+    ],
+    "content": "A blood pressure below 140 systolic and below 90 diastolic is not in the elevated postpartum range (about 120/80 is a typical healthy reading). A normal reading does not rule out warning symptoms such as a headache that will not go away, vision changes, or upper belly pain.",
+    "app_guidance": "That reading is in a healthy range, which is good news. Keep checking, and tell me or your provider if you have a headache that won't go away, vision changes, or belly pain, even when the number looks fine."
+  },
+  {
+    "id": "wsign-01",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Headache That Will Not Go Away",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "CDC page text checked. NOTE: CDC lists a persistent or worsening headache as a warning sign by itself, not only with vision changes",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my head is pounding",
+      "headache won't go away",
+      "headache is getting worse",
+      "worst headache of my life",
+      "Tylenol isn't helping my headache"
+    ],
+    "content": "CDC lists a headache that will not go away or gets worse over time as an urgent maternal warning sign for the year after delivery. It is more concerning if it feels like the worst headache of a person's life, or if there is high blood pressure or swelling elsewhere. With vision changes, a high blood pressure reading, or upper belly pain it is an emergency.",
+    "app_guidance": "A headache that won't go away or keeps getting worse needs attention. Contact your provider right away, and if you can't reach them, go to the ER or call 911. If you also have vision changes, a high blood pressure reading, or upper belly pain, call 911 now. Say that you recently gave birth."
+  },
+  {
+    "id": "wsign-02",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs; Kansas Dept. of Health and Environment Hear Her flyer",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Preeclampsia-Related Warning Signs (Vision, Swelling, Belly Pain, Vomiting)",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "CDC list checked; combination rule (headache + vision) follows CDC/ACOG logic, needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "the lights look weird",
+      "I see flashing lights",
+      "my vision is blurry",
+      "seeing spots",
+      "my face is swollen",
+      "my hands are puffy",
+      "pain in my stomach that won't go away",
+      "throwing up and it's not normal"
+    ],
+    "content": "CDC's urgent warning signs include changes in vision, extreme swelling of the hands or face, severe belly pain that does not go away, and severe nausea and vomiting that is not like morning sickness. These can point to postpartum preeclampsia. A headache with vision changes, or any of these with high blood pressure, needs emergency care. A single sign on its own still calls for contacting a provider right away.",
+    "app_guidance": "If you have a headache with vision changes, or any of these signs along with high blood pressure, call 911 or go to the ER now and say you recently gave birth. If you have just one of them, contact your provider right away."
+  },
+  {
+    "id": "wsign-03",
+    "source": "Standard emergency guidance (no direct source verified; ACOG protocol references eclampsia)",
+    "url": "https://urgentcareassociation.org/wp-content/uploads/ACOG_Elevated-BP-Guideline_UC_FINAL_SECURED.pdf",
+    "section": "Seizure",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "conservative emergency rule; add a primary citation (ACOG or CDC) before the final submission",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I had a seizure",
+      "she is shaking and not responding",
+      "I blacked out and shook"
+    ],
+    "content": "A seizure, uncontrollable shaking, or loss of consciousness after giving birth is a life-threatening emergency and can be linked to eclampsia, a complication of high blood pressure.",
+    "app_guidance": "Call 911 now. If someone is with you, ask them to call for you."
+  },
+  {
+    "id": "bleed-01",
+    "source": "CDC Hear Her (warning sign); Baylor Scott & White Health; Ascension patient library",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Heavy Postpartum Bleeding",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "CDC lists heavy bleeding as a warning sign; pad-an-hour and golf-ball numbers confirmed in two health-system sources (not CDC). Earlier draft said 'egg-sized' - sources say golf ball",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my pad is soaked",
+      "I'm soaking a pad every hour",
+      "huge clots",
+      "bleeding got heavier suddenly",
+      "blood is gushing",
+      "I feel dizzy and I'm bleeding"
+    ],
+    "content": "Heavy vaginal bleeding after pregnancy is an urgent warning sign. Emergency care is needed for soaking through a pad in an hour or less, passing clots larger than a golf ball, bright red bleeding that suddenly gushes after it had slowed, or dizziness, faintness, weakness, or a racing heartbeat with the bleeding.",
+    "app_guidance": "Call 911 or go to the ER now and tell them you recently gave birth."
+  },
+  {
+    "id": "bleed-02",
+    "source": "Baylor Scott & White Health - Postpartum bleeding: what's normal and what's not",
+    "url": "https://bswhealth.com/blog/postpartum-bleeding-whats-normal-whats-not",
+    "section": "Normal Postpartum Bleeding (Lochia)",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary (health system blog); stage timing and 6-week range vary slightly across sources",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "is this much bleeding normal",
+      "I'm still bleeding after two weeks",
+      "my bleeding turned brown",
+      "small clots"
+    ],
+    "content": "Bleeding after birth (lochia) is normal and usually lasts several weeks, up to about six weeks and sometimes a little longer. It starts bright red with small clots in the first days, then lightens to pink or brown, and may start and stop. Heavy bleeding signs, a foul smell, or fever are not part of normal lochia.",
+    "app_guidance": "Bleeding for several weeks that gets lighter and changes from red to pink or brown is normal. If you start soaking a pad an hour, pass clots bigger than a golf ball, or notice a bad smell or fever, tell me or call your provider."
+  },
+  {
+    "id": "wsign-04",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Trouble Breathing, Chest Pain, Fast Heartbeat",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "CDC page text checked",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I can't catch my breath",
+      "I can't breathe lying down",
+      "my chest hurts",
+      "my heart is racing",
+      "I need to prop up with pillows to breathe"
+    ],
+    "content": "Trouble breathing, chest pain, or a fast-beating heart are urgent maternal warning signs. Trouble breathing includes struggling to breathe when lying flat (needing pillows to prop up) or being unable to catch a breath so that talking and breathing are both difficult. These can signal a blood clot in the lungs or a heart problem.",
+    "app_guidance": "Call 911 or go to the ER now and say you recently gave birth. Don't wait to see if it gets better."
+  },
+  {
+    "id": "wsign-05",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs; Ascension patient library",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Leg Swelling, Redness, or Pain (Possible Blood Clot)",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "CDC page text checked; escalation to RED when combined with chest or breathing symptoms follows CDC logic, needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my calf hurts and is red",
+      "one leg is swollen",
+      "my leg is warm and sore"
+    ],
+    "content": "Swelling, redness, or pain in a leg (or arm) is an urgent maternal warning sign and can mean a blood clot. Combined with chest pain, trouble breathing, or a racing heartbeat it is an emergency.",
+    "app_guidance": "Get medical care right away; if you can't reach your provider, go to the ER. If you also have chest pain, trouble breathing, or a racing heart, call 911."
+  },
+  {
+    "id": "wsign-06",
+    "source": "CDC Hear Her - Warning Signs poster; Ascension patient library",
+    "url": "https://www.cdc.gov/hearher/resources/download-share/docs/pdf/Warning-Signs-Poster-h.pdf",
+    "section": "Fever of 100.4 F or Higher",
+    "tier": "AMBER",
+    "category": "quantitative",
+    "action": "contact_provider_same_day",
+    "verification": "threshold confirmed on CDC Hear Her poster and a health-system discharge sheet",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I have a fever",
+      "my temperature is 101",
+      "I have chills",
+      "thermometer says 100.6"
+    ],
+    "content": "A temperature of 100.4 F (38 C) or higher after delivery is an urgent warning sign and may mean an infection such as a uterine, wound, urinary, or breast infection.",
+    "app_guidance": "Contact your provider right away, and go to the ER if you can't reach them or feel very unwell. Say you recently gave birth."
+  },
+  {
+    "id": "wsign-07",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Dizziness or Fainting",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "CDC list checked; escalation rule follows bleeding/chest guidance, needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I feel faint",
+      "I almost passed out",
+      "the room is spinning",
+      "I blacked out"
+    ],
+    "content": "Dizziness or fainting is an urgent maternal warning sign. Fainting, or dizziness with heavy bleeding, chest pain, or trouble breathing, is an emergency.",
+    "app_guidance": "Contact your provider right away, or go to the ER if you can't reach them. If you faint, or feel dizzy with heavy bleeding, chest pain, or trouble breathing, call 911."
+  },
+  {
+    "id": "wsign-08",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Overwhelming Tiredness",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "CDC page text checked",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I have no energy at all",
+      "I can't get through the day",
+      "too exhausted to function",
+      "so tired I can't get out of bed"
+    ],
+    "content": "CDC lists overwhelming tiredness, meaning not having enough energy to get through the day, as an urgent warning sign. It differs from ordinary newborn tiredness and can accompany anemia, infection, heart problems, or depression.",
+    "app_guidance": "That level of exhaustion is worth checking. Tell me what you can and can't manage today, and contact your provider about it."
+  },
+  {
+    "id": "wsign-09",
+    "source": "Texas DSHS Hear Her Texas (CDC campaign materials)",
+    "url": "https://www.dshs.texas.gov/sites/default/files/CHI-HearHerTx/NewHHTX/Updated-HHTX_Women_Conv_Eng.pdf",
+    "section": "Normal Tiredness and Soreness",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary, partial text only; confirm wording on the full document",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I'm so tired",
+      "I'm sore all over",
+      "I'm exhausted from the baby"
+    ],
+    "content": "It is normal to feel tired and have some pain after giving birth, especially in the first weeks. Escalate only if tiredness is overwhelming, pain is severe or worsening, or a warning sign appears.",
+    "app_guidance": "Feeling tired and sore in the first weeks is normal. Rest when you can and accept help. Tell me if the tiredness feels overwhelming, the pain gets worse, or you have a fever, heavy bleeding, a bad headache, vision changes, chest pain, or trouble breathing."
+  },
+  {
+    "id": "wsign-10",
+    "source": "CDC Hear Her - Urgent Maternal Warning Signs and Symptoms",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Trust Your Instincts and Say You Recently Gave Birth",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "CDC page text checked",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "something feels wrong",
+      "I don't feel right",
+      "nobody believes me",
+      "the ER sent me home"
+    ],
+    "content": "The warning-sign list does not cover every symptom. A person who feels something is wrong, or is unsure it is serious, should contact a provider and say they are pregnant or were pregnant within the last year. If no provider can be reached, go to the ER or call 911.",
+    "app_guidance": "You know your body best. If something feels wrong, even if it isn't on a list, contact your provider, and always say you recently gave birth. If you can't reach them, go to the ER or call 911."
+  },
+  {
+    "id": "csec-01",
+    "source": "Providence health system; Ascension patient library (paraphrased)",
+    "url": "https://blog.providence.org/blog/c-section-recovery-what-s-normal-and-what-s-not",
+    "section": "Normal C-Section Recovery",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary (health systems); recovery duration varies",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my incision hurts a little but it's getting better",
+      "my scar is itchy",
+      "I feel numb near the scar",
+      "cramps when I nurse"
+    ],
+    "content": "Soreness around a C-section incision, some numbness, and afterpains (often stronger while breastfeeding) are normal, along with vaginal bleeding that lasts a few weeks. The incision can take up to about six weeks to heal.",
+    "app_guidance": "Some soreness and numbness are normal as you heal. Keep the incision clean and dry, hold a pillow against it when you cough or stand, and avoid lifting anything heavier than your baby. Tell me if the pain gets worse, or you notice redness, discharge, or fever."
+  },
+  {
+    "id": "csec-02",
+    "source": "Ascension patient library; University of New Mexico Health patient education (paraphrased)",
+    "url": "https://chl.ascension.org/3,82260",
+    "section": "C-Section Incision Infection Signs",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "secondary (health systems); fever threshold varies by clinic (100 to 101 F), 100.4 F used to match CDC",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my incision is red and hot",
+      "pus coming from my scar",
+      "my scar is opening",
+      "incision pain is getting worse"
+    ],
+    "content": "After a C-section, worsening redness or heat at the incision, increasing pain or drainage, a foul smell, an incision that opens, or a fever of 100.4 F or higher or chills are signs of possible infection. Mild, steadily improving soreness is expected.",
+    "app_guidance": "Please contact your provider if your incision is getting redder or hotter, draining, smells bad, or opens, or if you have a fever of 100.4 F or higher or chills."
+  },
+  {
+    "id": "other-01",
+    "source": "Ascension patient library - After a Cesarean (paraphrased)",
+    "url": "https://chl.ascension.org/3,82260",
+    "section": "Other Reasons to Call the Provider",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "secondary (health system patient education); clinician review needed",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "it burns when I pee",
+      "blood in my urine",
+      "I haven't pooped in a week",
+      "foul smelling discharge",
+      "I have a rash"
+    ],
+    "content": "Reasons to contact a provider include burning with urination or blood in the urine, vaginal discharge with a foul odor, no bowel movement within a week after birth, a rash or hives, or a sore, red, painful area on a breast (possibly with flu-like symptoms, which can mean mastitis). Fever or severe belly pain with any of these is urgent.",
+    "app_guidance": "Those symptoms are common and treatable but should be checked, so please contact your provider. If you also have a fever or severe belly pain, get care today."
+  },
+  {
+    "id": "bf-01",
+    "source": "UNVERIFIED - CDC breastfeeding guidance (needs primary page)",
+    "url": "https://www.cdc.gov/breastfeeding/index.html",
+    "section": "Normal Breastfeeding Discomfort",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "NOT VERIFIED - I did not find a primary source. Replace with CDC or NIH text before ingest",
+    "ready_to_ingest": false,
+    "example_phrases": [
+      "my nipples are sore",
+      "my breasts feel full",
+      "milk came in and it hurts"
+    ],
+    "content": "Mild nipple soreness in the first week or two and breast fullness when milk comes in are common. No fever and no hard, red, hot area means no urgent action is needed. (UNVERIFIED - replace with a primary source.)",
+    "app_guidance": "Some soreness and fullness is common. Check the baby's latch, feed often, and tell me if you get a fever or a hard, red, hot area on your breast."
+  },
+  {
+    "id": "bf-02",
+    "source": "UNVERIFIED - NIH LactMed (needs the specific drug entry)",
+    "url": "https://www.ncbi.nlm.nih.gov/books/NBK501922/",
+    "section": "Medication Safety While Breastfeeding",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "NOT VERIFIED - pull the actual LactMed entries for ibuprofen and acetaminophen and cite them; the assistant should not recommend or change any medication",
+    "ready_to_ingest": false,
+    "example_phrases": [
+      "can I take ibuprofen while breastfeeding",
+      "is Tylenol safe for my baby",
+      "is this medicine safe"
+    ],
+    "content": "Medication questions while breastfeeding should be answered by a provider, a pharmacist, or the LactMed database. (UNVERIFIED - cite actual LactMed entries.)",
+    "app_guidance": "I can't tell you whether a medicine is safe. Please ask your provider or pharmacist, or look it up in the LactMed database. I won't recommend starting or stopping any medicine."
+  },
+  {
+    "id": "mh-01",
+    "source": "CDC - Symptoms of Depression Among Women (paraphrased); JAMA PRAMS 2018 summary",
+    "url": "https://www.cdc.gov/reproductive-health/depression/index.html",
+    "section": "How Common Postpartum Depression Is",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "is this normal",
+      "am I the only one",
+      "why do I feel so bad after having my baby"
+    ],
+    "content": "About 1 in 8 women with a recent live birth report symptoms of postpartum depression, and state rates range from about 1 in 10 to nearly 1 in 4. It is common and treatable, and most people get better with treatment.",
+    "app_guidance": "You're not alone. About 1 in 8 new mothers have symptoms of postpartum depression. It's common, it's treatable, and it isn't your fault."
+  },
+  {
+    "id": "mh-02",
+    "source": "CDC - Symptoms of Depression Among Women (paraphrased)",
+    "url": "https://www.cdc.gov/reproductive-health/depression/index.html",
+    "section": "Postpartum Depression Symptoms",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "primary page text checked",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I cry all the time",
+      "I feel nothing for my baby",
+      "I'm angry at everyone",
+      "I don't think I'm a good mom"
+    ],
+    "content": "Postpartum depression symptoms can include crying more often than usual, feeling angry, feeling distant from the baby, and doubting the ability to care for the baby. A lasting sad, anxious, or empty mood is a core sign.",
+    "app_guidance": "What you're describing can be postpartum depression, which is common and treatable. If it has lasted more than two weeks, is severe, or is getting in the way of your day, please contact your provider, and I can help you find support."
+  },
+  {
+    "id": "mh-03",
+    "source": "CDC; California Dept. of Public Health; clinical sources (paraphrased)",
+    "url": "https://www.cdc.gov/reproductive-health/depression/index.html",
+    "section": "Baby Blues vs Postpartum Depression",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary sources; duration varies from days to about 2 weeks",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I cry for no reason",
+      "my mood swings are crazy",
+      "I feel overwhelmed but it's only been a few days"
+    ],
+    "content": "The baby blues are common, with tearfulness, mood swings, irritability, and feeling overwhelmed that start in the first days after birth and usually ease within days to about two weeks. Symptoms lasting longer than two weeks, severe symptoms, or worsening symptoms may be postpartum depression, which is not limited to the first two weeks.",
+    "app_guidance": "Mood swings and tearfulness in the first couple of weeks are very common and usually ease on their own. Rest and accept help. If it lasts beyond two weeks or gets worse, tell me or your provider."
+  },
+  {
+    "id": "mh-04",
+    "source": "Derived from CDC and clinical sources (product rule, not a quoted guideline)",
+    "url": "https://www.cdc.gov/reproductive-health/depression/index.html",
+    "section": "Low Mood Lasting More Than a Week (Watch)",
+    "tier": "WATCH",
+    "category": "baseline",
+    "action": "follow_up_question",
+    "verification": "DERIVED RULE - clinician must confirm the Watch cutoffs; the risk engine, not retrieval, should set Watch",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I've been down for a week",
+      "still crying every day",
+      "I'm not enjoying anything lately"
+    ],
+    "content": "DERIVED RULE (not a quoted guideline). Low mood, tearfulness, or anxiety lasting most of a week or not easing warrants a check-in within a few days and a repeat screen. Move to AMBER if it passes two weeks, interferes with daily life, or the screening score rises.",
+    "app_guidance": "It sounds like you've been feeling low for a while. I'll check in with you again in a few days. Tell me about your sleep and who is helping you."
+  },
+  {
+    "id": "mh-05",
+    "source": "California Dept. of Public Health; Minnesota Dept. of Health (paraphrased)",
+    "url": "https://www.health.mn.gov/people/womeninfants/pmad/pmad-eng.pdf",
+    "section": "Timing and Risk Factors",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "secondary (state health departments)",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "it's been months and I still feel awful",
+      "my baby is 6 months old and I'm not okay"
+    ],
+    "content": "Postpartum depression and anxiety can start during pregnancy or at any point in the first year after birth and can last for months. Risk is higher with a history of depression or anxiety, limited social support, intimate partner violence, young age, or loss of an infant, but anyone can be affected.",
+    "app_guidance": "Postpartum depression can start any time in the first year. How long have you been feeling this way? If it's lasting or affecting your day, please contact your provider."
+  },
+  {
+    "id": "mh-06a",
+    "source": "EPDS validation literature (Scientific Reports, 2023 meta-analysis); scale copyright Royal College of Psychiatrists",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10006408",
+    "section": "EPDS Score 10 to 12 (Possible Depression)",
+    "tier": "WATCH",
+    "category": "quantitative",
+    "action": "follow_up_question",
+    "verification": "cutoff 10 widely used; sources differ on where 'possible' starts (8 to 10). Clinician to confirm. Item 10 handled separately (mh-07)",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my score was 11",
+      "my mood score went up",
+      "I took the Edinburgh quiz"
+    ],
+    "content": "An Edinburgh Postnatal Depression Scale total of 10 to 12 suggests possible depression and is a reason to check in, not an alarm. Repeat the screen in a few days; move to AMBER at 13 or higher, symptoms beyond two weeks, or interference with daily life. Item 10 is handled separately.",
+    "app_guidance": "Your score suggests you might be struggling. That's not a diagnosis. I'll check in with you again in a few days, and here are some places to get support if you want them."
+  },
+  {
+    "id": "mh-06b",
+    "source": "EPDS validation literature (Scientific Reports, 2023 meta-analysis); scale copyright Royal College of Psychiatrists",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10006408",
+    "section": "EPDS Score 13 or Higher (Probable Depression)",
+    "tier": "AMBER",
+    "category": "quantitative",
+    "action": "contact_provider_same_day",
+    "verification": "cutoff 13 widely used; 'promptly' timing needs clinician confirmation. Do not put the EPDS questions in the app without permission",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "my score was 14",
+      "the quiz says I might have postpartum depression"
+    ],
+    "content": "An Edinburgh Postnatal Depression Scale total of 13 or higher suggests probable depression. Encourage contacting a provider promptly and offer support resources. A screening score is not a diagnosis. Item 10 is handled separately.",
+    "app_guidance": "Your score suggests you may have postpartum depression. This isn't a diagnosis, but please contact your provider soon. You can also call or text 1-833-852-6262 (1-833-TLC-MAMA) any time for free, confidential support."
+  },
+  {
+    "id": "mh-07",
+    "source": "EPDS validation literature (Scientific Reports, 2023 meta-analysis)",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10006408",
+    "section": "EPDS Item 10 (Self-Harm) Override",
+    "tier": "RED",
+    "category": "quantitative",
+    "action": "emergency_911_er",
+    "verification": "literature checked; clinician review needed for the response wording",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I answered yes to the self-harm question",
+      "I sometimes think about hurting myself"
+    ],
+    "content": "Any answer above zero on EPDS item 10 (thoughts of self-harm) needs a same-day safety follow-up regardless of total score. Many positive answers reflect fleeting thoughts of escaping problems without intent, and some people misread the item, so ask directly rather than assume intent. If intent is present or unclear, provide 988 and, for immediate danger, 911.",
+    "app_guidance": "Thank you for telling me. I want to ask directly: are you having thoughts of ending your life or hurting yourself? If you are, or you're not sure, please call or text 988 now. If you're in immediate danger, call 911."
+  },
+  {
+    "id": "mh-08",
+    "source": "CDC Hear Her (warning sign); HRSA National Maternal Mental Health Hotline; 988 Suicide & Crisis Lifeline",
+    "url": "https://www.cdc.gov/hearher/maternal-warning-signs/",
+    "section": "Suicidal Thoughts or Self-Harm (Crisis)",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "CDC lists thoughts of hurting yourself or your baby as a warning sign; hotline scope confirmed via HRSA announcement; clinician review needed for response wording",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I want to die",
+      "everyone would be better off without me",
+      "I can't do this anymore",
+      "I want to hurt myself"
+    ],
+    "content": "Thoughts of suicide or self-harm, or a plan or intent, are an emergency. CDC lists thoughts of hurting oneself or one's baby as a warning sign. The National Maternal Mental Health Hotline is not an emergency line; 988 is the crisis line.",
+    "app_guidance": "I'm glad you told me. Please call or text 988 right now. If you're in immediate danger, call 911. Please tell someone near you. You don't have to go through this alone."
+  },
+  {
+    "id": "mh-09",
+    "source": "MGH Center for Women's Mental Health; CDC Hear Her (warning sign); Texas DSHS Hear Her toolkit (paraphrased)",
+    "url": "https://womensmentalhealth.org/posts/postpartum-psychosis-awareness-day/",
+    "section": "Intrusive Thoughts About the Baby (Distressing, Unwanted)",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "secondary (academic medical center). NOTE: CDC lists thoughts of harming yourself or your baby as a warning sign, so do not dismiss. Clinician review needed",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I keep picturing something bad happening to my baby",
+      "scary thoughts about dropping the baby",
+      "I'm afraid I'll hurt my baby but I don't want to"
+    ],
+    "content": "Unwanted, upsetting thoughts or images of harm coming to the baby are common after birth, especially with postpartum depression or anxiety. When a person is frightened or disturbed by them and does not want to act on them, they do not indicate danger. CDC still lists thoughts of harming oneself or one's baby as a warning sign to bring to a provider.",
+    "app_guidance": "Scary thoughts like that are common after birth, and having them doesn't mean you'd act on them or that you're a bad parent. Because they can be a sign of anxiety or depression, please tell your provider soon. I can help you find support."
+  },
+  {
+    "id": "mh-10",
+    "source": "Penn State Health; WBUR clinical interview (paraphrased)",
+    "url": "https://www.wbur.org/hereandnow/2023/01/31/postpartum-psychosis",
+    "section": "Thoughts About Harming the Baby: When It Is an Emergency",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "secondary; clinician review required before shipping",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I think the baby would be better off if I ...",
+      "voices are telling me to hurt the baby",
+      "I don't mind these thoughts"
+    ],
+    "content": "Thoughts of harming the baby are an emergency when the person wants to act on them, feels no distress about them, has a plan, or also has confusion, hallucinations, paranoia, or delusions. This differs from distressing intrusive thoughts.",
+    "app_guidance": "If you want to act on these thoughts, aren't bothered by them, or are hearing or seeing things, call 911 or go to the ER now, and ask someone to stay with you and your baby."
+  },
+  {
+    "id": "mh-11",
+    "source": "MGH Center for Women's Mental Health; Penn State Health; HHS Office on Women's Health (paraphrased)",
+    "url": "https://womensmentalhealth.org/posts/postpartum-psychosis-awareness-day/",
+    "section": "Postpartum Psychosis",
+    "tier": "RED",
+    "category": "red_flag",
+    "action": "emergency_911_er",
+    "verification": "secondary (academic medical center, federal fact sheet); clinician review needed",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I'm seeing things",
+      "I hear voices",
+      "I haven't slept in days and feel amazing",
+      "someone is trying to take my baby"
+    ],
+    "content": "Postpartum psychosis is a psychiatric emergency. Signs include hallucinations, delusions or paranoia, severe confusion, extreme agitation, racing or manic energy, and very little need for sleep. It usually begins in the first two weeks after birth. A family history of bipolar disorder or postpartum psychosis raises risk.",
+    "app_guidance": "What you're describing needs emergency care. Please call 911 or go to the ER now, and ask a partner or family member to stay with you."
+  },
+  {
+    "id": "mh-12",
+    "source": "HHS Office on Women's Health - Perinatal Mental Health Conditions fact sheet (paraphrased)",
+    "url": "https://womenshealth.gov/sites/default/files/_documents/2025/talkingppd/23348-66_OWH24-Fact-Sheet-Perinatal-Mental-Health-Conditions-04_ADA_submitted.pdf",
+    "section": "Postpartum Anxiety and OCD Symptoms",
+    "tier": "AMBER",
+    "category": "red_flag",
+    "action": "contact_provider_same_day",
+    "verification": "secondary (federal fact sheet; partially read); confirm details",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I can't stop worrying",
+      "my heart is racing and I can't relax",
+      "I keep checking the baby over and over"
+    ],
+    "content": "Postpartum anxiety can show as constant worry, racing or intrusive thoughts, trouble sleeping even when the baby sleeps, dizziness, or hot flashes. Postpartum OCD involves upsetting repeated thoughts and actions repeated to calm them, and the person usually knows the thoughts are disturbing. Both are common and treatable.",
+    "app_guidance": "This sounds like it could be postpartum anxiety, which is common and treatable. Please tell your provider. You can also call or text Postpartum Support International at 1-800-944-4773."
+  },
+  {
+    "id": "mh-13",
+    "source": "CDC; Rhode Island Dept. of Health (paraphrased)",
+    "url": "https://www.cdc.gov/reproductive-health/depression/index.html",
+    "section": "Treatment Works",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "general claim checked on CDC page; medication and breastfeeding details need clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "can this be treated",
+      "do I need medication",
+      "will I be on meds forever",
+      "can I take medicine while breastfeeding"
+    ],
+    "content": "Depression after birth is treatable and most people improve with treatment. Options commonly include talk therapy, medication, or both, chosen with a provider. Many mothers can keep breastfeeding during treatment, but medication choices should be made with a provider, who can check resources such as LactMed.",
+    "app_guidance": "Postpartum depression is treatable, and most people get better. Therapy, medicine, or both can help, and your provider can help you choose. I can't recommend or change any medicine."
+  },
+  {
+    "id": "mh-14",
+    "source": "HRSA National Maternal Mental Health Hotline; Postpartum Support International; 988 Lifeline",
+    "url": "https://mchb.hrsa.gov/national-maternal-mental-health-hotline",
+    "section": "Where to Get Support Now",
+    "tier": "AMBER",
+    "category": "baseline",
+    "action": "contact_provider_same_day",
+    "verification": "numbers confirmed across multiple sources; reconfirm before the demo",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "who can I talk to",
+      "I need help but don't know where to start",
+      "is there a hotline"
+    ],
+    "content": "The National Maternal Mental Health Hotline is free, confidential, and open 24/7 by call or text at 1-833-852-6262 (1-833-TLC-MAMA), in English and Spanish, with interpreters in many languages. It is not an emergency line. Postpartum Support International's helpline is 1-800-944-4773 (call or text HELP). For suicidal crisis call or text 988; for immediate danger call 911.",
+    "app_guidance": "You can call or text 1-833-852-6262 (1-833-TLC-MAMA) any time for free, confidential support, or Postpartum Support International at 1-800-944-4773. If you're in crisis, call or text 988, or call 911 if you're in immediate danger."
+  },
+  {
+    "id": "mh-15",
+    "source": "California Dept. of Public Health; Minnesota Dept. of Health (paraphrased)",
+    "url": "https://www.health.mn.gov/people/womeninfants/pmad/pmad-eng.pdf",
+    "section": "Reducing Stigma and Encouraging Help-Seeking",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "secondary (state health departments)",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "I'm ashamed",
+      "I'm a bad mother",
+      "I don't want anyone to think I'm failing"
+    ],
+    "content": "Postpartum depression and anxiety are not a person's fault and not a sign of weakness or poor parenting. Asking for help benefits both parent and baby. Practical supports include childcare help to allow rest, protecting sleep where possible, and telling a provider how things have been.",
+    "app_guidance": "This is not your fault, and it doesn't mean you're a bad parent. Asking for help is a good step for you and your baby. Is there someone who could watch the baby so you can rest? Tell your provider how you've been feeling."
+  }
+]

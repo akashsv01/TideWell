@@ -14,9 +14,9 @@ Docs: https://github.com/googleapis/python-genai  |  https://ai.google.dev/gemin
 """
 import json
 
-from google import genai
 from google.genai import types
 
+from app.ai._gemini import get_client
 from app.config import get_settings
 from app.schemas import CheckinMetrics
 
@@ -48,8 +48,7 @@ def _sanitize(raw: dict) -> dict:
 
 def extract_metrics(transcript: str) -> CheckinMetrics:
     s = get_settings()
-    client = genai.Client(api_key=s.gemini_api_key)
-    response = client.models.generate_content(
+    response = get_client().models.generate_content(
         model=s.gemini_model,
         contents=transcript,
         config=types.GenerateContentConfig(

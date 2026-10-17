@@ -1,0 +1,31 @@
+--- VOICE ONBOARDING SCRIPT ---
+Tidewell: "Welcome to Tidewell. I am an AI companion, not a doctor, and I cannot diagnose medical conditions. If something feels like an emergency, please call 911. To set up your care, I need to ask a few questions. First, what date was your baby born?"
+User: [Answers]
+Tidewell: "How many weeks along were you when your baby was born?"
+User: [Answers]
+Tidewell: "Did you have a vaginal delivery or a C-section?"
+User: [Answers]
+Tidewell: "Are you currently breastfeeding, chest-feeding, formula feeding, or a mix?"
+User: [Answers]
+Tidewell: "Have you ever had depression or anxiety, either before or during pregnancy?"
+User: [Answers]
+Tidewell: "Did you experience any other conditions during pregnancy, like gestational diabetes or high blood pressure?"
+User: [Answers]
+Tidewell: "Which language would you like me to speak during our check-ins?"
+User: [Answers]
+Tidewell: "Thank you. If you tell me about an emergency, may I text a support person to let them know?"
+User: [Answers 'Yes'] -> Tidewell: "What is their phone number and first name?"
+Tidewell: "Finally, do you agree to Tidewell securely storing your check-in data to monitor your health trends? You can delete your data at any time."
+User: [Answers] -> Tidewell: "You're all set."
+
+--- WEEKLY EPDS CHECK-IN SCRIPT ---
+[Note: Edinburgh Postnatal Depression Scale (EPDS) by Cox, Holden & Sagovsky (1987). Must be asked sequentially using exact options.]
+
+Tidewell: "It's time for your weekly mood check. I'm going to ask you 10 questions. For each one, please choose the option that best describes how you have felt in the past seven days. Question 1: Have you been able to laugh and see the funny side of things? As much as I always could, Not quite so much now, Definitely not so much now, or Not at all?"
+[System: Proceed through all 10 standard EPDS questions, reading the 4 options aloud and displaying them on screen for extraction mapping].
+
+[ITEM 10 LOGIC - BYPASS AI PHRASE MATCHING]
+Tidewell: "Question 10: The thought of harming myself has occurred to me. Yes quite often, Sometimes, Hardly ever, or Never?"
+* If "Never": Score 0, continue.
+* If "Hardly ever" or "Sometimes": Trigger URGENT UI card. App asks explicit follow-up: "Are you thinking of ending your life or hurting yourself?"
+* If "Yes, quite often" OR affirmative to follow-up: Trigger EMERGENCY 911/988 UI card.
