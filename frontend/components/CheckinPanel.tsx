@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Orb from "@/components/Orb";
 import UrgentCard from "@/components/UrgentCard";
 import { checkin, replyAudioSrc } from "@/lib/api";
-import { DEMO_PATIENT_ID } from "@/lib/config";
+import { usePatientId } from "@/lib/identity";
 import {
   getSpokenReplies,
   spokenRepliesServerValue,
@@ -15,6 +15,7 @@ import { btnPrimary, focusRing } from "@/lib/ui";
 import { useRecorder } from "@/lib/useRecorder";
 
 export default function CheckinPanel() {
+  const { patientId } = usePatientId();
   const { state, seconds, levelRef, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CheckinResponse | null>(null);
@@ -64,12 +65,13 @@ export default function CheckinPanel() {
   }
 
   async function send(input: { text?: string; audio?: Blob }) {
+    if (!patientId) return; // RequirePatient renders this panel only once there is an id
     setBusy(true);
     setError(null);
     setResult(null);
     setNeedsTap(false);
     try {
-      const res = await checkin(DEMO_PATIENT_ID, input);
+      const res = await checkin(patientId, input);
       setResult(res);
       if (res.red_flag) stopAudio();
       else if (res.reply_audio_base64 && spoken) play(res.reply_audio_base64);

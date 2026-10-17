@@ -3,6 +3,7 @@ import type {
   CheckinRequest,
   CheckinResponse,
   ClinicianPatient,
+  Me,
   OnboardRequest,
   OnboardResponse,
   PhotoReading,
@@ -100,6 +101,15 @@ export async function onboard(input: OnboardRequest): Promise<OnboardResponse> {
     return { patient_id: input.patient_id ?? "mock-patient", categories: ["postpartum_high_bp", "post_cesarean"] };
   }
   return postJson("/onboard", input);
+}
+
+/** The patient that belongs to this login, or null if they have not onboarded yet (404). */
+export async function getMe(clerkUserId: string): Promise<Me | null> {
+  if (USE_MOCK) return null;
+  const res = await fetch(`${BASE}/me?clerk_user_id=${encodeURIComponent(clerkUserId)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json() as Promise<Me>;
 }
 
 export async function checkin(

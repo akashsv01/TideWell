@@ -1,8 +1,11 @@
 "use client";
 
+import { SignOutButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { deleteMyData } from "@/lib/api";
-import { DEMO_PATIENT_ID } from "@/lib/config";
+import { AUTH_ENABLED } from "@/lib/auth";
+import { chooseDemoAccount, isDemo, setPatientId, useClerkUserId, usePatientId } from "@/lib/identity";
 import {
   getSpokenReplies,
   setSpokenReplies,
@@ -14,6 +17,10 @@ import { btnOutline, focusRing } from "@/lib/ui";
 type DeleteState = "idle" | "confirm" | "deleting" | "done" | "error";
 
 export default function SettingsPanel() {
+  const router = useRouter();
+  const { patientId } = usePatientId();
+  const { clerkUserId } = useClerkUserId();
+  const demo = isDemo(patientId);
   const spoken = useSyncExternalStore(
     subscribeSpokenReplies,
     getSpokenReplies,
@@ -22,10 +29,12 @@ export default function SettingsPanel() {
   const [del, setDel] = useState<DeleteState>("idle");
 
   async function confirmDelete() {
+    if (!patientId) return;
     setDel("deleting");
     try {
-      await deleteMyData(DEMO_PATIENT_ID);
+      await deleteMyData(patientId);
       setDel("done");
+      setPatientId(null); // nothing left to show; RequirePatient offers to start again
     } catch {
       setDel("error");
     }
@@ -88,6 +97,42 @@ export default function SettingsPanel() {
         </ul>
       </section>
 
+      <section aria-labelledby="account-title">
+        <h2 id="account-title" className="font-display text-2xl">
+          Account
+        </h2>
+        <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
+          {demo
+            ? "You are looking at Maya, our demo parent. Nothing you do here is about you."
+            : "Your check-ins and trends are saved to your own Tidewell record."}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {demo ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPatientId(null);
+                router.push(AUTH_ENABLED && !clerkUserId ? "/sign-up" : "/onboarding");
+              }}
+              className={btnOutline}
+            >
+              Set up my own account
+            </button>
+          ) : (
+            <button type="button" onClick={chooseDemoAccount} className={btnOutline}>
+              Switch to the demo
+            </button>
+          )}
+          {AUTH_ENABLED && clerkUserId && (
+            <SignOutButton redirectUrl="/">
+              <button type="button" className={btnOutline}>
+                Sign out
+              </button>
+            </SignOutButton>
+          )}
+        </div>
+      </section>
+
       <section aria-labelledby="data-title">
         <h2 id="data-title" className="font-display text-2xl">
           Your data
@@ -97,7 +142,12 @@ export default function SettingsPanel() {
         </p>
 
         <div className="mt-4" aria-live="polite">
-          {del === "idle" && (
+          {demo && del === "idle" && (
+            <p className="rounded-3xl bg-sand/70 p-5 text-lg">
+              The demo account can&apos;t be deleted. Switch to your own account to manage your data.
+            </p>
+          )}
+          {!demo && del === "idle" && (
             <button type="button" onClick={() => setDel("confirm")} className={btnOutline}>
               Delete my data
             </button>

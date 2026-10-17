@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { onboard } from "@/lib/api";
+import { getClerkUserId, setPatientId } from "@/lib/identity";
 import type { DeliveryType } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
@@ -79,9 +80,10 @@ export default function Onboarding() {
     }
     setSaving(true);
     try {
-      await onboard({
-        // No patient_id: the backend creates a new patient, so a demo onboarding never overwrites
-        // Maya's seeded chart. Check-ins still use DEMO_PATIENT_ID until Clerk is wired in.
+      const res = await onboard({
+        // No patient_id: the backend creates a new patient (or, when signed in, updates the one
+        // linked to this login). Every screen then uses the id it returns.
+        clerk_user_id: getClerkUserId(),
         birth_date: birthDate,
         delivery_type: delivery as DeliveryType,
         conditions,
@@ -90,6 +92,7 @@ export default function Onboarding() {
         support_consent: Boolean(phone.trim() && consent),
         language: "en",
       });
+      setPatientId(res.patient_id);
       router.push("/home");
     } catch {
       setError("We couldn't save your answers. Check your connection and try again.");

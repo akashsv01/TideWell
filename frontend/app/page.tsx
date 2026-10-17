@@ -1,8 +1,8 @@
-import Link from "next/link";
 import Waves, { type WaveLayer } from "@/components/Waves";
-import { btnPrimary, focusRing, focusRingLight } from "@/lib/ui";
+import WelcomeActions from "@/components/WelcomeActions";
+import { focusRingLight } from "@/lib/ui";
 
-// Welcome screen. Clerk sign-in will replace the "I already have an account" link later.
+// Welcome screen. The buttons (sign up / sign in / demo) live in WelcomeActions.
 
 const shoreline: WaveLayer[] = [
   { color: "#efe3c8", amp: 9, cycles: 2, top: 70, seconds: 34, opacity: 1 },
@@ -38,17 +38,7 @@ export default function Welcome() {
             Tidewell is a voice companion for the first year after birth. Talk for a minute a day.
             It keeps track of the pattern and tells you when something is worth a call.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <Link href="/onboarding" className={btnPrimary}>
-              Get started
-            </Link>
-            <Link
-              href="/home"
-              className={`rounded-md py-2 text-lg font-semibold underline underline-offset-4 ${focusRing}`}
-            >
-              I already have an account
-            </Link>
-          </div>
+          <WelcomeActions />
         </div>
 
         <div className="mt-12 flex flex-1 flex-col">

@@ -19,7 +19,7 @@ import ChartTip from "@/components/ChartTip";
 import { AlertIcon } from "@/components/icons";
 import Waves from "@/components/Waves";
 import { getTrends } from "@/lib/api";
-import { DEMO_PATIENT_ID } from "@/lib/config";
+import { usePatientId } from "@/lib/identity";
 import { bpRise, moodSentence, shortDay, sleepSentence } from "@/lib/insights";
 import type { TrendPoint } from "@/lib/types";
 
@@ -42,13 +42,15 @@ const xAxisProps = {
 const tipMotion = { isAnimationActive: false } as const;
 
 export default function Dashboard() {
+  const { patientId } = usePatientId();
   const [points, setPoints] = useState<TrendPoint[] | null>(null);
   const [failed, setFailed] = useState(false);
   const gradientId = `tide-${useId().replace(/:/g, "")}`;
 
   useEffect(() => {
+    if (!patientId) return;
     let cancelled = false;
-    getTrends(DEMO_PATIENT_ID).then(
+    getTrends(patientId).then(
       (data) => {
         if (!cancelled) setPoints(data);
       },
@@ -59,7 +61,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [patientId]);
 
   if (failed) {
     return (

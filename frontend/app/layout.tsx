@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource/young-serif";
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
+import ClerkBridge from "@/components/ClerkBridge";
+import { AUTH_ENABLED } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: { default: "Tidewell", template: "%s | Tidewell" },
@@ -22,7 +25,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        {children}
+        {AUTH_ENABLED ? (
+          <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+            <ClerkBridge />
+            {children}
+          </ClerkProvider>
+        ) : (
+          children
+        )}
       </body>
     </html>
   );

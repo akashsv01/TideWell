@@ -17,6 +17,7 @@ export interface OnboardRequest {
   support_phone: string | null;
   language: string; // "en"
   support_consent?: boolean; // explicit permission to text the support person in an emergency
+  clerk_user_id?: string | null; // links the new patient to the signed-in login
 }
 
 export interface CheckinRequest {
@@ -88,6 +89,13 @@ export interface Citation {
 
 export interface Slot {
   slot: string; // ISO timestamp
+}
+
+export interface Me {
+  patient_id: string;
+  name: string | null;
+  days_postpartum: number | null;
+  delivery_type: DeliveryType | null;
 }
 
 export interface OnboardResponse {
