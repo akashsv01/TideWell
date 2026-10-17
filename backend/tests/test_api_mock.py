@@ -29,6 +29,13 @@ def test_onboard_assigns_categories_and_returns_uuid():
     assert r.json()["patient_id"]
 
 
+def test_onboard_keeps_a_valid_uuid_patient_id_and_replaces_a_bad_one():
+    base = {"birth_date": "2026-09-29", "delivery_type": "vaginal"}
+    mine = "11111111-1111-4111-8111-111111111111"
+    assert client.post("/onboard", json={**base, "patient_id": mine}).json()["patient_id"] == mine
+    assert client.post("/onboard", json={**base, "patient_id": "maya"}).json()["patient_id"] != "maya"
+
+
 def test_onboard_rejects_bad_phone():
     body = {"birth_date": "2026-09-29", "delivery_type": "vaginal", "support_phone": "202-555-0123"}
     assert client.post("/onboard", json=body).status_code == 422

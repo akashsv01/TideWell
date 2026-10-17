@@ -11,9 +11,9 @@ from app.schemas_data import OnboardIn, OnboardOut, VitalsIn, VitalsOut
 router = APIRouter()
 
 
-def _pick_id(user_id: str | None) -> UUID:
+def _pick_id(patient_id: str | None) -> UUID:
     try:
-        return UUID(user_id) if user_id else uuid4()
+        return UUID(patient_id) if patient_id else uuid4()
     except ValueError:
         return uuid4()
 
@@ -21,7 +21,7 @@ def _pick_id(user_id: str | None) -> UUID:
 @router.post("/onboard", response_model=OnboardOut)
 def onboard(body: OnboardIn) -> OnboardOut:
     cats = categories.assign(body.delivery_type, body.conditions, body.breastfeeding)
-    patient_id = _pick_id(body.user_id)
+    patient_id = _pick_id(body.patient_id)
     if db.enabled():
         store.insert_patient(patient_id, body, cats)
     return OnboardOut(patient_id=patient_id, categories=cats)
@@ -47,7 +47,9 @@ def add_vitals(body: VitalsIn) -> VitalsOut:
     if (body.bp_sys is None) != (body.bp_dia is None):
         raise HTTPException(422, "send bp_sys and bp_dia together")
 
-    flag, reason = red_flags.check("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))
+    # Rules only: there is no transcript here, so the Gemini backup layer would have nothing to read.
+    result = red_flags.check_rules("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))
+    flag, reason = result.flag, result.reason
     if db.enabled():
         if not store.patient_exists(body.patient_id):
             raise HTTPException(404, "patient not found")

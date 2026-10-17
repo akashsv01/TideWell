@@ -16,9 +16,9 @@ _E164 = re.compile(r"^\+[1-9]\d{7,14}$")
 
 
 class OnboardIn(OnboardRequest):
-    """Person 1's OnboardRequest, with user_id optional and a few chart fields added."""
+    """Person 1's OnboardRequest, with patient_id optional and a few chart fields added."""
 
-    user_id: Optional[str] = None  # if it is a valid UUID it becomes the patient_id, else one is generated
+    patient_id: Optional[str] = None  # if it is a valid UUID it is used as the id, else one is generated
     name: Optional[str] = None
     age: Optional[int] = Field(default=None, ge=12, le=70)
     gestation_weeks: Optional[int] = Field(default=None, ge=20, le=45)
