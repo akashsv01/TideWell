@@ -26,7 +26,7 @@ export default function BottomNav() {
               <Link
                 href={href}
                 aria-current={current ? "page" : undefined}
-                className={`mx-1 my-1 flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-sm font-semibold transition-colors ${focusRing} ${
+                className={`mx-1 my-1 flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-sm font-semibold transition-colors duration-150 ${focusRing} ${
                   current ? "bg-tide-deep text-white" : "text-navy/75 hover:bg-navy/5"
                 }`}
               >

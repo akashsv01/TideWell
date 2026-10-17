@@ -17,11 +17,22 @@
   --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Young Serif", ui-serif, Georgia, serif;
 
+  /* Motion. Strong curves replace Tailwind's built-in ease-out / ease-in-out everywhere
+     (the `ease-out` utility now uses this curve too). UI motion stays under 300ms. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
   --animate-drift: drift 18s linear infinite;
   --animate-rise: rise 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-breathe: breathe 6s ease-in-out infinite;
   --animate-ripple: ripple 2.6s ease-out infinite;
-  --animate-step-in: step-in 0.28s ease-out both;
+  --animate-step-in: step-in 0.26s var(--ease-out) both;
+  --animate-step-back: step-back 0.26s var(--ease-out) both;
+  --animate-fade-in: fade-in 0.2s var(--ease-out) both;
+  --animate-reply-in: reply-in 0.26s var(--ease-out) both;
+  --animate-section-in: reply-in 0.3s var(--ease-out) both;
+  --animate-backdrop-in: fade-in 0.15s var(--ease-out) both;
+  --animate-card-in: card-in 0.2s var(--ease-out) both;
 
   @keyframes drift {
     from {
@@ -63,6 +74,47 @@
   @keyframes step-in {
     from {
       transform: translateX(1rem);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  /* Going back comes from the left, so the steps read as a row you move along. */
+  @keyframes step-back {
+    from {
+      transform: translateX(-1rem);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* Rises from where it came from: the reply appears under the orb. */
+  @keyframes reply-in {
+    from {
+      transform: translateY(0.75rem);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  /* Safety card: a small settle, never scale(0), no bounce. Readable from the first frame. */
+  @keyframes card-in {
+    from {
+      transform: scale(0.97);
       opacity: 0;
     }
     to {

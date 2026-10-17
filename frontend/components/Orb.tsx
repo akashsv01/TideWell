@@ -74,7 +74,7 @@ export default function Orb({ state, seconds, levelRef, onClick }: Props) {
         )}
         <span
           data-state={state}
-          className="orb relative size-48 overflow-hidden rounded-full bg-navy shadow-[0_18px_40px_-12px_rgba(11,37,69,0.55)] ring-4 ring-white motion-safe:group-active:scale-95 motion-safe:transition-transform"
+          className="orb relative size-48 overflow-hidden rounded-full bg-navy shadow-[0_18px_40px_-12px_rgba(11,37,69,0.55)] ring-4 ring-white motion-safe:group-active:scale-95 motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out"
         >
           <span
             ref={waterRef}

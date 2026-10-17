@@ -21,6 +21,7 @@ import Waves from "@/components/Waves";
 import { getTrends } from "@/lib/api";
 import { usePatientId } from "@/lib/identity";
 import { bpRise, moodSentence, shortDay, sleepSentence } from "@/lib/insights";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { TrendPoint } from "@/lib/types";
 
 // Chart colors. Teal and amber were checked together for color-blind separation.
@@ -41,8 +42,17 @@ const xAxisProps = {
 
 const tipMotion = { isAnimationActive: false } as const;
 
+// Sections settle in one after another (60ms apart) the first time the tide loads.
+const enter = (i: number) => ({
+  className: "motion-safe:animate-section-in",
+  style: { animationDelay: `${i * 60}ms` },
+});
+
 export default function Dashboard() {
   const { patientId } = usePatientId();
+  const reduce = useReducedMotion();
+  // Lines draw in quickly once (default is 1.5s); off entirely with reduced motion.
+  const drawIn = { isAnimationActive: !reduce, animationDuration: 500, animationEasing: "ease-out" } as const;
   const [points, setPoints] = useState<TrendPoint[] | null>(null);
   const [failed, setFailed] = useState(false);
   const gradientId = `tide-${useId().replace(/:/g, "")}`;
@@ -91,13 +101,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-12">
-      <header>
+      <header {...enter(0)}>
         <h1 className="font-display text-4xl leading-tight">Your last {points.length} days</h1>
         {summary && <p className="mt-3 max-w-[44ch] text-xl leading-relaxed">{summary}</p>}
       </header>
 
       {/* The tide: mood over time, on a navy basin with a gentle wave along the top. */}
-      <section aria-labelledby="mood-title" className="-mx-5 overflow-hidden bg-navy text-white sm:mx-0 sm:rounded-3xl">
+      <section
+        aria-labelledby="mood-title"
+        className="-mx-5 overflow-hidden bg-navy text-white motion-safe:animate-section-in sm:mx-0 sm:rounded-3xl"
+        style={enter(1).style}
+      >
         <Waves
           className="relative h-8"
           layers={[
@@ -126,6 +140,7 @@ export default function Dashboard() {
                 <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={AXIS_LIGHT} tickLine={false} axisLine={false} />
                 <Tooltip content={<ChartTip units={{ Mood: " / 10" }} />} {...tipMotion} />
                 <Area
+                  {...drawIn}
                   type="monotone"
                   dataKey="mood"
                   name="Mood"
@@ -144,7 +159,8 @@ export default function Dashboard() {
       {rise && (
         <section
           aria-labelledby="bp-callout-title"
-          className="flex gap-4 rounded-3xl border-l-8 border-chart-amber bg-sand/70 p-5 sm:p-6"
+          className="flex gap-4 rounded-3xl border-l-8 border-chart-amber bg-sand/70 p-5 motion-safe:animate-section-in sm:p-6"
+          style={enter(2).style}
         >
           <AlertIcon className="mt-1 size-7 shrink-0 text-navy" />
           <div>
@@ -162,7 +178,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      <section aria-labelledby="bp-title">
+      <section aria-labelledby="bp-title" {...enter(3)}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
           <h2 id="bp-title" className="font-display text-2xl">
             Blood pressure
@@ -191,15 +207,15 @@ export default function Dashboard() {
                 label={{ value: "140", position: "insideTopLeft", fill: "#0b2545", fontSize: 13, dy: -14 }}
               />
               <Tooltip content={<ChartTip units={{ "Top number": " mmHg", "Bottom number": " mmHg" }} />} {...tipMotion} />
-              <Line type="monotone" dataKey="bp_sys" name="Top number" stroke={TEAL} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="bp_dia" name="Bottom number" stroke={AMBER} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
+              <Line {...drawIn} type="monotone" dataKey="bp_sys" name="Top number" stroke={TEAL} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
+              <Line {...drawIn} type="monotone" dataKey="bp_dia" name="Bottom number" stroke={AMBER} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
         <p className="mt-1 text-base text-navy/80">The dashed line marks 140 on the top number.</p>
       </section>
 
-      <div className="grid gap-12 sm:grid-cols-2 sm:gap-8">
+      <div className="grid gap-12 motion-safe:animate-section-in sm:grid-cols-2 sm:gap-8" style={enter(4).style}>
         <section aria-labelledby="sleep-title">
           <h2 id="sleep-title" className="font-display text-2xl">
             Sleep
@@ -212,7 +228,7 @@ export default function Dashboard() {
                 <XAxis {...xAxisProps} tick={AXIS} />
                 <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={AXIS} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: "rgba(11,37,69,0.06)" }} content={<ChartTip units={{ Sleep: " hours" }} />} {...tipMotion} />
-                <Bar dataKey="sleep_hrs" name="Sleep" fill={TEAL} radius={[4, 4, 0, 0]} />
+                <Bar {...drawIn} dataKey="sleep_hrs" name="Sleep" fill={TEAL} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -230,7 +246,7 @@ export default function Dashboard() {
                 <XAxis {...xAxisProps} tick={AXIS} />
                 <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={AXIS} tickLine={false} axisLine={false} />
                 <Tooltip content={<ChartTip units={{ Pain: " / 10" }} />} {...tipMotion} />
-                <Line type="monotone" dataKey="pain" name="Pain" stroke={TEAL} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
+                <Line {...drawIn} type="monotone" dataKey="pain" name="Pain" stroke={TEAL} strokeWidth={2.5} dot={false} activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -34,6 +34,7 @@ const choice =
 export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1); // which way the step slides in
   const [birthDate, setBirthDate] = useState("");
   const [delivery, setDelivery] = useState<DeliveryType | "">("");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -75,6 +76,7 @@ export default function Onboarding() {
     setError(problem);
     if (problem) return;
     if (step < TOTAL - 1) {
+      setDirection(1);
       setStep(step + 1);
       return;
     }
@@ -102,6 +104,7 @@ export default function Onboarding() {
 
   function back() {
     setError(null);
+    setDirection(-1);
     setStep((s) => Math.max(0, s - 1));
   }
 
@@ -131,7 +134,12 @@ export default function Onboarding() {
       </div>
 
       <main id="main" className="flex flex-1 flex-col">
-        <form key={step} onSubmit={onSubmit} noValidate className="mt-8 flex flex-1 flex-col motion-safe:animate-step-in">
+        <form
+          key={step}
+          onSubmit={onSubmit}
+          noValidate
+          className={`mt-8 flex flex-1 flex-col ${direction < 0 ? "motion-safe:animate-step-back" : "motion-safe:animate-step-in"} motion-reduce:animate-fade-in`}
+        >
           <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
             {heading}
           </h1>

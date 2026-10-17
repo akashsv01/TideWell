@@ -39,15 +39,27 @@ export default function RequirePatient({ children }: { children: React.ReactNode
     };
   }, [lookingUp, clerkUserId, router]);
 
-  if (!ready || (AUTH_ENABLED && !loaded) || lookingUp) {
-    return (
-      <p role="status" className="py-24 text-center text-xl motion-safe:animate-fade-in">
-        Opening Tidewell…
-      </p>
-    );
-  }
-  if (patientId) return <>{children}</>;
+  const waiting = !ready || (AUTH_ENABLED && !loaded) || lookingUp;
 
+  // The page itself is always rendered (just hidden) so Next.js can still pre-render and validate
+  // the route segment; dropping it trips Next 16's instant-navigation check.
+  return (
+    <>
+      {waiting ? (
+        <p role="status" className="py-24 text-center text-xl motion-safe:animate-fade-in">
+          Opening Tidewell…
+        </p>
+      ) : (
+        !patientId && <StartChooser signedIn={!!clerkUserId} />
+      )}
+      <div hidden={waiting || !patientId} className="flex flex-1 flex-col">
+        {children}
+      </div>
+    </>
+  );
+}
+
+function StartChooser({ signedIn }: { signedIn: boolean }) {
   return (
     <section
       aria-labelledby="start-title"
@@ -61,13 +73,13 @@ export default function RequirePatient({ children }: { children: React.ReactNode
         parent on day 18 after a C-section.
       </p>
       <div className="mt-6 flex flex-col gap-3">
-        <Link href={AUTH_ENABLED && !clerkUserId ? "/sign-up" : "/onboarding"} className={btnPrimary}>
+        <Link href={AUTH_ENABLED && !signedIn ? "/sign-up" : "/onboarding"} className={btnPrimary}>
           Set up Tidewell
         </Link>
         <button type="button" onClick={chooseDemoAccount} className={btnOutline}>
           Try the demo as Maya
         </button>
-        {AUTH_ENABLED && !clerkUserId && (
+        {AUTH_ENABLED && !signedIn && (
           <Link
             href="/sign-in"
             className={`self-center rounded-md py-2 text-lg font-semibold underline underline-offset-4 ${focusRing}`}

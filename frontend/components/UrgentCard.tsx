@@ -29,7 +29,9 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
   }, []);
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-y-auto ${emergency ? "bg-alert" : "bg-chart-amber"}`}>
+    <div
+      className={`fixed inset-0 z-50 overflow-y-auto animate-backdrop-in ${emergency ? "bg-alert" : "bg-chart-amber"}`}
+    >
       {/* min-h-full + items-center centers short content without cutting off tall content. */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
@@ -39,7 +41,7 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
           aria-labelledby="urgent-title"
           aria-describedby="urgent-body-1 urgent-body-2"
           tabIndex={-1}
-          className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl focus:outline-none"
+          className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl focus:outline-none motion-safe:animate-card-in motion-reduce:animate-fade-in"
         >
           {emergency ? (
             <>

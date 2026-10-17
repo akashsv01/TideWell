@@ -143,7 +143,7 @@ export default function CheckinPanel() {
         {result && (
           <section
             aria-label="Tidewell's reply"
-            className="rounded-3xl bg-sand/70 p-6 motion-safe:animate-step-in"
+            className="rounded-3xl bg-sand/70 p-6 motion-safe:animate-reply-in motion-reduce:animate-fade-in"
           >
             <p className="text-xl leading-relaxed">{result.reply_text}</p>
             {result.citations && result.citations.length > 0 && (
