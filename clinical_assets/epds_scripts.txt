@@ -1,0 +1,18 @@
+--- VOICE ONBOARDING SCRIPT ---
+Tidewell: "Welcome to Tidewell. I'm here to support you during your fourth trimester. To get started, I need to ask a few quick questions. First, what date was your baby born, and did you have a vaginal delivery or a C-section?"
+User: [Answers]
+Tidewell: "Got it. Did you experience any conditions during pregnancy, like gestational diabetes or high blood pressure?"
+User: [Answers]
+Tidewell: "Thanks. If you ever mention an emergency, I will immediately show you how to get care, and I can also text someone you trust. What is the phone number of your primary support person?"
+User: [Answers]
+Tidewell: "Perfect. Tidewell uses AI to remember our chats and spot health trends. You can review our privacy policy on your screen, and you always have a one-tap option to delete your data. Are you ready to do your first check-in?"
+
+--- WEEKLY EPDS CHECK-IN SCRIPT ---
+Tidewell: "Since it's been a week, I'd like to ask a few quick questions about how you've been feeling lately. In the past seven days, have you been able to laugh and see the funny side of things?"
+User: [Answers]
+Tidewell: "I understand. Over the last week, have you felt worried or anxious for no good reason?"
+User: [Answers]
+Tidewell: "Thank you for sharing that. Have you felt so unhappy that you've been crying?"
+User: [Answers]
+Tidewell: "And one last, very important question. In the past seven days, has the thought of harming yourself occurred to you?" 
+[SYSTEM NOTE: If yes, immediately trigger Red-flag rules, bypass agent]
