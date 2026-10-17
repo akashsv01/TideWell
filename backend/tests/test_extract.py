@@ -49,6 +49,15 @@ CASES = [
 
 NUMERIC = ("mood", "pain", "incision_pain", "sleep_hrs", "bp_sys", "bp_dia")
 
+# Free-tier keys allow ~5 requests/min per model; space calls out. Set to 0 on a paid key.
+PACE_S = float(__import__("os").environ.get("EXTRACT_TEST_PACE_S", "13"))
+
+
+@pytest.fixture(autouse=True)
+def _pace():
+    yield
+    __import__("time").sleep(PACE_S)
+
 
 @pytest.mark.parametrize("transcript,expected", CASES)
 def test_extract(transcript, expected):
