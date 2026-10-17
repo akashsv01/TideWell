@@ -45,3 +45,15 @@ def close() -> None:
     if _pool is not None:
         _pool.close()
         _pool = None
+
+
+@contextmanager
+def autocommit_connection() -> Iterator[Connection]:
+    """A pooled connection in autocommit mode, for statements that cannot run in a transaction
+    (e.g. CALL refresh_continuous_aggregate). Autocommit is switched back off before it returns."""
+    with _get_pool().connection() as conn:
+        conn.autocommit = True
+        try:
+            yield conn
+        finally:
+            conn.autocommit = False

@@ -22,6 +22,7 @@ import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Coroutine, Optional, TypeVar
+from uuid import UUID
 
 from backboard import BackboardClient
 
@@ -32,8 +33,8 @@ log = logging.getLogger(__name__)
 T = TypeVar("T")
 
 # --- Mapping store -------------------------------------------------------------
-# TODO(P2): replace with a `backboard_assistant_id` (+ `backboard_thread_id`) column on `patients`.
-# Only get_mapping/save_mapping need to change.
+# Stored on the patient row (patients.backboard_assistant_id / backboard_thread_id) when the database
+# is configured and the patient exists; otherwise in a local JSON file (tests, smoke test, no DB).
 _STORE = BACKEND_DIR / ".data" / "backboard_ids.json"
 
 
@@ -41,12 +42,36 @@ def _read_all() -> dict:
     return json.loads(_STORE.read_text()) if _STORE.exists() else {}
 
 
+def _db_patient(patient_id: str) -> Optional[UUID]:
+    from app import db
+
+    if not db.enabled():
+        return None
+    try:
+        return UUID(patient_id)
+    except ValueError:
+        return None
+
+
 def get_mapping(patient_id: str) -> dict:
     """{"assistant_id": ..., "thread_id": ...} for a patient, or {} if none yet."""
+    pid = _db_patient(patient_id)
+    if pid is not None:
+        from app import store
+
+        found = store.get_backboard_ids(pid)
+        if found:
+            return found
     return _read_all().get(patient_id, {})
 
 
 def save_mapping(patient_id: str, mapping: dict) -> None:
+    pid = _db_patient(patient_id)
+    if pid is not None:
+        from app import store
+
+        if store.set_backboard_ids(pid, mapping["assistant_id"], mapping.get("thread_id")):
+            return
     data = _read_all()
     data[patient_id] = mapping
     _STORE.parent.mkdir(parents=True, exist_ok=True)
@@ -73,9 +98,10 @@ async def aget_or_create(patient_id: str, new_thread: bool = False) -> str:
     return m["assistant_id"]
 
 
-async def achat(patient_id: str, message: str) -> str:
+async def achat(patient_id: str, message: str, context: Optional[str] = None) -> str:
     """Memory-grounded reply: search past memories, store this message in Backboard (no LLM),
-    and have Gemini write the reply. Not the full Care Navigator (that is agent.py)."""
+    and have Gemini write the reply. `context` is the patient's chart summary (see checkin.py).
+    Not the full Care Navigator (that is agent.py)."""
     await aget_or_create(patient_id)
     m = get_mapping(patient_id)
     client = _client()
@@ -83,17 +109,18 @@ async def achat(patient_id: str, message: str) -> str:
         arecall(patient_id, message),
         client.add_message(m["thread_id"], content=message, memory="Auto", send_to_llm="false"),
     )
-    return await asyncio.to_thread(_gemini_reply, message, memories)
+    return await asyncio.to_thread(_gemini_reply, message, memories, context)
 
 
-def _gemini_reply(message: str, memories: list[str]) -> str:
+def _gemini_reply(message: str, memories: list[str], context: Optional[str] = None) -> str:
     from google.genai import types
 
     from app.ai._gemini import generate
 
     remembered = "\n".join(f"- {x}" for x in memories) or "- (nothing yet)"
+    chart = f"About this person (from their chart and recent check-ins):\n{context}\n\n" if context else ""
     r = generate(
-        contents=f"What you remember about this person from past conversations:\n{remembered}\n\nThey say: {message}",
+        contents=f"{chart}What you remember about this person from past conversations:\n{remembered}\n\nThey say: {message}",
         config=types.GenerateContentConfig(system_instruction=CARE_NAVIGATOR_SYSTEM_PROMPT, temperature=0.4),
     )
     return (r.text or "").strip()
@@ -150,9 +177,24 @@ def get_or_create(patient_id: str, new_thread: bool = False) -> str:
     return _run(aget_or_create(patient_id, new_thread))
 
 
-def chat(patient_id: str, message: str) -> str:
-    return _run(achat(patient_id, message))
+def chat(patient_id: str, message: str, context: Optional[str] = None) -> str:
+    return _run(achat(patient_id, message, context))
 
 
 def recall(patient_id: str, query: str, limit: int = 5) -> list[str]:
     return _run(arecall(patient_id, query, limit))
+
+
+async def aforget(patient_id: str) -> None:
+    """Delete the patient's Backboard memories (delete-my-data). Ids must be read before the
+    patient row is deleted."""
+    m = get_mapping(patient_id)
+    if m.get("assistant_id"):
+        await _client().reset_memories(m["assistant_id"])
+    data = _read_all()
+    if data.pop(patient_id, None) is not None:
+        _STORE.write_text(json.dumps(data, indent=2))
+
+
+def forget(patient_id: str) -> None:
+    _run(aforget(patient_id))

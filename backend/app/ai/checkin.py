@@ -72,9 +72,45 @@ def _extract(text: str) -> CheckinMetrics:
         return CheckinMetrics()
 
 
-def _reply(patient_id: str, text: str) -> str:
+def patient_context(pid: Optional[UUID]) -> Optional[str]:
+    """Plain-language chart summary so every reply is personal to this patient (None if unknown)."""
+    if pid is None or not db.enabled():
+        return None
     try:
-        return memory.chat(patient_id, text) or FALLBACK_REPLY
+        c = store.patient_context(pid)
+    except Exception:  # noqa: BLE001
+        log.exception("could not load patient context")
+        return None
+    if not c:
+        return None
+    lines = []
+    if c.get("name"):
+        lines.append(f"Name: {c['name']}.")
+    delivery = "a C-section" if c["delivery_type"] == "c-section" else "a vaginal birth"
+    weeks = f" at {c['gestation_weeks']} weeks" if c.get("gestation_weeks") else ""
+    lines.append(f"Day {c['days_postpartum']} after giving birth, by {delivery}{weeks}.")
+    if c.get("conditions"):
+        lines.append("Health history: " + ", ".join(c["conditions"]) + ".")
+    lines.append("Breastfeeding." if c.get("breastfeeding") else "Not breastfeeding.")
+    w = c.get("week") or {}
+    if w.get("checkins"):
+        parts = [f"{w['checkins']} check-ins"]
+        if w.get("avg_sleep") is not None:
+            parts.append(f"average sleep {w['avg_sleep']} hours")
+        if w.get("avg_mood") is not None:
+            parts.append(f"average mood {w['avg_mood']} out of 10")
+        parts.append(f"headaches on {w['headache_days']} days")
+        lines.append("Last 7 days: " + ", ".join(parts) + ".")
+    else:
+        lines.append("This is one of their first check-ins.")
+    if c.get("recent_bp"):
+        lines.append("Recent blood pressure readings, oldest first: " + ", ".join(c["recent_bp"]) + ".")
+    return " ".join(lines)
+
+
+def _reply(patient_id: str, text: str, context: Optional[str] = None) -> str:
+    try:
+        return memory.chat(patient_id, text, context) or FALLBACK_REPLY
     except Exception as e:  # noqa: BLE001
         log.warning("reply failed (%s: %s); using fallback", type(e).__name__, e)
         return FALLBACK_REPLY
@@ -95,6 +131,15 @@ def _save(pid: Optional[UUID], metrics: CheckinMetrics, red_flag: bool) -> None:
         store.save_checkin(pid, metrics, red_flag)
     except Exception:  # noqa: BLE001 - saving must never break the reply
         log.exception("could not save check-in")
+        return
+    _pool.submit(_refresh_trends)
+
+
+def _refresh_trends() -> None:
+    try:
+        store.refresh_today()
+    except Exception:  # noqa: BLE001
+        log.exception("could not refresh today's trend bucket")
 
 
 def _flagged(pid: Optional[UUID], text: str, flag: red_flags.RedFlagResult, metrics: CheckinMetrics) -> CheckinResponse:
@@ -125,7 +170,7 @@ def run_checkin(req: CheckinRequest) -> CheckinResponse:
 
     # 2. Safe so far: extraction and the reply run in parallel.
     f_metrics = _pool.submit(_extract, text)
-    f_reply = _pool.submit(_reply, req.patient_id, text)
+    f_reply = _pool.submit(_reply, req.patient_id, text, patient_context(pid))
     metrics = f_metrics.result()
 
     # 3. Second pass with the numbers (e.g. "my BP was 165 over 112"). The reply is discarded if it fires.

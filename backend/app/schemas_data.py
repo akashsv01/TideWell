@@ -23,6 +23,7 @@ class OnboardIn(OnboardRequest):
     age: Optional[int] = Field(default=None, ge=12, le=70)
     gestation_weeks: Optional[int] = Field(default=None, ge=20, le=45)
     support_consent: bool = Field(default=False, description="Explicit permission to text the support person")
+    clerk_user_id: Optional[str] = Field(default=None, max_length=200, description="Login id; links the account")
 
     @field_validator("support_phone")
     @classmethod
@@ -38,6 +39,13 @@ class OnboardIn(OnboardRequest):
 class OnboardOut(BaseModel):
     patient_id: UUID
     categories: list[str]
+
+
+class MeOut(BaseModel):
+    patient_id: UUID
+    name: Optional[str] = None
+    days_postpartum: Optional[int] = None
+    delivery_type: Optional[str] = None
 
 
 class VitalsIn(BaseModel):
