@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "EXAVITQu4vr4xnSDxMaL"  # premade "Sarah"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.8-flash"
+    gemini_model: str = "gemini-3.6-flash"
+    gemini_fast_model: str = "gemini-3.5-flash-lite"  # latency-critical calls (red-flag backup)
     backboard_api_key: str = ""
     tiger_database_url: str = ""
     twilio_account_sid: str = ""

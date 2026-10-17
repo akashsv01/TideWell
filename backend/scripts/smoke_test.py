@@ -85,11 +85,11 @@ def red_flags() -> None:
     ]
     ok = True
     for s in safe:
-        flag, reason = check(s)
+        flag, reason = (r := check(s, use_gemini=False)).flag, r.reason
         print(f"  [{'FLAG' if flag else 'safe'}] expected safe   | {reason} | {s}")
         ok &= not flag
     for s in danger:
-        flag, reason = check(s)
+        flag, reason = (r := check(s, use_gemini=False)).flag, r.reason
         print(f"  [{'FLAG' if flag else 'safe'}] expected FLAG   | {reason} | {s}")
         ok &= flag
     assert ok, "a sample was misclassified"
