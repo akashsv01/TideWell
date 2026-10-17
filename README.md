@@ -29,7 +29,7 @@ Frontend (terminal 2):
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local          # optional: API URL, mock mode, Clerk keys
+cp .env.example .env.local          # optional: API URL, mock mode
 npm run dev                         # http://localhost:3000
 ```
 
@@ -37,13 +37,14 @@ If a CSS change doesn't show up in `npm run dev`, restart the dev server (Tailwi
 
 ## Accounts and the demo
 
-- **New user:** "Get started" runs onboarding, which creates a patient record. That browser remembers the patient id, so check-ins, trends and replies are personal to them (days postpartum, delivery, history, last week's sleep/mood/BP).
-- **Demo:** "Try the demo" switches to Maya (day 18, C-section, rising BP). Maya cannot be deleted; `python scripts/seed_maya.py` resets her.
-- **Sign-in (optional):** put Clerk keys in `frontend/.env.local` (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`) and restart. Sign-up then leads to onboarding, and the patient is linked to the login (`patients.clerk_user_id`), so it follows the user across devices. Without keys the app runs signed-out. Known gap: the backend trusts the login id the frontend sends; verify the Clerk session token in `GET /me` before real use.
-- **Delete my data** (Settings) removes the patient's rows and Backboard memories.
+- **Accounts:** username + password (`/register`, `/login`, Log out). Passwords are stored as scrypt hashes; sessions are server-side tokens (only a SHA-256 is stored) that logout revokes. Tables: `users`, `sessions`, `patients.user_id` (migration 003).
+- **Onboarding** collects the baseline profile (consent, delivery date, weeks, delivery method, feeding, mental health history, pregnancy complications, language, support person + SMS consent). Edit it any time in Settings > Your details.
+- **Daily data:** check-ins (mood, pain, incision pain, sleep, headache, BP) and the weekly EPDS mood check (from day 7; score and question 10 alert) feed the tide.
+- **Access:** every patient route checks the session. The demo patient Maya (day 18, C-section, rising BP) is open to everyone and read-only in Settings; any other record is visible only to its own account.
+- **Delete my account and data** (Settings) removes the account, every row and the Backboard memories. Maya cannot be deleted; `python scripts/seed_maya.py` resets her.
 
 ## Deploy
 
 - **Backend → Render:** New > Blueprint > this repo (uses `render.yaml`). Fill the secret env vars when asked, set `FRONTEND_ORIGINS` to your Vercel URL, then run `python scripts/seed_maya.py` once from the Render shell.
-- **Frontend → Vercel:** import the repo, set Root Directory to `frontend`, and add `NEXT_PUBLIC_API_URL` (your Render URL) plus the Clerk keys if you use sign-in.
+- **Frontend → Vercel:** import the repo, set Root Directory to `frontend`, and add `NEXT_PUBLIC_API_URL` (your Render URL).
 - **Gemini quota:** free-tier keys allow ~20 requests/day per model and a check-in uses 3–4. Use a paid key or hackathon credits for the demo; the backend falls back to `GEMINI_FAST_MODEL` when the main model is out of quota.

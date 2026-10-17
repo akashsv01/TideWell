@@ -36,7 +36,7 @@ export default function SettingsPanel() {
     try {
       await deleteMyData(patientId); // also deletes the account and ends every session
       clearSession();
-      router.push("/?deleted=1");
+      router.push("/");
     } catch {
       setDel("error");
     }

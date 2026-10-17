@@ -132,7 +132,9 @@ export default function Dashboard() {
             ))}
           </ul>
         )}
-        <p className="mt-4 text-lg text-navy/80">Your last {points.length} days.</p>
+        <p className="mt-4 text-lg text-navy/80">
+          {points.length === 1 ? "Your first day of check-ins." : `Your last ${points.length} days.`}
+        </p>
         {summary && <p className="mt-2 max-w-[44ch] text-xl leading-relaxed">{summary}</p>}
       </header>
 

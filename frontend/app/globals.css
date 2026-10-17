@@ -150,3 +150,91 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Landing page motion -----------------------------------------------------------------
+   Marketing-page motion: slower than UI (600ms), entrance only, transform + opacity only.
+   Scroll reveals run once (components/Reveal.tsx). Loops are decorative and stop with
+   reduced motion (rule above). */
+.reveal {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 0.6s var(--ease-out),
+    transform 0.6s var(--ease-out);
+}
+.reveal[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Voice bars in the hero device: each bar breathes at its own pace. */
+@keyframes voice-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.voice-bar {
+  transform-origin: center;
+  animation: voice-bar 1.1s ease-in-out infinite;
+}
+
+/* Hero device: the reply bubble arrives, rests, and fades before the next "check-in". */
+@keyframes bubble-cycle {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.97);
+  }
+  26%,
+  86% {
+    opacity: 1;
+    transform: none;
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+.bubble-cycle {
+  animation: bubble-cycle 9s var(--ease-out) infinite;
+}
+
+/* Gentle float for decorative shapes. */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.float-slow {
+  animation: float 7s ease-in-out infinite;
+}
+
+/* A sparkline that draws itself once when revealed. */
+.draw-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+[data-shown] .draw-line {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.4s var(--ease-out) 0.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-line {
+    stroke-dashoffset: 0;
+  }
+}

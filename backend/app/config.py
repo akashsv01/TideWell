@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
     # Comma-separated browser origins allowed by CORS (local Next.js + your Vercel URL).
-    frontend_origins: str = "http://localhost:3000"
+    frontend_origins: str = "http://localhost:3000,http://localhost:3001"  # local dev server + local prod build
 
 
 @lru_cache
