@@ -104,5 +104,6 @@ class TrendPoint(BaseModel):
     headache: bool = False
     bp_sys: Optional[int] = None
     bp_dia: Optional[int] = None
+    resting_hr: Optional[int] = None  # from Apple Health (vitals.heart_rate), beats per minute
     epds_score: Optional[int] = None  # weekly (about days 7, 14, 21); null on other days
     item_10_alert: bool = False  # EPDS question 10 (self-harm thoughts) answered above "Never"

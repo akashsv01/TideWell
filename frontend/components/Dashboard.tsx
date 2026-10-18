@@ -158,6 +158,7 @@ export default function Dashboard() {
   const bpN = valued(points, "bp_sys");
   const sleepN = valued(points, "sleep_hrs");
   const painN = valued(points, "pain");
+  const hrN = valued(points, "resting_hr");
   const showDots = (n: number) => (n > 0 && n < 3 ? { r: 4 } : false);
 
   const facts = [
@@ -307,6 +308,7 @@ export default function Dashboard() {
                 strokeDasharray="5 4"
                 label={{ value: "140", position: "insideTopLeft", fill: "#0b2545", fontSize: 13, dy: -14 }}
               />
+              {/* BP is measured every few days, not daily: join the readings and mark each one. */}
               <Tooltip content={<ChartTip units={{ "Top number": " mmHg", "Bottom number": " mmHg" }} />} {...tipMotion} />
               <Line
                 {...drawIn}
@@ -315,8 +317,8 @@ export default function Dashboard() {
                 name="Top number"
                 stroke={TEAL}
                 strokeWidth={2.5}
-                connectNulls={false}
-                dot={showDots(bpN)}
+                connectNulls
+                dot={{ r: 3.5 }}
                 activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
               />
               <Line
@@ -326,8 +328,8 @@ export default function Dashboard() {
                 name="Bottom number"
                 stroke={AMBER}
                 strokeWidth={2.5}
-                connectNulls={false}
-                dot={showDots(bpN)}
+                connectNulls
+                dot={{ r: 3.5 }}
                 activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
               />
             </LineChart>
@@ -461,6 +463,36 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      {hrN > 0 && (
+        <section aria-labelledby="hr-title" className="motion-safe:animate-section-in" style={enter(7).style}>
+          <h2 id="hr-title" className="font-display text-2xl">
+            Resting heart rate
+          </h2>
+          <p className="text-base text-navy/80">Beats a minute, from Apple Health</p>
+          <div className="relative mt-3 h-44">
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 176 }}>
+              <LineChart data={points} margin={{ top: 8, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid vertical={false} stroke={GRID} />
+                <XAxis {...xAxisProps} tick={AXIS} />
+                <YAxis domain={[40, 110]} ticks={[50, 70, 90, 110]} tick={AXIS} tickLine={false} axisLine={false} />
+                <Tooltip content={<ChartTip units={{ "Resting heart rate": " bpm" }} />} {...tipMotion} />
+                <Line
+                  {...drawIn}
+                  type="monotone"
+                  dataKey="resting_hr"
+                  name="Resting heart rate"
+                  stroke={TEAL}
+                  strokeWidth={2.5}
+                  connectNulls
+                  dot={showDots(hrN)}
+                  activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       {tableRows.length > 0 && (
         <details className="group">

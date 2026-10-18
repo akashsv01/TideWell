@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
 import BottomNav from "@/components/BottomNav";
+import HealthAlertWatcher from "@/components/HealthAlertWatcher";
 import RequirePatient from "@/components/RequirePatient";
 import ThemeToggle from "@/components/ThemeToggle";
 import { focusRing } from "@/lib/ui";
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <RequirePatient>{children}</RequirePatient>
       </main>
       <BottomNav />
+      <HealthAlertWatcher />
     </div>
   );
 }

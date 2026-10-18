@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import AppleHealthSettings from "@/components/AppleHealthSettings";
 import CircleSettings from "@/components/CircleSettings";
 import NightModeSetting from "@/components/NightModeSetting";
 import ProfileEditor from "@/components/ProfileEditor";
@@ -106,6 +107,8 @@ export default function SettingsPanel() {
       </section>
 
       <NightModeSetting />
+
+      {!demo && patientId && <AppleHealthSettings patientId={patientId} />}
 
       {!demo && patientId && <CircleSettings patientId={patientId} />}
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource/young-serif";
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./globals.css";
+import Script from "next/script";
 import NightMode from "@/components/NightMode";
 import { DAY_PAGE, NIGHT_BOOT_SCRIPT } from "@/lib/nightBoot";
 
@@ -18,9 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     // suppressHydrationWarning: the boot script may add data-night before React hydrates.
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: NIGHT_BOOT_SCRIPT }} />
-      </head>
       <body className="min-h-full">
         <a
           href="#main"
@@ -29,6 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <NightMode />
+        {/* Before hydration, so a night-time visit never flashes the light theme. */}
+        <Script id="night-boot" strategy="beforeInteractive">
+          {NIGHT_BOOT_SCRIPT}
+        </Script>
         {children}
       </body>
     </html>

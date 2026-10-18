@@ -73,7 +73,44 @@ with TestClient(app) as c:
     for q in ("Give me calming exercises", "How is postpartum depression treated?"):
         a = c.post("/ask", headers=H, json={"patient_id": pid, "question": q}).json()
         check(f"Ask: cited answer for {q!r}", a.get("source") in ("web", "curated") and a.get("citations"), a)
-    check("clear saved location", c.delete(f"/patients/{pid}/location", headers=H).status_code == 204)
+    # --- Apple Health -------------------------------------------------------------------------
+    from app import store as st  # noqa: E402
+    from scripts.setup_apple_health_test import week_payload  # noqa: E402
+
+    before = st.last_checkin_time(__import__("uuid").UUID(pid))
+    imp = c.post("/wearables/import", headers=H, json={"patient_id": pid}).json()
+    check("Apple Health: no iPhone -> sample week", imp.get("source") == "sample" and imp["hr_days"] >= 6, imp)
+    check("sample keeps the patient's own sleep", imp["kept_own_sleep"] >= 2, imp)
+    check("sample data is normal (no alert)", not imp["red_flag"] and imp["latest_bp"]["sys"] < 130, imp)
+    pts = c.get(f"/trends/{pid}?range=14d", headers=H).json()
+    check("resting heart rate in the tide", any(p.get("resting_hr") for p in pts), pts[-1])
+    check("Apple rows don't count as check-ins", st.last_checkin_time(__import__("uuid").UUID(pid)) == before)
+    check("sample data removed", c.delete(f"/wearables/sample?patient_id={pid}", headers=H).status_code == 204
+          and not any(p.get("resting_hr") for p in c.get(f"/trends/{pid}?range=14d", headers=H).json()))
+    check("demo can't import", c.post("/wearables/import", json={"patient_id": MAYA}).status_code == 403)
+    check("guide PDF", c.get("/wearables/guide.pdf").content[:4] == b"%PDF")
+    code = c.post("/wearables/token", headers=H).json()["code"]
+    check("phone needs the code", c.post("/wearables/apple-health", json=week_payload(datetime.now(timezone.utc))).status_code == 401)
+    sent_at = datetime.now(timezone.utc)
+    r = c.post("/wearables/apple-health", headers={"Authorization": f"Bearer {code}"},
+               json=week_payload(sent_at, high_bp=True)).json()
+    check("instant check: 162/112 from the phone -> emergency", r.get("alert_level") == "emergency", r)
+    al = c.get(f"/wearables/alerts?patient_id={pid}", headers=H).json()["alerts"]
+    check("alert waiting for the website", len(al) == 1 and al[0]["bp_sys"] == 162, al)
+    r = c.post("/wearables/apple-health", headers={"Authorization": f"Bearer {code}"},
+               json=week_payload(sent_at, high_bp=True)).json()
+    check("re-sent data doesn't alert twice", r.get("alert_level") is None and r["new_bp_readings"] == 0, r)
+    c.post(f"/wearables/alerts/seen?patient_id={pid}", headers=H)
+    check("alert marked seen", c.get(f"/wearables/alerts?patient_id={pid}", headers=H).json()["alerts"] == [])
+    imp = c.post("/wearables/import", headers=H, json={"patient_id": pid}).json()
+    check("with an iPhone -> real data imported", imp.get("source") == "iphone" and imp["bp_added"] >= 3, imp)
+    check("import doesn't repeat the alert", not imp["red_flag"], imp)
+    status = c.get(f"/wearables/status?patient_id={pid}", headers=H).json()
+    check("status shows the phone connected", status["connected"] and status["last_sync"], status)
+    check("disconnect", c.delete("/wearables/token", headers=H).status_code == 204
+          and c.post("/wearables/apple-health", headers={"Authorization": f"Bearer {code}"}, json={}).status_code == 401)
+
+    check("clear saved location",c.delete(f"/patients/{pid}/location", headers=H).status_code == 204)
     check("Care asks for a location again", c.get(f"/care/nearby?patient_id={pid}", headers=H).json().get("needs_location"))
     check("demo location can't be cleared", c.delete(f"/patients/{MAYA}/location", headers=H).status_code == 403)
     check("cleanup", c.delete(f"/patients/{pid}", headers=H).status_code == 204)

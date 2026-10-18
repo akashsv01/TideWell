@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import AppleHealthButton from "@/components/AppleHealthButton";
 import Orb from "@/components/Orb";
 import UrgentCard from "@/components/UrgentCard";
 import { checkin, replyAudioSrc } from "@/lib/api";
@@ -139,6 +140,8 @@ export default function CheckinPanel() {
       </p>
 
       <Orb state={orbState} seconds={seconds} levelRef={levelRef} onClick={onMic} />
+
+      <AppleHealthButton />
 
       <div aria-live="polite" className="mt-6 w-full">
         {result && (

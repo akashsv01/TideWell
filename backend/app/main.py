@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
 from app.config import get_settings
-from app.routes import agents, appointments, auth, checkin, clinician, epds, patients
+from app.routes import agents, appointments, auth, checkin, clinician, epds, patients, wearables
 
 # Show app logs (check-in timings, safety fallbacks) next to uvicorn's access log.
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
@@ -51,6 +51,7 @@ app.include_router(checkin.router)
 app.include_router(auth.router)
 app.include_router(epds.router)
 app.include_router(agents.router)
+app.include_router(wearables.router)
 
 
 @app.get("/health")

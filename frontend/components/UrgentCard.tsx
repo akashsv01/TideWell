@@ -15,12 +15,15 @@ type Props = {
   supportAlerted?: boolean;
   /** Return to the screen behind the card (the help stays one tap away if they need it again). */
   onBack?: () => void;
+  /** One fixed line saying what triggered the card when it wasn't something the person said,
+   *  e.g. a cuff reading from Apple Health. Built from numbers, never AI text. */
+  context?: string;
 };
 
 const btn =
   "flex min-h-14 items-center justify-center rounded-xl px-4 text-center text-lg font-semibold focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2";
 
-export default function UrgentCard({ level = "emergency", supportAlerted = false, onBack }: Props) {
+export default function UrgentCard({ level = "emergency", supportAlerted = false, onBack, context }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const emergency = level === "emergency";
 
@@ -49,10 +52,15 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="urgent-title"
-          aria-describedby="urgent-body-1 urgent-body-2"
+          aria-describedby={context ? "urgent-context urgent-body-1 urgent-body-2" : "urgent-body-1 urgent-body-2"}
           tabIndex={-1}
           className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl focus:outline-none motion-safe:animate-card-in motion-reduce:animate-fade-in"
         >
+          {context && (
+            <p id="urgent-context" className="mb-3 rounded-xl bg-navy/5 px-3 py-2 text-base font-semibold text-navy">
+              {context}
+            </p>
+          )}
           {emergency ? (
             <>
               <h1 id="urgent-title" className="text-2xl font-bold text-alert">

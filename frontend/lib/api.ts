@@ -15,6 +15,9 @@ import type {
   DayOut,
   EpdsQuestions,
   EpdsResult,
+  HealthAlert,
+  HealthImport,
+  HealthStatus,
   Overview,
   PhotoReading,
   Profile,
@@ -367,3 +370,39 @@ export const getClinicianOverview = () =>
     appointments: { patient_id: string; slot: string; facility_name: string | null; clinician_note: string | null }[];
     timing: { overview_ms: number; aggregate_ms: number; patients_30d: number; checkins_30d: number };
   }>("/clinician/overview?limit=300");
+
+// --- Apple Health (backend app/routes/wearables.py) -------------------------------------------
+/** The "Get my Apple Health data" button: imports the last 7 days (sample data if no iPhone yet). */
+export const importAppleHealth = (patientId: string) =>
+  postJson<HealthImport>("/wearables/import", { patient_id: patientId });
+
+export async function removeSampleHealth(patientId: string): Promise<void> {
+  await raw(`/wearables/sample?patient_id=${patientId}`, { method: "DELETE" });
+}
+
+export const getHealthStatus = (patientId: string) =>
+  request<HealthStatus>(`/wearables/status?patient_id=${patientId}`);
+
+export const createHealthCode = () =>
+  postJson<{ code: string; ingest_url: string; header_name: string; header_value: string }>("/wearables/token", {});
+
+export async function disconnectHealth(): Promise<void> {
+  await raw("/wearables/token", { method: "DELETE" });
+}
+
+export async function downloadHealthGuide(): Promise<void> {
+  const res = await raw("/wearables/guide.pdf");
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement("a"), { href: url, download: "tidewell-apple-health-setup.pdf" });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export const getHealthAlerts = (patientId: string) =>
+  request<{ alerts: HealthAlert[] }>(`/wearables/alerts?patient_id=${patientId}`);
+
+export async function markHealthAlertsSeen(patientId: string): Promise<void> {
+  await raw(`/wearables/alerts/seen?patient_id=${patientId}`, { method: "POST" });
+}

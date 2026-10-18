@@ -133,6 +133,7 @@ export interface TrendPoint {
   headache?: boolean;
   bp_sys: number | null;
   bp_dia: number | null;
+  resting_hr?: number | null; // from Apple Health
   epds_score?: number | null; // weekly; null on other days
   item_10_alert?: boolean;
 }
@@ -258,4 +259,41 @@ export interface CircleView {
   avg_sleep_7d: number | null;
   last_checkin: string | null;
   appointments: { slot: string; where: string | null }[];
+}
+
+// --- Apple Health ---------------------------------------------------------------------------
+export interface HealthImport {
+  /** "sample" when no iPhone has sent data in the last week: a labelled, normal-range sample week. */
+  source: "sample" | "iphone";
+  connected: boolean;
+  last_sync: string | null;
+  sleep_days: number;
+  kept_own_sleep: number;
+  bp_added: number;
+  hr_days: number;
+  latest_sleep: { day: string; hours: number } | null;
+  latest_bp: { time: string; sys: number; dia: number } | null;
+  latest_resting_hr: { day: string; bpm: number } | null;
+  red_flag: boolean;
+  red_flag_level: RedFlagLevel | null;
+}
+
+export interface HealthStatus {
+  available: boolean;
+  connected: boolean;
+  connected_at?: string | null;
+  last_sync?: string | null;
+  latest_reading?: string | null;
+  has_sample_data?: boolean;
+  ingest_url: string;
+}
+
+export interface HealthAlert {
+  id: string;
+  created_at: string;
+  reading_time: string;
+  level: RedFlagLevel;
+  reason: string | null;
+  bp_sys: number | null;
+  bp_dia: number | null;
 }

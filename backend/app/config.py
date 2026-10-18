@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
+    # Public address of this API, used in the iPhone setup guide (e.g. https://tidewell-api.onrender.com).
+    # Empty: taken from the request (fine locally).
+    public_api_url: str = ""
     # Comma-separated browser origins allowed by CORS (local Next.js + your Vercel URL).
     frontend_origins: str = "http://localhost:3000,http://localhost:3001"  # local dev server + local prod build
 

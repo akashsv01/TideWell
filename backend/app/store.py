@@ -174,7 +174,7 @@ def trends(patient_id: UUID, days: int) -> list[dict]:
             """
             WITH c AS (SELECT day, mood, pain, incision_pain, sleep_hrs, headache_count FROM daily_checkins
                        WHERE patient_id = %(p)s AND day >= now() - %(span)s),
-                 v AS (SELECT day, bp_sys, bp_dia FROM daily_metrics
+                 v AS (SELECT day, bp_sys, bp_dia, heart_rate FROM daily_metrics
                        WHERE patient_id = %(p)s AND day >= now() - %(span)s),
                  e AS (SELECT time_bucket('1 day', time) AS day, max(score) AS score, max(item10) AS item10
                        FROM epds_scores WHERE patient_id = %(p)s AND time >= now() - %(span)s
@@ -189,6 +189,7 @@ def trends(patient_id: UUID, days: int) -> list[dict]:
                    COALESCE(c.headache_count, 0) > 0 AS headache,
                    round(v.bp_sys)::int AS bp_sys,
                    round(v.bp_dia)::int AS bp_dia,
+                   round(v.heart_rate)::int AS resting_hr,
                    e.score AS epds_score,
                    COALESCE(e.item10, 0) > 0 AS item_10_alert
             FROM days d
@@ -295,6 +296,7 @@ def patient_context(patient_id: UUID) -> Optional[dict]:
                    round(avg(mood)::numeric, 1)::float8 AS avg_mood,
                    count(*) FILTER (WHERE headache) AS headache_days
             FROM checkins WHERE patient_id = %s AND time >= now() - interval '7 days'
+                                AND source NOT LIKE 'apple_health%%'
             """,
             (patient_id,),
         ).fetchone()
@@ -309,7 +311,7 @@ def patient_context(patient_id: UUID) -> Optional[dict]:
 
 
 _PATIENT_TABLES = ("checkins", "vitals", "epds_scores", "appointments", "risk_assessments", "alert_log",
-                   "care_requests")
+                   "care_requests", "wearable_metrics", "wearable_tokens", "health_alerts")
 
 
 def delete_patient(patient_id: UUID) -> bool:
@@ -359,7 +361,8 @@ def save_day(patient_id: UUID, day: date, e) -> None:
     with db.connection() as conn:
         cur = conn.execute(
             """UPDATE checkins SET mood = %(mood)s, pain = %(pain)s, incision_pain = %(inc)s,
-                      sleep_hrs = %(sleep)s, headache = %(head)s
+                      sleep_hrs = %(sleep)s, headache = %(head)s,
+                      source = CASE WHEN source LIKE 'apple_health%%' THEN 'typed' ELSE source END
                WHERE patient_id = %(p)s AND time >= %(s)s AND time < %(e)s""",
             fields,
         )
@@ -395,7 +398,11 @@ import json as _json  # noqa: E402
 
 def last_checkin_time(patient_id: UUID):
     with db.connection() as conn:
-        row = conn.execute("SELECT max(time) AS t FROM checkins WHERE patient_id = %s", (patient_id,)).fetchone()
+        # Apple Health rows only fill in sleep; they are not the patient checking in.
+        row = conn.execute(
+            "SELECT max(time) AS t FROM checkins WHERE patient_id = %s AND source NOT LIKE 'apple_health%%'",
+            (patient_id,),
+        ).fetchone()
     return row["t"] if row else None
 
 
@@ -515,3 +522,218 @@ def todays_epds(patient_id: UUID) -> Optional[dict]:
                WHERE patient_id = %s AND time >= date_trunc('day', now()) ORDER BY time DESC LIMIT 1""",
             (patient_id,),
         ).fetchone()
+
+
+# --- Apple Health (app/routes/wearables.py) ------------------------------------------------------
+# Phone data lands in wearable_metrics first (BP as bp_sys / bp_dia rows). import_wearables() copies
+# it into the tables the rest of Tidewell reads: sleep -> checkins, BP and resting heart rate -> vitals.
+SAMPLE_SOURCE = "apple_health_sample"
+
+
+def set_wearable_token(patient_id: UUID, token_hash: str) -> None:
+    """One code per patient: a new one replaces the old (the old phone setup stops working)."""
+    with db.connection() as conn:
+        conn.execute(
+            """INSERT INTO wearable_tokens (token_hash, patient_id) VALUES (%s, %s)
+               ON CONFLICT (patient_id) DO UPDATE
+               SET token_hash = EXCLUDED.token_hash, created_at = now(), last_used_at = NULL""",
+            (token_hash, patient_id),
+        )
+
+
+def clear_wearable_token(patient_id: UUID) -> None:
+    with db.connection() as conn:
+        conn.execute("DELETE FROM wearable_tokens WHERE patient_id = %s", (patient_id,))
+
+
+def patient_for_wearable_token(token_hash: str) -> Optional[UUID]:
+    with db.connection() as conn:
+        row = conn.execute(
+            "UPDATE wearable_tokens SET last_used_at = now() WHERE token_hash = %s RETURNING patient_id",
+            (token_hash,),
+        ).fetchone()
+    return row["patient_id"] if row else None
+
+
+def wearable_status(patient_id: UUID) -> dict:
+    with db.connection() as conn:
+        tok = conn.execute(
+            "SELECT created_at, last_used_at FROM wearable_tokens WHERE patient_id = %s", (patient_id,)
+        ).fetchone()
+        srcs = conn.execute(
+            "SELECT source, max(time) AS latest FROM wearable_metrics WHERE patient_id = %s GROUP BY source",
+            (patient_id,),
+        ).fetchall()
+    by = {r["source"]: r["latest"] for r in srcs}
+    return {"connected": tok is not None, "connected_at": tok["created_at"] if tok else None,
+            "last_sync": tok["last_used_at"] if tok else None,
+            "latest_reading": by.get("apple_health"), "has_sample_data": SAMPLE_SOURCE in by}
+
+
+def stage_wearables(patient_id: UUID, samples: list, bp: list, source: str = "apple_health") -> list:
+    """Store phone samples (a re-sent (metric, time) overwrites). BP readings are stored as bp_sys /
+    bp_dia rows. Returns the BP readings that were not stored before (each is safety-checked once)."""
+    rows = [(x.time, patient_id, x.metric, x.value, source) for x in samples]
+    new_bp = []
+    with db.connection() as conn:
+        for r in bp:
+            seen = conn.execute(
+                "SELECT 1 FROM wearable_metrics WHERE patient_id = %s AND metric = 'bp_sys' AND time = %s",
+                (patient_id, r.time),
+            ).fetchone()
+            if not seen:
+                new_bp.append(r)
+            rows += [(r.time, patient_id, "bp_sys", float(r.sys), source),
+                     (r.time, patient_id, "bp_dia", float(r.dia), source)]
+        if rows:
+            with conn.cursor() as cur:
+                cur.executemany(
+                    """INSERT INTO wearable_metrics (time, patient_id, metric, value, source)
+                       VALUES (%s, %s, %s, %s, %s)
+                       ON CONFLICT (patient_id, metric, time)
+                       DO UPDATE SET value = EXCLUDED.value, source = EXCLUDED.source""",
+                    rows,
+                )
+    return new_bp
+
+
+def add_bp_reading(patient_id: UUID, when: datetime, sys_: int, dia: int, source: str) -> bool:
+    """Copy one cuff reading into vitals (once). True if it was new."""
+    with db.connection() as conn:
+        if conn.execute(
+            "SELECT 1 FROM vitals WHERE patient_id = %s AND source = %s AND time = %s AND bp_sys IS NOT NULL",
+            (patient_id, source, when),
+        ).fetchone():
+            return False
+        conn.execute("INSERT INTO vitals (time, patient_id, bp_sys, bp_dia, source) VALUES (%s, %s, %s, %s, %s)",
+                     (when, patient_id, sys_, dia, source))
+    return True
+
+
+def create_health_alert(patient_id: UUID, reading_time: datetime, level: str, reason: Optional[str],
+                        sys_: int, dia: int) -> bool:
+    """One alert per reading. False if this reading already had one."""
+    with db.connection() as conn:
+        cur = conn.execute(
+            """INSERT INTO health_alerts (patient_id, reading_time, level, reason, bp_sys, bp_dia)
+               VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (patient_id, reading_time) DO NOTHING""",
+            (patient_id, reading_time, level, reason, sys_, dia),
+        )
+    return cur.rowcount > 0
+
+
+def unseen_health_alerts(patient_id: UUID) -> list[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            """SELECT id, created_at, reading_time, level, reason, bp_sys, bp_dia FROM health_alerts
+               WHERE patient_id = %s AND seen_at IS NULL ORDER BY created_at DESC""",
+            (patient_id,),
+        ).fetchall()
+
+
+def mark_health_alerts_seen(patient_id: UUID) -> None:
+    with db.connection() as conn:
+        conn.execute("UPDATE health_alerts SET seen_at = now() WHERE patient_id = %s AND seen_at IS NULL",
+                     (patient_id,))
+
+
+def _refresh_days(start: datetime) -> None:
+    with db.autocommit_connection() as conn:
+        for view in ("daily_checkins", "daily_metrics"):
+            conn.execute("CALL refresh_continuous_aggregate(%s::regclass, %s, %s)",
+                         (view, start, datetime.now(timezone.utc) + timedelta(days=1)))
+
+
+def import_wearables(patient_id: UUID, days: int = 7, source: str = "apple_health") -> dict:
+    """Copy the last `days` of staged Apple Health data into checkins / vitals:
+    - sleep: onto that (UTC) day's check-in, never over sleep the patient entered. A day with no
+      check-in gets an Apple Health row (source = the Apple source, so it isn't counted as a check-in).
+      Sample data only fills days with no check-in at all, so removing it can't touch the patient's rows.
+    - BP: each reading once, at its own time.
+    - resting heart rate: one vitals row per day (heart_rate only), updated on re-import.
+    Returns what was filled, for the website's summary card."""
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    sample = source == SAMPLE_SOURCE
+    with db.connection() as conn:
+        rows = conn.execute(
+            """SELECT time, metric, value FROM wearable_metrics
+               WHERE patient_id = %s AND source = %s AND time >= %s ORDER BY time""",
+            (patient_id, source, since),
+        ).fetchall()
+    sleep: dict[date, tuple[datetime, float]] = {}
+    hr: dict[date, list[float]] = {}
+    bp: dict[datetime, dict] = {}
+    for r in rows:
+        d = r["time"].astimezone(timezone.utc).date()
+        if r["metric"] == "sleep_hrs" and (d not in sleep or r["value"] > sleep[d][1]):
+            sleep[d] = (r["time"], r["value"])
+        elif r["metric"] == "resting_hr":
+            hr.setdefault(d, []).append(r["value"])
+        elif r["metric"] in ("bp_sys", "bp_dia"):
+            bp.setdefault(r["time"], {})[r["metric"]] = int(round(r["value"]))
+
+    out = {"sleep_days": 0, "kept_own_sleep": 0, "bp_added": 0, "hr_days": 0,
+           "latest_sleep": None, "latest_bp": None, "latest_resting_hr": None}
+    with db.connection() as conn:
+        for d, (when, hours) in sorted(sleep.items()):
+            start = datetime.combine(d, time(0), tzinfo=timezone.utc)
+            span = (patient_id, start, start + timedelta(days=1))
+            day_rows = conn.execute(
+                "SELECT source, sleep_hrs FROM checkins WHERE patient_id = %s AND time >= %s AND time < %s", span
+            ).fetchall()
+            own = [x for x in day_rows if not x["source"].startswith("apple_health")]
+            if any(x["sleep_hrs"] is not None for x in own):
+                out["kept_own_sleep"] += 1  # the patient's own number wins
+                continue
+            if own and sample:
+                continue
+            if own:
+                conn.execute(
+                    """UPDATE checkins SET sleep_hrs = %s
+                       WHERE patient_id = %s AND time >= %s AND time < %s AND sleep_hrs IS NULL""",
+                    (hours, *span),
+                )
+            elif day_rows:
+                conn.execute(
+                    "UPDATE checkins SET sleep_hrs = %s WHERE patient_id = %s AND time >= %s AND time < %s",
+                    (hours, *span),
+                )
+            else:
+                conn.execute(
+                    """INSERT INTO checkins (time, patient_id, sleep_hrs, mentions, red_flag, source)
+                       VALUES (%s, %s, %s, '{}', false, %s)""",
+                    (when, patient_id, hours, source),
+                )
+            out["sleep_days"] += 1
+            out["latest_sleep"] = {"day": d, "hours": round(hours, 1)}
+        for d, vals in sorted(hr.items()):
+            # One row per day at a fixed time (re-imports update it): 11:00 UTC, or 00:01 for today so
+            # nothing is dated in the future.
+            today = datetime.now(timezone.utc).date()
+            at = datetime.combine(d, time(0, 1) if d == today else time(11), tzinfo=timezone.utc)
+            value = round(sum(vals) / len(vals))
+            cur = conn.execute(
+                """UPDATE vitals SET heart_rate = %s
+                   WHERE patient_id = %s AND source = %s AND time = %s AND bp_sys IS NULL""",
+                (value, patient_id, source, at),
+            )
+            if cur.rowcount == 0:
+                conn.execute("INSERT INTO vitals (time, patient_id, heart_rate, source) VALUES (%s, %s, %s, %s)",
+                             (at, patient_id, value, source))
+            out["hr_days"] += 1
+            out["latest_resting_hr"] = {"day": d, "bpm": value}
+    for when, v in sorted(bp.items()):
+        if "bp_sys" in v and "bp_dia" in v:
+            out["bp_added"] += add_bp_reading(patient_id, when, v["bp_sys"], v["bp_dia"], source)
+            out["latest_bp"] = {"time": when, "sys": v["bp_sys"], "dia": v["bp_dia"]}
+    if rows:
+        _refresh_days(datetime.combine(since.date(), time(0), tzinfo=timezone.utc))
+    return out
+
+
+def remove_wearable_source(patient_id: UUID, source: str) -> None:
+    """Delete everything one Apple Health source added (used to remove sample data)."""
+    with db.connection() as conn:
+        for table in ("wearable_metrics", "vitals", "checkins"):
+            conn.execute(f"DELETE FROM {table} WHERE patient_id = %s AND source = %s", (patient_id, source))
+    _refresh_days(datetime.now(timezone.utc) - timedelta(days=30))
