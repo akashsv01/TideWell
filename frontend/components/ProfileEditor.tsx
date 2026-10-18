@@ -88,7 +88,7 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <label htmlFor={`${ids}-date`} className="text-lg font-semibold">Baby&apos;s birth date</label>
+            <label htmlFor={`${ids}-date`} className="text-lg font-semibold">Your baby&apos;s birthday</label>
             <input id={`${ids}-date`} type="date" min={yearAgoIso()} max={todayIso()} value={p.delivery_date} onChange={(e) => set("delivery_date", e.target.value)} className={field} />
           </div>
           <div>
@@ -96,16 +96,16 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
             <input id={`${ids}-weeks`} type="number" inputMode="numeric" min={20} max={45} value={p.gestation_weeks ?? ""} onChange={(e) => set("gestation_weeks", e.target.value ? Number(e.target.value) : null)} className={field} />
           </div>
         </div>
-        <Section title="How you gave birth">
-          <Choices legend="How you gave birth" name={`${ids}-delivery`} value={p.delivery_method} onChange={(v) => set("delivery_method", v as DeliveryType)} options={DELIVERY} />
+        <Section title="Procedure for delivery">
+          <Choices legend="Procedure for delivery" name={`${ids}-delivery`} value={p.delivery_method} onChange={(v) => set("delivery_method", v as DeliveryType)} options={DELIVERY} />
         </Section>
         <Section title="Feeding">
           <Choices legend="Feeding" name={`${ids}-feeding`} value={p.feeding_type} onChange={(v) => set("feeding_type", v as FeedingType)} options={FEEDING} />
         </Section>
-        <Section title="Ever diagnosed with depression or anxiety">
+        <Section title="Depression or anxiety in the past">
           <Choices legend="Depression or anxiety" name={`${ids}-mental`} value={p.history_mental_health ? "yes" : "no"} onChange={(v) => set("history_mental_health", v === "yes")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]} />
         </Section>
-        <Section title="Pregnancy complications">
+        <Section title="During pregnancy or birth">
           <div className="space-y-3">
             {COMPLICATIONS.map((c) => {
               const id = `${ids}-c-${c.value.replace(/\W/g, "")}`;
@@ -145,7 +145,7 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
               <input id={`${ids}-sms`} type="checkbox" checked={p.support_sms_consent} onChange={(e) => set("support_sms_consent", e.target.checked)} className="peer sr-only" />
               <label htmlFor={`${ids}-sms`} className={`${checkChoice} items-start`}>
                 <CheckMark />
-                <span>It is okay for Tidewell to text this person if my check-ins show I need emergency care.</span>
+                <span>It is okay for Tidewell to text and call this person if my check-ins show I may need urgent care, or if my mood check shows I am having a hard day.</span>
               </label>
             </div>
           )}

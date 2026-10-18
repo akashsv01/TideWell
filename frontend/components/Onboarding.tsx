@@ -23,17 +23,18 @@ import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 // One question per screen, in plain words. Consent comes first, before any health question.
 // Everything here becomes the baseline profile (backend Profile), editable later in Settings.
 
+// Gentle, plain questions. Each step also says why Tidewell asks, and that skipping is fine where it is.
 const STEPS = [
   "Before we start",
-  "A little about you",
-  "When was your baby born?",
-  "How many weeks pregnant were you?",
-  "How did you give birth?",
-  "How are you feeding your baby?",
-  "Have you ever been diagnosed with depression or anxiety?",
-  "Did any of these happen in your pregnancy?",
-  "Who should we tell if you need urgent care?",
-  "Ready to start",
+  "Let's get to know you",
+  "When did your baby arrive?",
+  "How many weeks were you pregnant?",
+  "What was the procedure for delivery?",
+  "How are you feeding your baby right now?",
+  "Have you ever had depression or anxiety?",
+  "Did you have any of these during pregnancy or birth?",
+  "Is there someone we can reach if you need support?",
+  "You're all set",
 ] as const;
 const TOTAL = STEPS.length;
 
@@ -122,7 +123,7 @@ export default function Onboarding() {
         if (!weeks) return null; // optional
         return Number(weeks) >= 20 && Number(weeks) <= 45 ? null : "Enter a number of weeks between 20 and 45, or leave it blank.";
       case 4:
-        return method ? null : "Choose how you gave birth.";
+        return method ? null : "Choose the procedure for delivery.";
       case 5:
         return feeding ? null : "Choose how you are feeding your baby.";
       case 6:
@@ -131,7 +132,7 @@ export default function Onboarding() {
         if (!phone.trim()) return null;
         if (digits(phone).length < 10) return "Enter the full phone number, including area code.";
         if (!supportName.trim()) return "Add their first name.";
-        if (!smsConsent) return "Tick the box to say it is okay to text this person, or clear the number to skip.";
+        if (!smsConsent) return "Tick the box to say it is okay for Tidewell to contact this person, or clear the number to skip.";
         return null;
       case 9:
         return profileProblem(profile, phone);
@@ -245,10 +246,10 @@ export default function Onboarding() {
             {step === 2 && (
               <div>
                 <label htmlFor="birth" className="text-lg font-semibold">
-                  Date of birth
+                  Your baby&apos;s birthday
                 </label>
                 <p id="birth-hint" className="mt-1 text-base text-navy/80">
-                  We use this to know how far along your recovery is.
+                  This tells Tidewell how many days into your recovery you are, so its check-ins fit where you are.
                 </p>
                 <input id="birth" type="date" value={deliveryDate} min={yearAgoIso()} max={todayIso()} onChange={(e) => setDeliveryDate(e.target.value)} aria-describedby="birth-hint" aria-invalid={error ? true : undefined} className={field} />
               </div>
@@ -257,36 +258,52 @@ export default function Onboarding() {
             {step === 3 && (
               <div>
                 <label htmlFor="weeks" className="text-lg font-semibold">
-                  Weeks of pregnancy at birth <span className="font-normal text-navy/80">(optional)</span>
+                  Weeks of pregnancy <span className="font-normal text-navy/80">(optional)</span>
                 </label>
                 <p id="weeks-hint" className="mt-1 text-base text-navy/80">
-                  A full-term pregnancy is about 39 to 40 weeks. Skip this if you are not sure.
+                  If you know it, this helps Tidewell understand your recovery. A full-term pregnancy is about 39 to
+                  40 weeks. It is completely fine to skip this.
                 </p>
                 <input id="weeks" type="number" inputMode="numeric" min={20} max={45} value={weeks} onChange={(e) => setWeeks(e.target.value)} aria-describedby="weeks-hint" aria-invalid={error ? true : undefined} className={field} />
               </div>
             )}
 
             {step === 4 && (
-              <Choices legend="How did you give birth?" name="delivery" value={method} onChange={(v) => setMethod(v as DeliveryType)} options={DELIVERY} />
+              <div className="space-y-4">
+                <p className="text-lg leading-relaxed">
+                  Every birth is different. Knowing a little about yours helps Tidewell look out for the right things
+                  as you heal.
+                </p>
+                <Choices legend="What was the procedure for delivery?" name="delivery" value={method} onChange={(v) => setMethod(v as DeliveryType)} options={DELIVERY} />
+              </div>
             )}
 
             {step === 5 && (
-              <Choices legend="How are you feeding your baby?" name="feeding" value={feeding} onChange={(v) => setFeeding(v as FeedingType)} options={FEEDING} />
+              <div className="space-y-4">
+                <p className="text-lg leading-relaxed">
+                  There is no right answer. This only helps Tidewell give advice that fits you, and you can change it
+                  any time in Settings.
+                </p>
+                <Choices legend="How are you feeding your baby right now?" name="feeding" value={feeding} onChange={(v) => setFeeding(v as FeedingType)} options={FEEDING} />
+              </div>
             )}
 
             {step === 6 && (
               <div className="space-y-4">
                 <p className="text-lg leading-relaxed">
-                  By a doctor or other health professional, before or during pregnancy. This helps Tidewell
-                  check in on your mood more carefully. It stays private.
+                  Many parents have. If a doctor or other health professional has ever diagnosed it, before or during
+                  pregnancy, Tidewell can check in on your mood a little more closely. Your answer stays private, and
+                  any answer is okay.
                 </p>
-                <Choices legend="Have you ever been diagnosed with depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no" | "unsure")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "unsure", label: "Not sure" }]} />
+                <Choices legend="Have you ever had depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no" | "unsure")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "unsure", label: "Not sure" }]} />
               </div>
             )}
 
             {step === 7 && (
               <fieldset>
-                <legend className="text-lg font-semibold">Pick any that apply, or none.</legend>
+                <legend className="text-lg leading-relaxed">
+                  Choose any that apply, or none. This helps Tidewell watch for the right signs while you recover.
+                </legend>
                 <div className="mt-3 space-y-3">
                   {COMPLICATIONS.map((c) => (
                     <div key={c.value}>
@@ -312,7 +329,8 @@ export default function Onboarding() {
             {step === 8 && (
               <div>
                 <p className="text-lg leading-relaxed">
-                  Pick someone you trust: a partner, a parent, a friend. This is optional, and you can skip it.
+                  Someone you trust, like a partner, a parent or a friend. Tidewell only contacts them if you say it
+                  is okay below. This is optional, and you can skip it or add someone later in Settings.
                 </p>
                 <label htmlFor="sname" className="mt-6 block text-lg font-semibold">
                   Their first name
@@ -327,7 +345,7 @@ export default function Onboarding() {
                     <input id="sms" type="checkbox" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} className="peer sr-only" />
                     <label htmlFor="sms" className={`${checkChoice} items-start`}>
                       <CheckMark />
-                      <span>It is okay for Tidewell to text this person if my check-ins show I need emergency care.</span>
+                      <span>It is okay for Tidewell to text and call this person if my check-ins show I may need urgent care, or if my mood check shows I am having a hard day.</span>
                     </label>
                   </div>
                 )}
