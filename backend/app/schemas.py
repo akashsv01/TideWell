@@ -1,25 +1,61 @@
 """API contract shared with the frontend. Every optional field defaults to None/False/[]
 so a partial Gemini extraction never fails validation."""
+import re
 from datetime import date
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+_E164 = re.compile(r"^\+[1-9]\d{7,14}$")
+
+DeliveryMethod = Literal["vaginal", "c-section"]
+FeedingType = Literal["breastfeeding", "formula", "mixed"]
 
 
-class OnboardRequest(BaseModel):
+class Profile(BaseModel):
+    """Baseline profile, collected once at onboarding and editable in Settings (PUT /profile)."""
+
+    consent_granted: bool = Field(description="Explicit agreement to store check-in data. Must be true.")
+    delivery_date: date
+    gestation_weeks: Optional[int] = Field(default=None, ge=20, le=45)
+    delivery_method: DeliveryMethod
+    feeding_type: FeedingType
+    history_mental_health: bool = False  # prior depression or anxiety -> always at least "watch"
+    history_pregnancy_complications: list[str] = Field(default_factory=list, max_length=10)
+    language_preference: Literal["en", "es"] = "en"
+    support_person_name: Optional[str] = Field(default=None, max_length=80)
+    support_person_phone: Optional[str] = None  # E.164, e.g. +12025550123
+    support_sms_consent: bool = False  # permission to text the support person in an emergency
+    name: Optional[str] = Field(default=None, max_length=80)  # what Tidewell calls you
+
+    @field_validator("support_person_phone")
+    @classmethod
+    def _phone_e164(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or not v.strip():
+            return None
+        v = v.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        if not _E164.match(v):
+            raise ValueError("support_person_phone must be in E.164 format, e.g. +12025550123")
+        return v
+
+    @field_validator("history_pregnancy_complications")
+    @classmethod
+    def _clean(cls, v: list[str]) -> list[str]:
+        return [s.strip()[:80] for s in v if s and s.strip()]
+
+
+class ProfileOut(Profile):
     patient_id: str
-    birth_date: date
-    delivery_type: Literal["vaginal", "c-section"]
-    conditions: list[str] = Field(default_factory=list)
-    breastfeeding: bool = False
-    support_phone: Optional[str] = None
-    language: str = "en"
+    day_postpartum: int
+    categories: list[str] = Field(default_factory=list)
+    demo: bool = False
 
 
 class CheckinRequest(BaseModel):
     patient_id: str
     text: Optional[str] = None
     audio_base64: Optional[str] = None
+    audio_mime: Optional[str] = None  # e.g. "audio/webm;codecs=opus" (Chrome) or "audio/mp4" (Safari)
 
 
 class CheckinMetrics(BaseModel):
@@ -51,14 +87,22 @@ class CheckinResponse(BaseModel):
     reply_audio_base64: Optional[str] = None
     red_flag: bool = False
     red_flag_reason: Optional[str] = None
+    red_flag_level: Optional[Literal["emergency", "urgent"]] = None  # emergency = 911 card, urgent = call provider now
+    support_alerted: bool = False  # True only if the support-person SMS actually went out
+    transcript: Optional[str] = None  # what we heard, so the UI can show it back
     metrics: CheckinMetrics = Field(default_factory=CheckinMetrics)
     tiers: list[CategoryTier] = Field(default_factory=list)
 
 
 class TrendPoint(BaseModel):
     day: date
+    day_postpartum: Optional[int] = None
     mood: Optional[int] = None
     pain: Optional[int] = None
+    incision_pain: Optional[int] = None
     sleep_hrs: Optional[float] = None
+    headache: bool = False
     bp_sys: Optional[int] = None
     bp_dia: Optional[int] = None
+    epds_score: Optional[int] = None  # weekly (about days 7, 14, 21); null on other days
+    item_10_alert: bool = False  # EPDS question 10 (self-harm thoughts) answered above "Never"
