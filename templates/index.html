@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Secure P2P Telemedicine</title>
+    <!-- Import Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: system-ui; padding: 20px; max-width: 800px; margin: auto; }
+        .video-grid { display: flex; gap: 10px; margin-top: 20px; }
+        video { width: 45%; border-radius: 12px; background: #222; }
+        button { padding: 10px 20px; cursor: pointer; background: #007AFF; color: white; border: none; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <h1>Secure Video Consult</h1>
+    <button onclick="startCall()">Join Room</button>
+
+    <div class="video-grid">
+        <!-- Muted so you don't hear yourself -->
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+
+    <script>
+        const socket = io({
+    extraHeaders: {
+        "ngrok-skip-browser-warning": "true"
+    }
+        });
+        const ROOM_ID = "clinic-room-1"; // In a real app, generate this dynamically
+        
+        let localStream;
+        let peerConnection;
+        
+        // Free public STUN servers provided by Google to find your public IP
+        const rtcSettings = {
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        };
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+
+        async function startCall() {
+            // 1. Get camera and mic permissions
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+
+            // 2. Join the signaling room via SocketIO
+            socket.emit('join_room', { room: ROOM_ID });
+        }
+
+        // --- WebRTC Logic ---
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcSettings);
+
+            // Add our local video/audio tracks to the connection
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // When we receive the remote video, attach it to the HTML video element
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            // When our browser figures out how to route the connection, send it to the peer
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('webrtc_ice_candidate', { room: ROOM_ID, candidate: event.candidate });
+                }
+            };
+        }
+
+        // --- Signaling Triggers ---
+
+        // When another person joins, we initiate the call by creating an "Offer"
+        socket.on('peer_joined', async () => {
+            createPeerConnection();
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('webrtc_offer', { room: ROOM_ID, sdp: offer });
+        });
+
+        // When we receive an Offer, we reply with an "Answer"
+        socket.on('webrtc_offer', async (data) => {
+            createPeerConnection();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('webrtc_answer', { room: ROOM_ID, sdp: answer });
+        });
+
+        // When we receive an Answer, we save it
+        socket.on('webrtc_answer', async (data) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        });
+
+        // When we receive routing candidates, we add them to the connection
+        socket.on('webrtc_ice_candidate', async (data) => {
+            if (peerConnection) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        });
+    </script>
+</body>
+</html>
