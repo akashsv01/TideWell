@@ -15,7 +15,7 @@ export interface Profile {
   gestation_weeks: number | null;
   delivery_method: DeliveryType;
   feeding_type: FeedingType;
-  history_mental_health: boolean;
+  history_mental_health: boolean | null;
   history_pregnancy_complications: string[];
   language_preference: Language;
   support_person_name: string | null;
@@ -49,7 +49,7 @@ export interface Overview {
   day_postpartum: number;
   delivery_method: DeliveryType;
   feeding_type: FeedingType | null;
-  history_mental_health: boolean;
+  history_mental_health: boolean | null;
   history_pregnancy_complications: string[];
   epds_due: boolean;
   last_epds_score: number | null;

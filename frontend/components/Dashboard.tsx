@@ -170,7 +170,11 @@ export default function Dashboard() {
         : ov.feeding_type === "formula"
           ? "Formula feeding"
           : null,
-    ov.history_mental_health ? "Mood history noted" : null,
+    ov.history_mental_health === true
+      ? "Mood history noted"
+      : ov.history_mental_health === null
+        ? "Mood history not shared"
+        : null,
     ...ov.history_pregnancy_complications.map((c) => c.charAt(0).toUpperCase() + c.slice(1)),
   ].filter(Boolean);
 

@@ -83,7 +83,7 @@ export default function Onboarding() {
     gestation_weeks: weeks ? Number(weeks) : null,
     delivery_method: method as DeliveryType,
     feeding_type: feeding as FeedingType,
-    history_mental_health: mental === "yes",
+    history_mental_health: mental === "yes" ? true : mental === "no" ? false : null,
     history_pregnancy_complications: complications,
     language_preference: language,
     support_person_name: supportName.trim() || null,
@@ -261,7 +261,17 @@ export default function Onboarding() {
                   By a doctor or other health professional, before or during pregnancy. This helps Tidewell
                   check in on your mood more carefully. It stays private.
                 </p>
-                <Choices legend="Have you ever been diagnosed with depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no" | "unsure")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "unsure", label: "Not sure" }]} />
+                <Choices
+                  legend="Have you ever been diagnosed with depression or anxiety?"
+                  name="mental"
+                  value={mental}
+                  onChange={(v) => setMental(v as "yes" | "no" | "unsure")}
+                  options={[
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
+                    { value: "unsure", label: "Not sure / prefer not to say" },
+                  ]}
+                />
               </div>
             )}
 
@@ -320,7 +330,7 @@ export default function Onboarding() {
                 <Row term="Weeks of pregnancy" value={weeks || "Not given"} />
                 <Row term="Birth" value={DELIVERY.find((d) => d.value === method)?.label ?? ""} />
                 <Row term="Feeding" value={FEEDING.find((f) => f.value === feeding)?.label ?? ""} />
-                <Row term="Diagnosed with depression or anxiety" value={mental === "yes" ? "Yes" : mental === "unsure" ? "Not sure" : "No"} />
+                <Row term="Diagnosed with depression or anxiety" value={mental === "yes" ? "Yes" : mental === "no" ? "No" : "Not sure"} />
                 <Row term="Pregnancy" value={complications.length ? COMPLICATIONS.filter((c) => complications.includes(c.value)).map((c) => c.label).join("; ") : "Nothing to flag"} />
                 <Row term="Urgent contact" value={phone.trim() ? `${supportName.trim()}, ${phone.trim()}` : "None"} />
                 <Row term="Language" value={LANGUAGES.find((l) => l.value === language)?.label ?? ""} />
