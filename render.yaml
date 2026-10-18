@@ -27,6 +27,8 @@ services:
         sync: false
       - key: TIGER_DATABASE_URL
         sync: false
+      - key: DAILY_API_KEY
+        sync: false
       # Comma-separated. Set to your Vercel URL(s), e.g. https://tidewell.vercel.app
       - key: FRONTEND_ORIGINS
         sync: false

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Orb from "@/components/Orb";
 import UrgentCard from "@/components/UrgentCard";
@@ -165,6 +166,18 @@ export default function CheckinPanel() {
               </p>
             )}
             <div className="mt-5 flex flex-wrap gap-3">
+              {result.tiers?.some((t) => t.tier === "amber") && (
+                <Link
+                  href={`/visits/book?urgency=amber&kind=${
+                    result.tiers.some((t) => t.tier === "amber" && t.category === "high_blood_pressure")
+                      ? "blood_pressure"
+                      : "obstetrics"
+                  }`}
+                  className={`inline-flex min-h-12 items-center rounded-full bg-tide-deep px-5 font-semibold text-white hover:bg-navy ${focusRing}`}
+                >
+                  Book a visit
+                </Link>
+              )}
               {result.reply_audio_base64 && (
                 <button
                   type="button"

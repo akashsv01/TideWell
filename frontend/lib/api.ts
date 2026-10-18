@@ -8,13 +8,18 @@ import type {
   ClinicianPatient,
   EpdsQuestions,
   EpdsResult,
+  JoinInfo,
   Overview,
   PhotoReading,
   Profile,
   ProfileOut,
+  Provider,
   RedFlagLevel,
   Slot,
   TrendPoint,
+  Visit,
+  VisitMode,
+  VisitUrgency,
 } from "@/lib/types";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -237,24 +242,142 @@ export async function getTrends(patientId: string, range = "21d"): Promise<Trend
   return request(`/trends/${patientId}?range=${range}`);
 }
 
-export async function getSlots(urgency = "amber"): Promise<Slot[]> {
-  if (USE_MOCK) {
-    await wait(300);
-    return mockSlots();
+// --- Visits -------------------------------------------------------------------------------
+// Mock mode mirrors backend/app/providers_data.py and keeps visits in memory.
+const MOCK_PROVIDERS: Provider[] = [
+  {
+    id: "00000000-0000-4000-8000-0000000000a1", name: "Dr. Amara Okafor", specialty: "Obstetrician-gynecologist",
+    kind: "obstetrics", bio: "Postpartum checkups, recovery after a C-section, and anything that feels off after birth.",
+    modes: ["in_person", "virtual"], clinic: "Harbor Women's Health", address: "100 Harbor Street, College Park, MD",
+    is_synthetic: true,
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a2", name: "Dr. Daniel Reyes",
+    specialty: "Blood pressure and heart health after pregnancy", kind: "blood_pressure",
+    bio: "Checks rising blood pressure, reviews your home readings and adjusts the plan with you.",
+    modes: ["in_person", "virtual"], clinic: "Harbor Women's Health", address: "100 Harbor Street, College Park, MD",
+    is_synthetic: true,
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a3", name: "Nina Patel, CNM", specialty: "Certified nurse-midwife",
+    kind: "midwifery", bio: "Longer visits for recovery, feeding, sleep and the questions that come up at home.",
+    modes: ["in_person", "virtual"], clinic: "Tidewater Midwifery", address: "42 Bayview Avenue, Hyattsville, MD",
+    is_synthetic: true,
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a4", name: "Grace Lin, IBCLC", specialty: "Lactation consultant",
+    kind: "lactation", bio: "Help with latch, pain, supply and pumping, by video from your couch.",
+    modes: ["virtual"], clinic: "Tidewater Midwifery", address: null, is_synthetic: true,
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a5", name: "Dr. Marcus Webb", specialty: "Perinatal mental health",
+    kind: "mental_health", bio: "Support for low mood, anxiety and overwhelm after birth. No judgment, no rush.",
+    modes: ["virtual", "in_person"], clinic: "Calm Harbor Counseling", address: "7 Lighthouse Lane, Greenbelt, MD",
+    is_synthetic: true,
+  },
+];
+const MOCK_HOURS = [10, 11, 14, 15];
+let mockVisits: Visit[] = [];
+
+function mockVisitSlots(): Slot[] {
+  const out: Slot[] = [];
+  const day = new Date();
+  for (let i = 0; out.length < 12 && i < 14; i++) {
+    day.setDate(day.getDate() + 1);
+    if (day.getDay() === 0 || day.getDay() === 6) continue;
+    for (const h of MOCK_HOURS) {
+      const t = new Date(day);
+      t.setHours(h, 0, 0, 0);
+      out.push({ slot: t.toISOString() });
+    }
   }
-  return request(`/appointments/slots?urgency=${urgency}`);
+  return out.filter((s) => !mockVisits.some((v) => v.status === "booked" && v.slot === s.slot));
 }
 
-export async function bookAppointment(
-  patientId: string,
-  slot: string,
-  reason: string
-): Promise<{ appointment_id: string }> {
+export async function listProviders(): Promise<Provider[]> {
+  if (USE_MOCK) {
+    await wait(250);
+    return MOCK_PROVIDERS;
+  }
+  return request("/providers");
+}
+
+export async function getSlots(
+  urgency: VisitUrgency = "amber",
+  opts: { providerId?: string; mode?: VisitMode } = {}
+): Promise<Slot[]> {
+  if (USE_MOCK) {
+    await wait(300);
+    return mockVisitSlots();
+  }
+  const q = new URLSearchParams({ urgency });
+  if (opts.providerId) q.set("provider_id", opts.providerId);
+  if (opts.mode) q.set("mode", opts.mode);
+  return request(`/appointments/slots?${q}`);
+}
+
+export async function bookVisit(input: {
+  patientId: string;
+  providerId: string;
+  mode: VisitMode;
+  slot: string;
+  reason: string;
+  urgency: VisitUrgency;
+}): Promise<Visit> {
   if (USE_MOCK) {
     await wait(500);
-    return { appointment_id: "mock-appt-1" };
+    const provider = MOCK_PROVIDERS.find((p) => p.id === input.providerId) ?? MOCK_PROVIDERS[0];
+    const opens = new Date(new Date(input.slot).getTime() - 15 * 60_000).toISOString();
+    const closes = new Date(new Date(input.slot).getTime() + 2 * 3600_000).toISOString();
+    const v: Visit = {
+      appointment_id: `mock-${mockVisits.length + 1}`,
+      patient_id: input.patientId,
+      provider,
+      slot: input.slot,
+      mode: input.mode,
+      reason: input.reason,
+      urgency: input.urgency,
+      status: "booked",
+      join: input.mode === "virtual" ? { can_join: true, opens_at: opens, closes_at: closes } : null,
+    };
+    mockVisits = [...mockVisits, v];
+    return v;
   }
-  return postJson("/appointments", { patient_id: patientId, slot, reason });
+  const res = await postJson<{ visit: Visit }>("/appointments", {
+    patient_id: input.patientId,
+    provider_id: input.providerId,
+    mode: input.mode,
+    slot: input.slot,
+    reason: input.reason,
+    urgency: input.urgency,
+  });
+  return res.visit;
+}
+
+export async function listVisits(patientId: string): Promise<Visit[]> {
+  if (USE_MOCK) {
+    await wait(250);
+    return mockVisits;
+  }
+  return request(`/appointments?patient_id=${encodeURIComponent(patientId)}`);
+}
+
+export async function cancelVisit(appointmentId: string): Promise<Visit> {
+  if (USE_MOCK) {
+    await wait(300);
+    mockVisits = mockVisits.map((v) => (v.appointment_id === appointmentId ? { ...v, status: "cancelled" } : v));
+    return mockVisits.find((v) => v.appointment_id === appointmentId)!;
+  }
+  return request(`/appointments/${appointmentId}/cancel`, { method: "POST" });
+}
+
+/** `asProvider` is for trying the demo from two devices: it opens the doctor's side of the room. */
+export async function joinVisit(appointmentId: string, asProvider = false): Promise<JoinInfo> {
+  if (USE_MOCK) {
+    await wait(300);
+    return { url: `https://meet.jit.si/tidewell-mock-${appointmentId}`, service: "jitsi", embeddable: false };
+  }
+  return request(`/appointments/${appointmentId}/join${asProvider ? "?as=provider" : ""}`, { method: "POST" });
 }
 
 export async function getClinicianPatients(): Promise<ClinicianPatient[]> {
@@ -262,13 +385,16 @@ export async function getClinicianPatients(): Promise<ClinicianPatient[]> {
     await wait(300);
     return [
       {
-        patient: { id: "maya", name: "Maya (synthetic)" },
+        patient_id: "00000000-0000-4000-8000-000000000001",
+        name: "Maya",
         overall_tier: "amber",
         reasons: [
           "BP rose 4 readings in a row",
           "Headaches 3 of 7 days",
           "Prior gestational hypertension",
         ],
+        categories: { high_blood_pressure: "amber", depression_anxiety: "watch", post_cesarean: "green" },
+        synthetic: true,
       },
     ];
   }

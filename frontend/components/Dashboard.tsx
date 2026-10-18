@@ -16,12 +16,14 @@ import {
   YAxis,
 } from "recharts";
 import ChartTip from "@/components/ChartTip";
+import Link from "next/link";
 import { AlertIcon } from "@/components/icons";
 import Waves from "@/components/Waves";
 import { getOverview, getTrends } from "@/lib/api";
 import { usePatientId } from "@/lib/session";
 import { bpRise, moodSentence, shortDay, sleepSentence } from "@/lib/insights";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { btnPrimary } from "@/lib/ui";
 import type { Overview, TrendPoint } from "@/lib/types";
 
 // Chart colors. Teal and amber were checked together for color-blind separation.
@@ -206,6 +208,12 @@ export default function Dashboard() {
                 ? "After birth, a reading of 140/90 or higher is a reason to call your care team."
                 : "It is worth mentioning at your next visit."}
             </p>
+            <Link
+              href={`/visits/book?urgency=${rise.atOrAbove140 ? "amber" : "watch"}&kind=blood_pressure&reason=${encodeURIComponent("Blood pressure check")}`}
+              className={`${btnPrimary} mt-4`}
+            >
+              Book a visit
+            </Link>
           </div>
         </section>
       )}

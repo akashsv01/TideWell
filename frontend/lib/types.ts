@@ -159,8 +159,48 @@ export interface PhotoReading {
   needs_confirm: boolean;
 }
 
+/** GET /clinician/patients (backend ClinicianPatient). */
 export interface ClinicianPatient {
-  patient: { id: string; name: string };
-  overall_tier: Tier;
+  patient_id: string;
+  name: string | null;
+  overall_tier: Tier | "red";
   reasons: string[];
+  categories: Record<string, string>;
+  synthetic: boolean;
+}
+
+// --- Visits (in person or video) ------------------------------------------------------------
+export type VisitMode = "in_person" | "virtual";
+export type VisitUrgency = "watch" | "amber" | "routine";
+
+export interface Provider {
+  id: string;
+  name: string;
+  specialty: string;
+  kind: string; // obstetrics | midwifery | lactation | mental_health | blood_pressure
+  bio: string | null;
+  modes: VisitMode[];
+  clinic: string | null;
+  address: string | null;
+  is_synthetic: boolean;
+}
+
+export interface Visit {
+  appointment_id: string;
+  patient_id: string;
+  provider: Provider;
+  slot: string; // ISO timestamp
+  mode: VisitMode;
+  reason: string;
+  urgency: string;
+  status: "booked" | "cancelled";
+  /** Video visits only. The room opens 15 minutes before the start. */
+  join: { can_join: boolean; opens_at: string | null; closes_at: string | null } | null;
+}
+
+export interface JoinInfo {
+  url: string;
+  service: "daily" | "jitsi";
+  /** Daily rooms open inside the app. Jitsi opens in a new tab. */
+  embeddable: boolean;
 }

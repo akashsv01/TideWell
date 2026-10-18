@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartIcon, GearIcon, WaveIcon } from "@/components/icons";
+import { CalendarIcon, ChartIcon, GearIcon, WaveIcon } from "@/components/icons";
 import { focusRing } from "@/lib/ui";
 
 const items = [
   { href: "/home", label: "Check in", Icon: WaveIcon },
   { href: "/dashboard", label: "My tide", Icon: ChartIcon },
+  { href: "/visits", label: "Visits", Icon: CalendarIcon },
   { href: "/settings", label: "Settings", Icon: GearIcon },
 ];
 
@@ -20,7 +21,7 @@ export default function BottomNav() {
     >
       <ul className="mx-auto flex max-w-md">
         {items.map(({ href, label, Icon }) => {
-          const current = pathname === href;
+          const current = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <li key={href} className="flex-1">
               <Link

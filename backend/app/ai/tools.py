@@ -87,15 +87,30 @@ def recall_memory(patient_id: str, query: str) -> list[str]:
 
 
 def get_slots(urgency: str = "amber") -> list[dict]:
-    """Open slots in the next 3 days (mock clinic): {"slot": ISO datetime, "label": spoken form}.
+    """Open times at the default clinic (in person): {"slot": ISO datetime, "label": spoken form}.
     The label stops the model from guessing weekdays from an ISO string."""
-    base = datetime(2026, 10, 18, 0, 0)
-    slots = [base + timedelta(days=d, hours=h) for d, h in [(2, 10), (3, 14), (3, 16)]]
-    return [{"slot": t.isoformat(), "label": t.strftime("%A %B %d at %I %p").replace(" 0", " ")} for t in slots]
+    from app import booking
+
+    urgency = urgency if urgency in ("watch", "amber", "routine") else "amber"
+    out = []
+    for t in booking.open_slots(booking.DEFAULT_PROVIDER_ID, "in_person", urgency)[:3]:
+        label = t.strftime("%A %B %d at %I %p").replace(" 0", " ")
+        out.append({"slot": t.isoformat(), "label": label})
+    return out
 
 
 def book_appointment(patient_id: str, slot: str, reason: str) -> dict:
-    return {"appointment_id": f"apt-{patient_id}-{slot[:10]}", "status": "booked", "slot": slot, "reason": reason}
+    """Books at the default clinic, in person. Returns the same keys as before plus the clinic."""
+    from uuid import UUID
+
+    from app import booking
+
+    try:
+        v = booking.book(UUID(patient_id), None, datetime.fromisoformat(slot), "in_person", reason, "amber")
+    except (booking.BookingError, ValueError) as e:
+        return {"status": "failed", "error": getattr(e, "message", str(e))}
+    return {"appointment_id": str(v["appointment_id"]), "status": "booked", "slot": slot, "reason": reason,
+            "clinic": v["provider"]["clinic"], "provider": v["provider"]["name"]}
 
 
 # --- Registry + Gemini declarations -------------------------------------------------

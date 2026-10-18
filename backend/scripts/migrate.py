@@ -32,6 +32,11 @@ def main() -> None:
                 except Exception as e:  # noqa: BLE001
                     print(f"  FAIL {head}\n       {type(e).__name__}: {str(e).strip()[:300]}")
                     sys.exit(1)
+        from app import store
+        from app.providers_data import PROVIDERS
+
+        store.upsert_providers(conn, PROVIDERS)
+        print(f"== seeded {len(PROVIDERS)} demo providers")
     print("migrations applied")
 
 

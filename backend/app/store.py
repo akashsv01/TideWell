@@ -11,7 +11,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
-from app import db
+from app import db, demo_data
 from app.schemas import CheckinMetrics, Profile
 from app.schemas_data import VitalsIn
 
@@ -220,6 +220,114 @@ def insert_appointment(patient_id: UUID, slot, reason: str, urgency: str) -> UUI
             (patient_id, slot, reason, urgency),
         ).fetchone()
     return row["id"]
+
+
+# --- Providers and visits ----------------------------------------------------------------
+_PROVIDER_COLS = "id, name, specialty, kind, bio, modes, clinic, address, hours, is_synthetic"
+
+
+def upsert_providers(conn, providers: list[dict]) -> None:
+    """Used by scripts/migrate.py with a plain psycopg connection. Idempotent."""
+    for p in providers:
+        conn.execute(
+            """
+            INSERT INTO providers (id, name, specialty, kind, bio, modes, clinic, address, hours, is_synthetic)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, true)
+            ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, specialty = EXCLUDED.specialty,
+                kind = EXCLUDED.kind, bio = EXCLUDED.bio, modes = EXCLUDED.modes, clinic = EXCLUDED.clinic,
+                address = EXCLUDED.address, hours = EXCLUDED.hours, active = true
+            """,
+            (p["id"], p["name"], p["specialty"], p["kind"], p["bio"], p["modes"], p["clinic"], p["address"], p["hours"]),
+        )
+
+
+def list_providers() -> list[dict]:
+    with db.connection() as conn:
+        return conn.execute(f"SELECT {_PROVIDER_COLS} FROM providers WHERE active ORDER BY name").fetchall()
+
+
+def get_provider(provider_id: UUID) -> Optional[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            f"SELECT {_PROVIDER_COLS} FROM providers WHERE id = %s AND active", (provider_id,)
+        ).fetchone()
+
+
+def provider_booked_slots(provider_id: UUID) -> set:
+    """Slots a provider can no longer offer. The shared demo patient never blocks a slot."""
+    with db.connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT slot FROM appointments
+            WHERE provider_id = %s AND status = 'booked' AND slot >= now() AND patient_id <> %s
+            """,
+            (provider_id, demo_data.MAYA_ID),
+        ).fetchall()
+    return {r["slot"] for r in rows}
+
+
+class SlotTaken(Exception):
+    pass
+
+
+_VISIT_SELECT = """
+    SELECT a.id, a.patient_id, a.provider_id, a.slot, a.mode, a.reason, a.urgency, a.status,
+           a.meeting_provider, a.meeting_room, a.meeting_url,
+           p.name AS provider_name, p.specialty AS provider_specialty, p.kind AS provider_kind,
+           p.clinic AS provider_clinic, p.address AS provider_address, p.modes AS provider_modes
+    FROM appointments a JOIN providers p ON p.id = a.provider_id
+"""
+
+
+def insert_visit(patient_id: UUID, provider_id: UUID, slot, mode: str, reason: str, urgency: str,
+                 meeting: Optional[dict]) -> UUID:
+    """Raises SlotTaken when the provider is already booked at that time (unique index, so it is race-safe)."""
+    from psycopg.errors import UniqueViolation
+
+    m = meeting or {}
+    try:
+        with db.connection() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO appointments (patient_id, provider_id, slot, mode, reason, urgency, status,
+                                          meeting_provider, meeting_room, meeting_url)
+                VALUES (%s, %s, %s, %s, %s, %s, 'booked', %s, %s, %s) RETURNING id
+                """,
+                (patient_id, provider_id, slot, mode, reason, urgency,
+                 m.get("provider"), m.get("room"), m.get("url")),
+            ).fetchone()
+            if patient_id == demo_data.MAYA_ID:  # the shared demo account: keep only the newest few
+                conn.execute(
+                    """
+                    DELETE FROM appointments WHERE patient_id = %s AND provider_id IS NOT NULL AND id NOT IN (
+                        SELECT id FROM appointments WHERE patient_id = %s AND provider_id IS NOT NULL
+                        ORDER BY created_at DESC LIMIT 6)
+                    """,
+                    (patient_id, patient_id),
+                )
+    except UniqueViolation:
+        raise SlotTaken() from None
+    return row["id"]
+
+
+def list_visits(patient_id: UUID) -> list[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            _VISIT_SELECT + " WHERE a.patient_id = %s ORDER BY a.slot", (patient_id,)
+        ).fetchall()
+
+
+def get_visit(appointment_id: UUID) -> Optional[dict]:
+    with db.connection() as conn:
+        return conn.execute(_VISIT_SELECT + " WHERE a.id = %s", (appointment_id,)).fetchone()
+
+
+def cancel_visit(appointment_id: UUID) -> bool:
+    with db.connection() as conn:
+        cur = conn.execute(
+            "UPDATE appointments SET status = 'cancelled' WHERE id = %s AND status = 'booked'", (appointment_id,)
+        )
+    return cur.rowcount > 0
 
 
 def latest_risk_rows() -> list[dict]:
