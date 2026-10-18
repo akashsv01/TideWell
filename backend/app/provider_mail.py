@@ -53,7 +53,8 @@ def build(event: str, visit: dict, room: str) -> dict:
             f"A patient booked a video visit with {p['name']} ({p['specialty']}).",
             f"When: {when}",
             f"Reason: {reason}" if reason else "Reason: not given",
-            "Your join link opens 15 minutes before the visit:",
+            "Your join link works now:" if get_settings().video_join_anytime
+            else "Your join link opens 15 minutes before the visit:",
         ]
     text = "\n".join(lines + ([link] if link else [])) + "\n\nTidewell"
     body = "".join(f'<p style="margin:0 0 12px">{html.escape(l)}</p>' for l in lines)

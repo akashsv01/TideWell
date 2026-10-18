@@ -444,7 +444,7 @@ export default function CarePanel() {
             <ol className="mt-4 list-decimal space-y-2 pl-6 marker:font-semibold">
               {[
                 "Choose who you'd like to see and a time.",
-                "The video room opens 15 minutes before your visit. Join from Your upcoming visits.",
+                "Join the video room from Your upcoming visits.",
                 "Your provider gets a link by email and joins you there.",
               ].map((t) => (
                 <li key={t} className="text-lg leading-relaxed">

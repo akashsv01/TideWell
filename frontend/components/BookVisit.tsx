@@ -382,7 +382,9 @@ export default function BookVisit() {
             </p>
             <p className="mt-4 max-w-[48ch] text-lg leading-relaxed">
               {visit.mode === "virtual"
-                ? "Open Your visits (under Care) and tap Join video visit. The room opens 15 minutes before."
+                ? visit.join?.can_join
+                  ? "Open Your visits (under Care) and tap Join video visit. The room is open now."
+                  : "Open Your visits (under Care) and tap Join video visit. The room opens 15 minutes before."
                 : `${visit.provider.clinic ?? ""}${visit.provider.address ? `, ${visit.provider.address}` : ""}. Bring your home blood pressure readings if you have them.`}
             </p>
           </div>

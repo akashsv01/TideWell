@@ -28,7 +28,7 @@ services:
         value: "Tidewell <onboarding@resend.dev>"
       # true lets anyone join a video visit at any time (handy for a live demo); false = 15 minutes before only.
       - key: VIDEO_JOIN_ANYTIME
-        value: "false"
+        value: "true"
       - key: TIGER_DATABASE_URL
         sync: false
       - key: GEMINI_API_KEY

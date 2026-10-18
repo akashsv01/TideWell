@@ -64,6 +64,13 @@ def _transcript(req: CheckinRequest) -> str:
     return text
 
 
+def transcribe_only(req: CheckinRequest) -> str:
+    """Speech-to-text alone, so the UI can show what it heard before the check-in runs on that text."""
+    if not req.audio_base64:
+        raise NoSpeech("send audio")
+    return _transcript(req.model_copy(update={"text": None}))
+
+
 def _extract(text: str) -> CheckinMetrics:
     try:
         return extract.extract_metrics(text)

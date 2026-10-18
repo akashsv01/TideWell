@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import AppleHealthButton from "@/components/AppleHealthButton";
 import Orb from "@/components/Orb";
 import UrgentCard from "@/components/UrgentCard";
-import { checkin, replyAudioSrc } from "@/lib/api";
+import { ApiError, checkin, replyAudioSrc, transcribe } from "@/lib/api";
 import { usePatientId } from "@/lib/session";
 import {
   getSpokenReplies,
@@ -19,6 +19,8 @@ export default function CheckinPanel() {
   const patientId = usePatientId();
   const { state, seconds, levelRef, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [heard, setHeard] = useState<string | null>(null); // the parent's words, shown before the reply
   const [result, setResult] = useState<CheckinResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showText, setShowText] = useState(false);
@@ -65,14 +67,15 @@ export default function CheckinPanel() {
     );
   }
 
-  async function send(input: { text?: string; audio?: Blob }) {
+  async function send(value: string) {
     if (!patientId) return; // RequirePatient renders this panel only once there is an id
     setBusy(true);
     setError(null);
     setResult(null);
     setNeedsTap(false);
+    setHeard(value);
     try {
-      const res = await checkin(patientId, input);
+      const res = await checkin(patientId, { text: value });
       setResult(res);
       if (res.red_flag) stopAudio();
       else if (res.reply_audio_base64 && spoken) play(res.reply_audio_base64);
@@ -88,12 +91,28 @@ export default function CheckinPanel() {
     if (busy) return;
     setError(null);
     if (recording) {
+      // 1. ElevenLabs transcribes the recording and the words show at once. 2. The check-in runs on them.
+      if (!patientId) return;
+      let words: string;
+      setResult(null);
+      setHeard(null);
+      setBusy(true);
+      setTranscribing(true);
       try {
         const audio = await stop();
-        await send({ audio });
-      } catch {
-        setError("We couldn't save that recording. Please try again, or type instead.");
+        words = await transcribe(patientId, audio);
+      } catch (e) {
+        setBusy(false);
+        setError(
+          e instanceof ApiError && e.status === 422
+            ? "I didn't catch any words in that recording. Please try again, or type instead."
+            : "We couldn't turn that recording into text. Please try again, or type instead."
+        );
+        return;
+      } finally {
+        setTranscribing(false);
       }
+      await send(words);
       return;
     }
     stopAudio(); // so the microphone does not pick up the reply
@@ -109,7 +128,7 @@ export default function CheckinPanel() {
     const value = text.trim();
     if (!value || busy) return;
     setText("");
-    await send({ text: value });
+    await send(value);
   }
 
   // SAFETY: the urgent card shows only fixed text and never the reply text.
@@ -118,17 +137,22 @@ export default function CheckinPanel() {
       <UrgentCard
         level={result.red_flag_level ?? "emergency"}
         supportAlerted={Boolean(result.support_alerted)}
-        onBack={() => setResult(null)}
+        onBack={() => {
+          setResult(null);
+          setHeard(null);
+        }}
       />
     );
 
   const status = recording
     ? "Listening. Tap the button again when you are done."
-    : busy
-      ? "Thinking about what you said."
-      : result
-        ? ""
-        : "Tap the button and tell me how you are feeling today.";
+    : transcribing
+      ? "Writing down what you said."
+      : busy
+        ? "Thinking about what you said."
+        : result
+          ? ""
+          : "Tap the button and tell me how you are feeling today.";
 
   const sendDisabled = busy || !text.trim();
   const orbState = recording ? "recording" : busy ? "busy" : "idle";
@@ -143,7 +167,16 @@ export default function CheckinPanel() {
 
       <AppleHealthButton />
 
-      <div aria-live="polite" className="mt-6 w-full">
+      <div aria-live="polite" className="mt-6 flex w-full flex-col gap-4">
+        {heard && (
+          <section
+            aria-label="What you said"
+            className="ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-tide-deep px-5 py-3 text-white motion-safe:animate-reply-in motion-reduce:animate-fade-in"
+          >
+            <p className="text-sm font-semibold text-white/80">You said</p>
+            <p className="mt-1 text-lg leading-relaxed">{result?.transcript || heard}</p>
+          </section>
+        )}
         {result && (
           <section
             aria-label="Tidewell's reply"
@@ -183,6 +216,7 @@ export default function CheckinPanel() {
                 onClick={() => {
                   stopAudio();
                   setResult(null);
+                  setHeard(null);
                 }}
                 className={`inline-flex min-h-12 items-center rounded-full bg-navy px-5 font-semibold text-white ${focusRing}`}
               >

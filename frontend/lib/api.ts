@@ -196,6 +196,21 @@ export const submitEpds = (patientId: string, answers: number[]) =>
 export const epdsFollowup = (patientId: string, answer: "yes" | "no" | "unsure") =>
   postJson<{ level: RedFlagLevel; response: string }>("/epds/followup", { patient_id: patientId, answer });
 
+/** ElevenLabs speech-to-text only, so the words show up before the check-in runs on them. */
+export async function transcribe(patientId: string, audio: Blob): Promise<string> {
+  if (USE_MOCK) {
+    await wait(500);
+    return "I slept about four hours, I have a headache, and my blood pressure was 144 over 92.";
+  }
+  const body: CheckinRequest = {
+    patient_id: patientId,
+    audio_base64: await blobToBase64(audio),
+    audio_mime: audio.type || undefined,
+  };
+  const res = await postJson<{ transcript: string }>("/transcribe", body);
+  return res.transcript;
+}
+
 export async function checkin(
   patientId: string,
   input: { text?: string; audio?: Blob }

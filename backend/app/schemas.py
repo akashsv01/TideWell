@@ -94,6 +94,10 @@ class CheckinResponse(BaseModel):
     tiers: list[CategoryTier] = Field(default_factory=list)
 
 
+class TranscribeResponse(BaseModel):
+    transcript: str  # ElevenLabs speech-to-text, shown right after recording, before the check-in runs
+
+
 class TrendPoint(BaseModel):
     day: date
     day_postpartum: Optional[int] = None

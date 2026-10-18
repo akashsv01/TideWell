@@ -101,3 +101,29 @@ def test_vitals_validation():
 def test_cors_allows_local_frontend():
     r = client.options("/onboard", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST"})
     assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+def test_transcribe_returns_elevenlabs_text(monkeypatch):
+    from app.ai import checkin as checkin_pipeline
+
+    seen = {}
+
+    def fake_stt(audio, mime):
+        seen.update(audio=audio, mime=mime)
+        return "I slept four hours"
+
+    monkeypatch.setattr(checkin_pipeline.stt, "transcribe", fake_stt)
+    r = client.post("/transcribe", json={"patient_id": str(demo_data.MAYA_ID), "audio_base64": "aGVsbG8=",
+                                         "audio_mime": "audio/webm;codecs=opus"})
+    assert r.status_code == 200
+    assert r.json() == {"transcript": "I slept four hours"}
+    assert seen == {"audio": b"hello", "mime": "audio/webm;codecs=opus"}
+
+
+def test_transcribe_rejects_missing_audio_and_silence(monkeypatch):
+    from app.ai import checkin as checkin_pipeline
+
+    pid = str(demo_data.MAYA_ID)
+    assert client.post("/transcribe", json={"patient_id": pid, "text": "typed"}).status_code == 422
+    monkeypatch.setattr(checkin_pipeline.stt, "transcribe", lambda *_: "")
+    assert client.post("/transcribe", json={"patient_id": pid, "audio_base64": "aGVsbG8="}).status_code == 422
