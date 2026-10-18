@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Public address of this API (e.g. https://tidewell-api.onrender.com): the doctor's emailed join link and the
     # iPhone setup guide point here. Empty: the guide uses the request's host and email links use localhost:8000.
     public_api_url: str = ""
+    # Optional SMS through Vonage instead of Twilio (used only when both are set).
+    vonage_api_key: str = ""
+    vonage_api_secret: str = ""
+    vonage_from_number: str = ""
     # Comma-separated browser origins allowed by CORS (local Next.js + your Vercel URL).
     frontend_origins: str = "http://localhost:3000,http://localhost:3001"  # local dev server + local prod build
 
