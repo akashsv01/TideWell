@@ -1,5 +1,6 @@
 """Weekly EPDS mood check: GET /epds/questions, POST /epds, POST /epds/followup."""
 from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -23,7 +24,7 @@ def submit(body: EpdsIn, user: Optional[auth.User] = Depends(auth.optional_user)
         raise HTTPException(422, str(e)) from e
     level, followup = epds.item10_outcome(item10)
     if db.enabled() and not auth.is_demo(body.patient_id):  # the shared demo is never written to
-        store.save_epds(body.patient_id, total, item10)
+        store.save_epds(body.patient_id, total, item10, body.answers)
         from app.routes.agents import analyse_later
 
         analyse_later(body.patient_id)
@@ -41,3 +42,13 @@ def followup(body: EpdsFollowupIn, user: Optional[auth.User] = Depends(auth.opti
     if level == "emergency" and db.enabled() and not auth.is_demo(body.patient_id):
         notify.send_support_alert(body.patient_id)
     return EpdsFollowupOut(level=level, response=response)
+
+
+@router.get("/today")
+def today(patient_id: UUID, user: Optional[auth.User] = Depends(auth.optional_user)) -> dict:
+    """Today's mood check (if taken), so it can be reopened and edited. A retake replaces it."""
+    auth.authorize_patient(patient_id, user)
+    if not db.enabled() or auth.is_demo(patient_id):
+        return {"taken": False}
+    r = store.todays_epds(patient_id)
+    return {"taken": bool(r), "score": r["score"] if r else None, "answers": (r or {}).get("answers")}

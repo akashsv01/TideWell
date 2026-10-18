@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import UrgentCard from "@/components/UrgentCard";
-import { epdsFollowup, getEpdsQuestions, submitEpds } from "@/lib/api";
+import { epdsFollowup, getEpdsQuestions, getTodaysEpds, submitEpds } from "@/lib/api";
 import { usePatientId } from "@/lib/session";
 import type { EpdsQuestions, EpdsResult, RedFlagLevel } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
@@ -29,9 +29,25 @@ export default function MoodCheck() {
   const [urgent, setUrgent] = useState<RedFlagLevel | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
+  const [editing, setEditing] = useState(false);
+
   useEffect(() => {
     getEpdsQuestions().then(setQs, () => setPhase("error"));
   }, []);
+
+  // Taken today already? Reopen with those answers selected, so they can be changed.
+  useEffect(() => {
+    if (!patientId) return;
+    getTodaysEpds(patientId).then(
+      (t) => {
+        if (t.taken && t.answers?.length === 10) {
+          setAnswers(t.answers);
+          setEditing(true);
+        }
+      },
+      () => {}
+    );
+  }, [patientId]);
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -131,6 +147,9 @@ export default function MoodCheck() {
         />
       </div>
       <div key={i} className="motion-safe:animate-step-in motion-reduce:animate-fade-in">
+        {editing && i === 0 && (
+          <p className="mt-6 rounded-2xl bg-sand/70 p-3 text-base">You already did today&apos;s check. Your answers are selected; change any of them.</p>
+        )}
         <p className="mt-6 text-lg text-navy/85">In the past 7 days:</p>
         <h1 ref={headingRef} tabIndex={-1} className="mt-1 font-display text-3xl leading-tight focus:outline-none">
           {q.text}

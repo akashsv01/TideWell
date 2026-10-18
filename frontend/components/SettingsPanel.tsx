@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import CircleSettings from "@/components/CircleSettings";
+import NightModeSetting from "@/components/NightModeSetting";
 import ProfileEditor from "@/components/ProfileEditor";
 import { deleteMyData, logout, switchToDemo } from "@/lib/api";
 import {
@@ -102,6 +104,10 @@ export default function SettingsPanel() {
           </li>
         </ul>
       </section>
+
+      <NightModeSetting />
+
+      {!demo && patientId && <CircleSettings patientId={patientId} />}
 
       <section aria-labelledby="account-title">
         <h2 id="account-title" className="font-display text-2xl">

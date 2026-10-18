@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartIcon, GearIcon, WaveIcon } from "@/components/icons";
+import { ChartIcon, ChatIcon, GearIcon, HeartPlusIcon, WaveIcon } from "@/components/icons";
 import { focusRing } from "@/lib/ui";
 
 const items = [
   { href: "/home", label: "Check in", Icon: WaveIcon },
   { href: "/dashboard", label: "My tide", Icon: ChartIcon },
+  { href: "/care", label: "Care", Icon: HeartPlusIcon },
+  { href: "/ask", label: "Ask", Icon: ChatIcon },
   { href: "/settings", label: "Settings", Icon: GearIcon },
 ];
 

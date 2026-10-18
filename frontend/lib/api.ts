@@ -6,6 +6,11 @@ import type {
   CheckinRequest,
   CheckinResponse,
   ClinicianPatient,
+  AskResult,
+  CircleView,
+  Nearby,
+  RiskResult,
+  Tier,
   DayEntry,
   DayOut,
   EpdsQuestions,
@@ -296,3 +301,62 @@ export async function deleteMyData(patientId: string): Promise<void> {
   }
   await raw(`/patients/${patientId}`, { method: "DELETE" });
 }
+
+// --- Agents and care ------------------------------------------------------------------------
+export const ask = (patientId: string, question: string) =>
+  postJson<AskResult>("/ask", { patient_id: patientId, question });
+
+export const getRisk = (patientId: string) => request<RiskResult>(`/patients/${patientId}/risk`);
+
+export const saveLocation = (patientId: string, loc: { lat?: number; lon?: number; postal_code?: string }) =>
+  sendJson<{ lat: number; lon: number; label: string | null }>("PUT", `/patients/${patientId}/location`, loc);
+
+export const getNearby = (patientId: string) => request<Nearby>(`/care/nearby?patient_id=${patientId}`);
+
+export const bookCare = (requestId: string, slot: string, facilityIndex: number) =>
+  postJson<{ appointment_id: string }>(`/care-requests/${requestId}/book`, { slot, facility_index: facilityIndex });
+
+export async function dismissCare(requestId: string): Promise<void> {
+  await raw(`/care-requests/${requestId}/dismiss`, { method: "POST" });
+}
+
+/** Downloads the one-page visit summary PDF (authorized fetch, then a temporary link). */
+export async function downloadSummary(patientId: string): Promise<void> {
+  const res = await raw(`/patients/${patientId}/summary.pdf`);
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement("a"), { href: url, download: "tidewell-visit-summary.pdf" });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export const createCircle = (patientId: string) =>
+  postJson<{ token: string; path: string }>(`/patients/${patientId}/circle`, {});
+
+export async function revokeCircle(patientId: string): Promise<void> {
+  await raw(`/patients/${patientId}/circle`, { method: "DELETE" });
+}
+
+export const getCircle = (token: string) => request<CircleView>(`/circle/${encodeURIComponent(token)}`);
+
+export const getTodaysEpds = (patientId: string) =>
+  request<{ taken: boolean; score: number | null; answers: number[] | null }>(`/epds/today?patient_id=${patientId}`);
+
+export interface ClinicianRow {
+  patient_id: string;
+  name: string | null;
+  is_synthetic: boolean;
+  day_postpartum: number;
+  delivery_type: string;
+  overall_tier: Tier;
+  reasons: string[];
+  note: string | null;
+}
+
+export const getClinicianOverview = () =>
+  request<{
+    patients: ClinicianRow[];
+    appointments: { patient_id: string; slot: string; facility_name: string | null; clinician_note: string | null }[];
+    timing: { overview_ms: number; aggregate_ms: number; patients_30d: number; checkins_30d: number };
+  }>("/clinician/overview?limit=300");

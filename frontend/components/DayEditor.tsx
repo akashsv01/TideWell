@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
+import CuffPhotoButton from "@/components/CuffPhotoButton";
 import UrgentCard from "@/components/UrgentCard";
 import { ApiError, saveDay } from "@/lib/api";
 import { todayIso } from "@/lib/profile";
@@ -224,6 +225,13 @@ function DayEditorForm({
             <input id={`${ids}-dia`} type="number" inputMode="numeric" min={30} max={200} value={bpDia} onChange={(e) => setBpDia(e.target.value)} className={field} />
           </div>
         </div>
+        <CuffPhotoButton
+          patientId={patientId}
+          onRead={(s, d) => {
+            setBpSys(String(s));
+            setBpDia(String(d));
+          }}
+        />
 
         {error && (
           <p role="alert" className="text-lg text-alert">

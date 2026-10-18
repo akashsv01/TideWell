@@ -143,7 +143,10 @@ export default function Dashboard() {
     selectedDay < deliveryDate ? deliveryDate : selectedDay > today ? today : selectedDay;
 
   const rise = bpRise(points);
-  const lastMood = [...points].reverse().find((p) => p.mood !== null)?.mood ?? null;
+  // Mood is the mood check (EPDS, out of 30) when one exists; otherwise the 0-10 check-in mood.
+  const epdsMode = points.some((p) => p.epds_score != null);
+  const moodKey = epdsMode ? "epds_score" : "mood";
+  const lastMood = [...points].reverse().find((p) => p[moodKey] != null)?.[moodKey] ?? null;
   const summary = [moodSentence(points), sleepSentence(points)].filter(Boolean).join(" ");
   const lastWeek = points.slice(-7);
   const headacheDays = lastWeek.filter((p) => p.headache).length;
@@ -215,10 +218,15 @@ export default function Dashboard() {
             <h2 id="mood-title" className="font-display text-2xl">
               Mood
             </h2>
-            {lastMood !== null && <p className="text-lg text-white/85">Latest: {lastMood} out of 10</p>}
+            {lastMood !== null && (
+              <p className="text-lg text-white/85">
+                Latest: {lastMood} out of {epdsMode ? 30 : 10}
+              </p>
+            )}
           </div>
           <div className="relative mt-4 h-56">
-            <ChartEmpty show={moodN === 0} light />
+            {epdsMode && <p className="-mt-2 mb-2 text-base text-white/75">Mood check score: higher means a harder week.</p>}
+            <ChartEmpty show={moodN === 0 && !epdsMode} light />
             <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 224 }}>
               <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
                 <defs>
@@ -229,18 +237,18 @@ export default function Dashboard() {
                 </defs>
                 <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.14)" />
                 <XAxis {...xAxisProps} tick={AXIS_LIGHT} />
-                <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={AXIS_LIGHT} tickLine={false} axisLine={false} />
-                <Tooltip content={<ChartTip units={{ Mood: " / 10" }} />} {...tipMotion} />
+                <YAxis domain={epdsMode ? [0, 30] : [0, 10]} ticks={epdsMode ? [0, 10, 20, 30] : [0, 5, 10]} tick={AXIS_LIGHT} tickLine={false} axisLine={false} />
+                <Tooltip content={<ChartTip units={{ Mood: epdsMode ? " / 30" : " / 10" }} />} {...tipMotion} />
                 <Area
                   {...drawIn}
                   type="monotone"
-                  dataKey="mood"
+                  dataKey={moodKey}
                   name="Mood"
                   stroke="#6fd0d4"
                   strokeWidth={3}
                   fill={`url(#${gradientId})`}
-                  connectNulls={false}
-                  dot={showDots(moodN)}
+                  connectNulls={epdsMode}
+                  dot={epdsMode ? { r: 5, fill: "#6fd0d4", stroke: "#0b2545", strokeWidth: 2 } : showDots(moodN)}
                   activeDot={{ r: 6, fill: "#6fd0d4", stroke: "#0b2545", strokeWidth: 2 }}
                 />
               </AreaChart>

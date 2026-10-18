@@ -184,3 +184,73 @@ export interface ClinicianPatient {
   overall_tier: Tier;
   reasons: string[];
 }
+
+// --- Agents and care (backend app/routes/agents.py) -----------------------------------------
+export interface Citation2 {
+  title: string;
+  url: string;
+}
+
+export interface AskResult {
+  answer: string;
+  citations: Citation2[];
+  tools_called: string[];
+  red_flag: boolean;
+  red_flag_level: RedFlagLevel | null;
+}
+
+export interface Place {
+  name: string;
+  kind: "emergency" | "hospital" | "obgyn" | "midwife";
+  kind_label: string;
+  address: string | null;
+  phone: string | null;
+  website: string | null;
+  distance_km: number;
+  directions_url: string;
+}
+
+export interface CareRequest {
+  id: string | null;
+  tier: Tier;
+  reasons: string[];
+  patient_message: string;
+  clinician_note?: string | null;
+  facilities: Place[];
+  slots: string[];
+  status?: string;
+  demo?: boolean;
+}
+
+export interface Appointment {
+  id: string;
+  slot: string;
+  reason: string | null;
+  facility_name: string | null;
+  facility_address: string | null;
+  facility_phone: string | null;
+}
+
+export interface RiskResult {
+  overall: Tier;
+  tiers: (CategoryTier & { score: number })[];
+  care_request: CareRequest | null;
+  appointments: Appointment[];
+}
+
+export interface Nearby {
+  places: Place[];
+  label: string | null;
+  nearest_er: Place | null;
+  needs_location: boolean;
+}
+
+export interface CircleView {
+  name: string;
+  day_postpartum: number;
+  status: Tier;
+  how_to_help: string;
+  avg_sleep_7d: number | null;
+  last_checkin: string | null;
+  appointments: { slot: string; where: string | null }[];
+}

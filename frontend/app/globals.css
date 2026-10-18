@@ -264,3 +264,19 @@ select {
     stroke-dashoffset: 0;
   }
 }
+
+/* --- Night mode (lib/night.ts): swap the colour tokens for a dark, low-glare theme ------------ */
+html[data-night] {
+  color-scheme: dark;
+  --color-foam: #0a1628;
+  --color-navy: #e6eef5;
+  --color-sand: #1d2b40;
+  --color-white: #12223a;
+  --color-tide-deep: #2b9aa1;
+  --color-tide: #3fb3b9;
+  --color-alert: #ff8a80;
+}
+html[data-night] body {
+  background: var(--color-foam);
+  color: var(--color-navy);
+}

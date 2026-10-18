@@ -62,3 +62,21 @@ export function AlertIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function HeartPlusIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+      <path d="M12 9.5v5M9.5 12h5" />
+    </svg>
+  );
+}
+
+export function ChatIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M5 5h14v10H9l-4 4z" />
+      <path d="M9 9.5h6M9 12h4" />
+    </svg>
+  );
+}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource/young-serif";
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./globals.css";
+import NightMode from "@/components/NightMode";
 
 export const metadata: Metadata = {
   title: { default: "Tidewell", template: "%s | Tidewell" },
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+        <NightMode />
         {children}
       </body>
     </html>

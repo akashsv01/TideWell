@@ -114,7 +114,7 @@ def owner_of(patient_id: UUID) -> Optional[UUID]:
     return row["user_id"] if row else None
 
 
-def save_epds(patient_id: UUID, total: int, item10: int) -> None:
+def save_epds(patient_id: UUID, total: int, item10: int, answers: Optional[list[int]] = None) -> None:
     """One mood check per (UTC) day: a retake the same day replaces the earlier answers."""
     with db.connection() as conn:
         conn.execute(
@@ -122,8 +122,8 @@ def save_epds(patient_id: UUID, total: int, item10: int) -> None:
             (patient_id,),
         )
         conn.execute(
-            "INSERT INTO epds_scores (time, patient_id, score, item10) VALUES (now(), %s, %s, %s)",
-            (patient_id, total, item10),
+            "INSERT INTO epds_scores (time, patient_id, score, item10, answers) VALUES (now(), %s, %s, %s, %s)",
+            (patient_id, total, item10, answers),
         )
 
 
@@ -505,3 +505,12 @@ def latest_assessment(patient_id: UUID) -> list[dict]:
                FROM risk_assessments WHERE patient_id = %s ORDER BY category, time DESC""",
             (patient_id,),
         ).fetchall()
+
+
+def todays_epds(patient_id: UUID) -> Optional[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            """SELECT score, item10, answers, time FROM epds_scores
+               WHERE patient_id = %s AND time >= date_trunc('day', now()) ORDER BY time DESC LIMIT 1""",
+            (patient_id,),
+        ).fetchone()
