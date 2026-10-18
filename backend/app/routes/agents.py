@@ -4,6 +4,8 @@ POST /ask                          Ask Tidewell: safety check, topic guardrail, 
 GET  /patients/{id}/risk           Watch agent analysis now (+ open care request, appointments)
 PUT/DELETE /patients/{id}/location save or forget location (browser coords or ZIP) for nearby care
 GET  /care/nearby                  nearest maternity care (patient's saved location, coords or ZIP)
+GET  /care/place-slots             open in-person times at one nearby clinic (demo scheduler)
+POST /care/book-place              book an in-person visit at a nearby clinic
 POST /care-requests/{id}/book      patient books a proposed time (Booking agent never books alone)
 POST /care-requests/{id}/dismiss
 GET  /patients/{id}/summary.pdf    one-page visit summary for the doctor
@@ -19,7 +21,7 @@ import logging
 import secrets
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 from uuid import UUID
 
@@ -84,6 +86,19 @@ def risk(patient_id: UUID, user: Optional[auth.User] = Depends(auth.optional_use
     _need_db()
     r = watch.run(patient_id, persist=not auth.is_demo(patient_id))
     r["appointments"] = [] if auth.is_demo(patient_id) else store.upcoming_appointments(patient_id)
+    req = r.get("care_request")
+    if req and req.get("id"):
+        # A suggestion stays open for up to 3 days: drop times that have passed (refill if none are left),
+        # and say so when the numbers that triggered it have improved since.
+        from app.routes.appointments import _generate
+
+        soon = datetime.now(timezone.utc) + timedelta(hours=1)
+        future = [x for x in (req.get("slots") or []) if datetime.fromisoformat(x) > soon]
+        if req.get("slots") and len(future) != len(req["slots"]):
+            future = future or [t.isoformat() for t in _generate("amber")[:4]]
+            store.set_care_request_slots(req["id"], future)
+            req["slots"] = future
+        req["outdated"] = r["overall"] not in ("amber", "red")
     if auth.is_demo(patient_id) and r["overall"] in ("amber", "red"):
         # Show the demo what the Booking agent proposes, without writing to the shared demo.
         from app.agents.booking import _places
@@ -118,6 +133,10 @@ def book(request_id: UUID, body: BookIn, user: Optional[auth.User] = Depends(aut
             body.slot.astimezone(timezone.utc).isoformat() not in [datetime.fromisoformat(s).astimezone(timezone.utc).isoformat() for s in req["slots"]]:
         raise HTTPException(422, "choose one of the proposed times")
     fac = req["facilities"][body.facility_index] if body.facility_index < len(req["facilities"]) else None
+    if store.patient_busy(UUID(req["patient_id"]), body.slot):
+        raise HTTPException(409, "you already have a visit at that time; choose another")
+    if fac and body.slot in store.facility_booked_slots(fac["name"]):
+        raise HTTPException(409, "that time was just taken at this clinic; choose another")
     appt = store.book_care_request(req, fac, body.slot.isoformat())
     return {"appointment_id": appt, "facility": fac, "slot": body.slot.isoformat()}
 
@@ -190,6 +209,50 @@ def nearby(patient_id: Optional[UUID] = None, lat: Optional[float] = None, lon: 
         return {"places": [], "needs_location": True}
     places = care.nearby(lat, lon, postal)
     return {"places": places, "label": label, "nearest_er": care.nearest_er(places), "needs_location": False}
+
+
+# --- Book a visit at a nearby place (Care near you) ------------------------------------------
+class PlaceIn(BaseModel):
+    name: str = Field(min_length=2, max_length=200)
+    address: Optional[str] = Field(default=None, max_length=300)
+    phone: Optional[str] = Field(default=None, max_length=40)
+
+
+class PlaceBookIn(BaseModel):
+    patient_id: UUID
+    place: PlaceIn
+    slot: datetime
+    reason: str = Field(default="", max_length=500)
+
+
+@router.get("/care/place-slots")
+def place_slots(name: str = Query(min_length=2, max_length=200)) -> list[dict]:
+    """Open in-person times at one nearby clinic (demo scheduler). Times anyone has booked there are left
+    out, and come back when that visit is cancelled."""
+    from app.routes.appointments import clinic_slots
+
+    taken = store.facility_booked_slots(name) if db.enabled() else set()
+    return [{"slot": t} for t in clinic_slots() if t not in taken]
+
+
+@router.post("/care/book-place")
+def book_place(body: PlaceBookIn, user: Optional[auth.User] = Depends(auth.optional_user)) -> dict:
+    from app.routes.appointments import clinic_slots
+
+    auth.authorize_patient(body.patient_id, user)
+    if auth.is_demo(body.patient_id):
+        raise HTTPException(403, "This is Maya's demo, so booking a real clinic is turned off. Create an account to book.")
+    _need_db()
+    if body.slot.tzinfo is None or body.slot not in set(clinic_slots()):
+        raise HTTPException(409, "that time is not available")
+    if store.patient_busy(body.patient_id, body.slot):
+        raise HTTPException(409, "you already have a visit at that time; choose another")
+    try:
+        appt = store.insert_place_visit(body.patient_id, body.place.model_dump(), body.slot, body.reason.strip())
+    except store.SlotTaken:
+        raise HTTPException(409, "that time was just taken; choose another") from None
+    analyse_later(body.patient_id)
+    return {"appointment_id": str(appt), "slot": body.slot, "place": body.place.model_dump()}
 
 
 # --- Visit summary PDF -----------------------------------------------------------------------
@@ -312,8 +375,13 @@ def clinician_overview(limit: int = Query(100, ge=1, le=1000)) -> dict:
             (limit,),
         ).fetchall()
         appts = conn.execute(
-            """SELECT a.patient_id::text, a.slot, a.facility_name, a.clinician_note FROM appointments a
-               WHERE a.slot >= now() - interval '1 day' ORDER BY a.slot LIMIT 50"""
+            """SELECT a.patient_id::text, a.slot,
+                      CASE WHEN pr.name IS NOT NULL
+                           THEN pr.name || CASE WHEN a.mode = 'virtual' THEN ' (video)' ELSE '' END
+                           ELSE a.facility_name END AS facility_name,
+                      COALESCE(a.clinician_note, a.reason) AS clinician_note
+               FROM appointments a LEFT JOIN providers pr ON pr.id = a.provider_id
+               WHERE a.status = 'booked' AND a.slot >= now() - interval '1 day' ORDER BY a.slot LIMIT 50"""
         ).fetchall()
     query_ms = (time.perf_counter() - t0) * 1000
     t1 = time.perf_counter()

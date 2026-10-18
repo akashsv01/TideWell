@@ -180,10 +180,50 @@ export interface PhotoReading {
   needs_confirm: boolean;
 }
 
+/** GET /clinician/patients (backend ClinicianPatient). */
 export interface ClinicianPatient {
-  patient: { id: string; name: string };
-  overall_tier: Tier;
+  patient_id: string;
+  name: string | null;
+  overall_tier: Tier | "red";
   reasons: string[];
+  categories: Record<string, string>;
+  synthetic: boolean;
+}
+
+// --- Visits (in person or video) ------------------------------------------------------------
+export type VisitMode = "in_person" | "virtual";
+export type VisitUrgency = "watch" | "amber" | "routine";
+
+export interface Provider {
+  id: string;
+  name: string;
+  specialty: string;
+  kind: string; // obstetrics | midwifery | lactation | mental_health | blood_pressure
+  bio: string | null;
+  modes: VisitMode[];
+  clinic: string | null;
+  address: string | null;
+  is_synthetic: boolean;
+}
+
+export interface Visit {
+  appointment_id: string;
+  patient_id: string;
+  provider: Provider;
+  slot: string; // ISO timestamp
+  mode: VisitMode;
+  reason: string;
+  urgency: string;
+  status: "booked" | "cancelled";
+  /** Video visits only. The room opens 15 minutes before the start. */
+  join: { can_join: boolean; opens_at: string | null; closes_at: string | null } | null;
+}
+
+export interface JoinInfo {
+  url: string;
+  service: "daily" | "webrtc" | "jitsi";
+  /** Daily rooms open inside the app. The WebRTC page opens in a new tab. */
+  embeddable: boolean;
 }
 
 // --- Agents and care (backend app/routes/agents.py) -----------------------------------------
@@ -226,6 +266,10 @@ export interface CareRequest {
   slots: string[];
   status?: string;
   demo?: boolean;
+  /** When the Watch agent made this suggestion. */
+  created_at?: string;
+  /** The numbers that triggered it have improved since (the suggestion stays open for 3 days). */
+  outdated?: boolean;
 }
 
 export interface Appointment {
@@ -235,6 +279,7 @@ export interface Appointment {
   facility_name: string | null;
   facility_address: string | null;
   facility_phone: string | null;
+  mode?: VisitMode | null;
 }
 
 export interface RiskResult {

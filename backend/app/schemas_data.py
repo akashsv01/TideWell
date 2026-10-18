@@ -108,15 +108,58 @@ class Slot(BaseModel):
     slot: datetime
 
 
+VisitMode = Literal["in_person", "virtual"]
+
+
+class ProviderOut(BaseModel):
+    id: UUID
+    name: str
+    specialty: str
+    kind: str
+    bio: Optional[str] = None
+    modes: list[VisitMode]
+    clinic: Optional[str] = None
+    address: Optional[str] = None
+    is_synthetic: bool = True
+
+
 class AppointmentIn(BaseModel):
     patient_id: UUID
     slot: datetime
     reason: str = Field(max_length=500)
-    urgency: Literal["watch", "amber"] = "amber"
+    urgency: Literal["watch", "amber", "routine"] = "amber"
+    # Optional so the voice agent and older clients keep working: no provider = the default clinic, in person.
+    provider_id: Optional[UUID] = None
+    mode: VisitMode = "in_person"
+
+
+class VisitJoin(BaseModel):
+    can_join: bool
+    opens_at: Optional[datetime] = None
+    closes_at: Optional[datetime] = None
+
+
+class VisitOut(BaseModel):
+    appointment_id: UUID
+    patient_id: UUID
+    provider: ProviderOut
+    slot: datetime
+    mode: VisitMode
+    reason: str
+    urgency: str
+    status: Literal["booked", "cancelled"]
+    join: Optional[VisitJoin] = None  # virtual visits only
 
 
 class AppointmentOut(BaseModel):
     appointment_id: UUID
+    visit: Optional[VisitOut] = None
+
+
+class JoinOut(BaseModel):
+    url: str
+    service: Literal["daily", "webrtc", "jitsi"]
+    embeddable: bool  # Daily rooms open inside the app; the WebRTC page opens in a new tab
 
 
 class ClinicianPatient(BaseModel):
