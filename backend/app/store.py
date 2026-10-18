@@ -85,6 +85,7 @@ def get_profile(patient_id: UUID) -> Optional[dict]:
             SELECT id, name, birth_date, delivery_type, gestation_weeks, feeding_type, breastfeeding,
                    history_mental_health, pregnancy_complications, language, support_person_name,
                    support_phone, support_consent, consent_granted, categories,
+                   postal_code, home_lat, home_lon,
                    (current_date - birth_date) AS day_postpartum
             FROM patients WHERE id = %s
             """,
@@ -103,6 +104,7 @@ def get_profile(patient_id: UUID) -> Optional[dict]:
         "support_person_name": r["support_person_name"], "support_person_phone": r["support_phone"],
         "support_sms_consent": r["support_consent"], "day_postpartum": r["day_postpartum"],
         "categories": r["categories"] or [],
+        "postal_code": r["postal_code"], "home_lat": r["home_lat"], "home_lon": r["home_lon"],
     }
 
 
@@ -113,7 +115,12 @@ def owner_of(patient_id: UUID) -> Optional[UUID]:
 
 
 def save_epds(patient_id: UUID, total: int, item10: int) -> None:
+    """One mood check per (UTC) day: a retake the same day replaces the earlier answers."""
     with db.connection() as conn:
+        conn.execute(
+            "DELETE FROM epds_scores WHERE patient_id = %s AND time >= date_trunc('day', now())",
+            (patient_id,),
+        )
         conn.execute(
             "INSERT INTO epds_scores (time, patient_id, score, item10) VALUES (now(), %s, %s, %s)",
             (patient_id, total, item10),
@@ -301,7 +308,8 @@ def patient_context(patient_id: UUID) -> Optional[dict]:
     return {**p, "week": week, "recent_bp": [f"{r['bp_sys']}/{r['bp_dia']}" for r in reversed(bp)]}
 
 
-_PATIENT_TABLES = ("checkins", "vitals", "epds_scores", "appointments", "risk_assessments", "alert_log")
+_PATIENT_TABLES = ("checkins", "vitals", "epds_scores", "appointments", "risk_assessments", "alert_log",
+                   "care_requests")
 
 
 def delete_patient(patient_id: UUID) -> bool:
@@ -379,3 +387,121 @@ def save_day(patient_id: UUID, day: date, e) -> None:
     with db.autocommit_connection() as conn:
         for view in ("daily_checkins", "daily_metrics"):
             conn.execute("CALL refresh_continuous_aggregate(%s::regclass, %s, %s)", (view, start, end))
+
+
+# --- Agents ----------------------------------------------------------------------------
+import json as _json  # noqa: E402
+
+
+def last_checkin_time(patient_id: UUID):
+    with db.connection() as conn:
+        row = conn.execute("SELECT max(time) AS t FROM checkins WHERE patient_id = %s", (patient_id,)).fetchone()
+    return row["t"] if row else None
+
+
+def active_patient_ids(days: int = 30) -> list[UUID]:
+    with db.connection() as conn:
+        rows = conn.execute(
+            """SELECT DISTINCT c.patient_id FROM checkins c JOIN patients p ON p.id = c.patient_id
+               WHERE c.time >= now() - %s AND NOT p.is_synthetic AND p.user_id IS NOT NULL""",
+            (timedelta(days=days),),
+        ).fetchall()
+    return [r["patient_id"] for r in rows]
+
+
+def save_assessment(patient_id: UUID, tiers: list[dict], note: Optional[str]) -> None:
+    with db.connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                """INSERT INTO risk_assessments (patient_id, category, tier, score, reasons, next_step, agent_note)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                [(patient_id, t["category"], t["tier"], t["score"], t["reasons"], t["next_step"], note) for t in tiers],
+            )
+
+
+def _request_out(r: Optional[dict]) -> Optional[dict]:
+    if not r:
+        return None
+    return {k: (str(v) if k in ("id", "patient_id", "appointment_id") and v else v) for k, v in r.items()}
+
+
+def open_care_request(patient_id: UUID) -> Optional[dict]:
+    """The latest request that still needs the patient (proposed), from the last 3 days."""
+    with db.connection() as conn:
+        r = conn.execute(
+            """SELECT * FROM care_requests WHERE patient_id = %s AND status = 'proposed'
+               AND created_at >= now() - interval '3 days' ORDER BY created_at DESC LIMIT 1""",
+            (patient_id,),
+        ).fetchone()
+    return _request_out(r)
+
+
+def create_care_request(patient_id, tier, reasons, note, message, facilities, slots) -> dict:
+    with db.connection() as conn:
+        r = conn.execute(
+            """INSERT INTO care_requests (patient_id, tier, reasons, clinician_note, patient_message, facilities, slots)
+               VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb) RETURNING *""",
+            (patient_id, tier, reasons, note, message, _json.dumps(facilities), _json.dumps(slots)),
+        ).fetchone()
+    return _request_out(r)
+
+
+def get_care_request(request_id: UUID) -> Optional[dict]:
+    with db.connection() as conn:
+        return _request_out(conn.execute("SELECT * FROM care_requests WHERE id = %s", (request_id,)).fetchone())
+
+
+def book_care_request(req: dict, facility: Optional[dict], slot: str) -> str:
+    with db.connection() as conn:
+        with conn.transaction():
+            appt = conn.execute(
+                """INSERT INTO appointments (patient_id, slot, reason, urgency, status, facility_name,
+                                             facility_address, facility_phone, clinician_note)
+                   VALUES (%s, %s, %s, %s, 'booked', %s, %s, %s, %s) RETURNING id""",
+                (req["patient_id"], slot, "; ".join(req["reasons"])[:500], "amber",
+                 (facility or {}).get("name"), (facility or {}).get("address"), (facility or {}).get("phone"),
+                 req.get("clinician_note")),
+            ).fetchone()
+            conn.execute("UPDATE care_requests SET status = 'booked', appointment_id = %s WHERE id = %s",
+                         (appt["id"], req["id"]))
+    return str(appt["id"])
+
+
+def dismiss_care_request(request_id: UUID) -> None:
+    with db.connection() as conn:
+        conn.execute("UPDATE care_requests SET status = 'dismissed' WHERE id = %s", (request_id,))
+
+
+def upcoming_appointments(patient_id: UUID) -> list[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            """SELECT id::text, slot, reason, facility_name, facility_address, facility_phone, status
+               FROM appointments WHERE patient_id = %s AND slot >= now() - interval '1 day' ORDER BY slot""",
+            (patient_id,),
+        ).fetchall()
+
+
+def set_location(patient_id: UUID, lat: float, lon: float, postal_code: Optional[str]) -> None:
+    with db.connection() as conn:
+        conn.execute("UPDATE patients SET home_lat = %s, home_lon = %s, postal_code = %s WHERE id = %s",
+                     (lat, lon, postal_code, patient_id))
+
+
+def set_circle_token(patient_id: UUID, token_hash: Optional[str]) -> None:
+    with db.connection() as conn:
+        conn.execute("UPDATE patients SET circle_token_hash = %s WHERE id = %s", (token_hash, patient_id))
+
+
+def patient_for_circle(token_hash: str) -> Optional[UUID]:
+    with db.connection() as conn:
+        r = conn.execute("SELECT id FROM patients WHERE circle_token_hash = %s", (token_hash,)).fetchone()
+    return r["id"] if r else None
+
+
+def latest_assessment(patient_id: UUID) -> list[dict]:
+    with db.connection() as conn:
+        return conn.execute(
+            """SELECT DISTINCT ON (category) category, tier, reasons, next_step, agent_note, time
+               FROM risk_assessments WHERE patient_id = %s ORDER BY category, time DESC""",
+            (patient_id,),
+        ).fetchall()

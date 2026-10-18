@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -6,15 +7,31 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
 from app.config import get_settings
-from app.routes import appointments, auth, checkin, clinician, epds, patients
+from app.routes import agents, appointments, auth, checkin, clinician, epds, patients
 
 # Show app logs (check-in timings, safety fallbacks) next to uvicorn's access log.
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
 
 
+async def _watch_loop() -> None:
+    """The Watch agent re-analyses every active patient every 30 minutes (catches silence too)."""
+    from app.agents import watch
+
+    while True:
+        await asyncio.sleep(1800)
+        try:
+            n = await asyncio.to_thread(watch.sweep)
+            logging.getLogger("tidewell.watch").info("sweep analysed %d patients", n)
+        except Exception:  # noqa: BLE001
+            logging.getLogger("tidewell.watch").exception("sweep failed")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    task = asyncio.create_task(_watch_loop()) if db.enabled() else None
     yield
+    if task:
+        task.cancel()
     db.close()
 
 
@@ -33,6 +50,7 @@ app.include_router(clinician.router)
 app.include_router(checkin.router)
 app.include_router(auth.router)
 app.include_router(epds.router)
+app.include_router(agents.router)
 
 
 @app.get("/health")

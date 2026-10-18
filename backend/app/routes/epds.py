@@ -24,6 +24,9 @@ def submit(body: EpdsIn, user: Optional[auth.User] = Depends(auth.optional_user)
     level, followup = epds.item10_outcome(item10)
     if db.enabled() and not auth.is_demo(body.patient_id):  # the shared demo is never written to
         store.save_epds(body.patient_id, total, item10)
+        from app.routes.agents import analyse_later
+
+        analyse_later(body.patient_id)
         if level == "emergency":
             notify.send_support_alert(body.patient_id)
     return EpdsOut(score=total, item10=item10, band=epds.band(total), level=level,

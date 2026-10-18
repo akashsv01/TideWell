@@ -137,6 +137,9 @@ def save_day(patient_id: UUID, day: date, body: DayEntry,
     if day < prof["delivery_date"]:
         raise HTTPException(422, "that day is before your baby was born")
     store.save_day(patient_id, day, body)
+    from app.routes.agents import analyse_later
+
+    analyse_later(patient_id)
     out = DayOut(day=day)
     if day >= today - timedelta(days=1):  # only recent numbers can still need urgent care
         r = red_flags.check_rules("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))

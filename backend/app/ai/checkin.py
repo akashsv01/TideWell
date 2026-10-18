@@ -138,6 +138,9 @@ def _save(pid: Optional[UUID], metrics: CheckinMetrics, red_flag: bool) -> None:
         log.exception("could not save check-in")
         return
     _pool.submit(_refresh_trends)
+    from app.routes.agents import analyse_later  # Watch agent: analyse after every saved check-in
+
+    analyse_later(pid)
 
 
 def _refresh_trends() -> None:
