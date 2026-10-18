@@ -2,6 +2,7 @@ import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
 import BottomNav from "@/components/BottomNav";
 import RequirePatient from "@/components/RequirePatient";
+import ThemeToggle from "@/components/ThemeToggle";
 import { focusRing } from "@/lib/ui";
 
 // Shared frame for the signed-in screens: wordmark on top, tab bar at the bottom.
@@ -15,7 +16,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           Tidewell
         </Link>
-        <AccountMenu />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AccountMenu />
+        </div>
       </header>
       <main id="main" className="flex flex-1 flex-col pb-32">
         <RequirePatient>{children}</RequirePatient>

@@ -7,7 +7,8 @@ import type { Nearby, Place, RiskResult, Tier } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
 // Care: what the Watch agent sees, what the Booking agent proposes (book with one tap), upcoming
-// visits, and the nearest maternity care from OpenStreetMap (your location or ZIP code).
+// visits, and the nearest maternity care: OB-GYNs, midwives and hospitals from the official NPI
+// Registry (plus OpenStreetMap emergency-room tags), by your location or ZIP code.
 
 const TIER_STYLE: Record<Tier, { label: string; cls: string }> = {
   green: { label: "Steady", cls: "bg-[#e3f1e8] text-[#2f5d3f]" },
@@ -227,7 +228,7 @@ export default function CarePanel() {
         {near && near.places.length > 0 && (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {near.places.map((p) => (
-              <li key={p.name} className="flex flex-col rounded-2xl bg-white p-4 ring-1 ring-navy/10">
+              <li key={`${p.name}-${p.address}`} className="flex flex-col rounded-2xl bg-white p-4 ring-1 ring-navy/10">
                 <span className="text-lg font-semibold">{p.name}</span>
                 <span className="text-base text-navy/80">{p.kind_label} · {p.distance_km} km</span>
                 {p.address && <span className="text-base text-navy/80">{p.address}</span>}
@@ -242,7 +243,10 @@ export default function CarePanel() {
         {near && !near.needs_location && near.places.length === 0 && (
           <p className="mt-4 text-lg">We couldn&apos;t load places right now. In an emergency, call 911.</p>
         )}
-        <p className="mt-3 text-sm text-navy/70">Places from OpenStreetMap. Call ahead to check they can see you.</p>
+        <p className="mt-3 text-sm text-navy/70">
+          Doctors, midwives and hospitals from the US NPI Registry (CMS), with OpenStreetMap. Listings can be out of
+          date: call ahead to check they can see you. In an emergency, call 911.
+        </p>
       </section>
     </div>
   );
@@ -252,7 +256,7 @@ function ErCard({ place }: { place: Place }) {
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border-l-8 border-alert bg-white p-5 ring-1 ring-alert/20">
       <div>
-        <p className="text-base font-semibold text-alert">Nearest emergency room</p>
+        <p className="text-base font-semibold text-alert">{place.kind === "emergency" ? "Nearest emergency room" : "Nearest hospital"}</p>
         <p className="text-lg font-semibold">{place.name}</p>
         <p className="text-base text-navy/80">{place.distance_km} km{place.phone ? ` · ${place.phone}` : ""}</p>
       </div>

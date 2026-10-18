@@ -189,6 +189,9 @@ export interface ClinicianPatient {
 export interface Citation2 {
   title: string;
   url: string;
+  site?: string;
+  /** The exact passage from the page that the answer relies on (Claude web search). */
+  quote?: string;
 }
 
 export interface AskResult {
@@ -197,6 +200,7 @@ export interface AskResult {
   tools_called: string[];
   red_flag: boolean;
   red_flag_level: RedFlagLevel | null;
+  source: "web" | "curated" | "none" | "off_topic" | "safety";
 }
 
 export interface Place {
@@ -208,6 +212,7 @@ export interface Place {
   website: string | null;
   distance_km: number;
   directions_url: string;
+  source?: "npi" | "osm";
 }
 
 export interface CareRequest {

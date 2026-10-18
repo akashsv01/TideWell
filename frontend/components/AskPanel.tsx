@@ -7,8 +7,9 @@ import { usePatientId } from "@/lib/session";
 import type { AskResult, RedFlagLevel } from "@/lib/types";
 import { btnPrimary, focusRing } from "@/lib/ui";
 
-// Ask Tidewell: the Care Navigator agent. It can look at your tide, search trusted guidance
-// (CDC, NIH, WHO, ACOG...) and the care team's suggestions, then answers with its sources.
+// Ask Tidewell: pregnancy and postpartum questions only (the backend declines anything else).
+// Answers come from a web search locked to trusted health sites (CDC, NIH, WHO, ACOG...), with the
+// page and the exact passage each answer relies on, or from Tidewell's curated guidelines.
 
 type Turn = { q: string; a?: AskResult; error?: string };
 
@@ -52,8 +53,8 @@ export default function AskPanel() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
       <h1 className="font-display text-4xl leading-tight">Ask Tidewell</h1>
       <p className="mt-3 max-w-[48ch] text-lg leading-relaxed text-navy/85">
-        Questions about recovery, feeding, mood or your numbers. Answers come from trusted sources like
-        the CDC and NIH, and say where they came from. Tidewell does not diagnose.
+        Questions about pregnancy, recovery, feeding, sleep, mood or your baby. Answers come from trusted
+        sources like the CDC, NIH and ACOG, and show where they came from. Tidewell does not diagnose.
       </p>
 
       <div aria-live="polite" className="mt-8 space-y-6">
@@ -78,23 +79,35 @@ export default function AskPanel() {
               {t.q}
             </p>
             {t.a && (
-              <div className="max-w-[92%] rounded-3xl rounded-bl-lg bg-sand/70 p-5 motion-safe:animate-reply-in">
+              <div className={`max-w-[92%] rounded-3xl rounded-bl-lg p-5 motion-safe:animate-reply-in ${t.a.source === "off_topic" ? "bg-white ring-1 ring-navy/15" : "bg-sand/70"}`}>
                 <p className="text-lg leading-relaxed">{t.a.answer}</p>
                 {t.a.citations.length > 0 && (
-                  <p className="mt-3 text-base text-navy/80">
-                    Sources:{" "}
-                    {t.a.citations.map((c, j) => (
-                      <span key={c.url}>
-                        {j > 0 && ", "}
-                        <a href={c.url} target="_blank" rel="noreferrer" className={`rounded font-semibold underline underline-offset-2 ${focusRing}`}>
-                          {c.title}
-                        </a>
-                      </span>
-                    ))}
-                  </p>
-                )}
-                {t.a.tools_called.length > 0 && (
-                  <p className="mt-2 text-sm text-navy/70">Checked: {[...new Set(t.a.tools_called)].map((x) => x.replace(/_/g, " ")).join(", ")}</p>
+                  <div className="mt-4">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-navy/70">
+                      {t.a.source === "web" ? "From trusted sites" : "From Tidewell's guidelines"}
+                    </p>
+                    <ol className="mt-2 space-y-2">
+                      {t.a.citations.map((c, j) => (
+                        <li key={c.url + j}>
+                          <a
+                            href={c.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`group block rounded-2xl bg-white p-3 ring-1 ring-navy/10 transition-[background-color] duration-150 ease-out hover:bg-foam ${focusRing}`}
+                          >
+                            <span className="flex items-baseline gap-2">
+                              <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-tide-deep text-xs font-bold text-white">{j + 1}</span>
+                              <span className="min-w-0">
+                                <span className="block font-semibold underline-offset-2 [overflow-wrap:anywhere] group-hover:underline">{c.title}</span>
+                                {c.site && <span className="block text-sm text-navy/70">{c.site}<span className="sr-only"> (opens in a new tab)</span></span>}
+                              </span>
+                            </span>
+                            {c.quote && <span className="mt-2 block border-l-4 border-tide pl-3 text-base italic text-navy/85">&ldquo;{c.quote}&rdquo;</span>}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 )}
               </div>
             )}

@@ -1,5 +1,13 @@
 // Decorative layered waves. Each layer is a sine path drawn twice as wide as its box and
 // slid left forever, so the loop is seamless. With reduced motion the layers stay still.
+// The brand colours map to --wave-* variables (globals.css), so night mode recolours every wave.
+
+const THEMED: Record<string, string> = {
+  "#efe3c8": "var(--wave-sand)",
+  "#13828a": "var(--wave-tide)",
+  "#0e6a70": "var(--wave-tide-deep)",
+  "#0b2545": "var(--wave-navy)",
+};
 
 export type WaveLayer = {
   color: string;
@@ -49,7 +57,7 @@ export default function Waves({
             opacity: layer.opacity ?? 1,
           }}
         >
-          <path d={wavePath(layer)} fill={layer.color} />
+          <path d={wavePath(layer)} style={{ fill: THEMED[layer.color.toLowerCase()] ?? layer.color }} />
         </svg>
       ))}
     </div>

@@ -3,6 +3,7 @@ import "@fontsource/young-serif";
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./globals.css";
 import NightMode from "@/components/NightMode";
+import { DAY_PAGE, NIGHT_BOOT_SCRIPT } from "@/lib/nightBoot";
 
 export const metadata: Metadata = {
   title: { default: "Tidewell", template: "%s | Tidewell" },
@@ -10,12 +11,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f9f9",
+  themeColor: DAY_PAGE,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    // suppressHydrationWarning: the boot script may add data-night before React hydrates.
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NIGHT_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full">
         <a
           href="#main"

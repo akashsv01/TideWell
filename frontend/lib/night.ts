@@ -1,12 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { NIGHT_KEY as KEY } from "@/lib/nightBoot";
 
 // Night mode for 3 a.m. feeds: a dark, low-glare theme. "auto" turns it on from 10 pm to 6 am.
 // Applied as <html data-night>, which swaps the colour tokens in globals.css.
 export type NightPref = "auto" | "on" | "off";
 
-const KEY = "tidewell.night";
 const listeners = new Set<() => void>();
 let pref: NightPref | null = null;
 
@@ -47,4 +47,15 @@ function subscribe(cb: () => void) {
 
 export function useNightPref(): NightPref {
   return useSyncExternalStore(subscribe, getNightPref, () => "auto");
+}
+
+// Whether night mode is showing right now (the <html data-night> attribute that NightMode sets).
+function subscribeShown(cb: () => void) {
+  const o = new MutationObserver(cb);
+  o.observe(document.documentElement, { attributes: true, attributeFilter: ["data-night"] });
+  return () => o.disconnect();
+}
+
+export function useNightShown(): boolean {
+  return useSyncExternalStore(subscribeShown, () => document.documentElement.hasAttribute("data-night"), () => false);
 }

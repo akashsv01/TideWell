@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
-/* Tidewell design tokens.
-   Light theme only for now. A night mode for 3 a.m. feeds is a good Phase 2 idea. */
+/* Tidewell design tokens. Night mode overrides them at the end of this file (html[data-night]). */
 @theme {
   --color-navy: #0b2545;
   --color-tide: #13828a;
@@ -33,7 +32,8 @@
   --animate-section-in: reply-in 0.3s var(--ease-out) both;
   --animate-backdrop-in: fade-in 0.15s var(--ease-out) both;
   --animate-card-in: card-in 0.2s var(--ease-out) both;
-  --animate-page-in: page-in 0.22s var(--ease-out) both;
+  /* No fill-mode: content stays visible even if the animation never runs (hidden/cached segments). */
+  --animate-page-in: page-in 0.22s var(--ease-out);
 
   @keyframes drift {
     from {
@@ -265,18 +265,103 @@ select {
   }
 }
 
-/* --- Night mode (lib/night.ts): swap the colour tokens for a dark, low-glare theme ------------ */
+/* --- Wave colours (components/Waves.tsx). Night mode below swaps them for a moonlit sea. ------ */
+:root {
+  --wave-sand: #efe3c8;
+  --wave-tide: #13828a;
+  --wave-tide-deep: #0e6a70;
+  --wave-navy: #0b2545;
+}
+
+/* --- Night mode (lib/night.ts) ----------------------------------------------------------------
+   A dark, low-glare "moonlit tide" for 3 a.m. feeds. Text tokens turn light; surfaces get their own
+   dark layers rather than inverting, so navy panels stay the deepest water and white text on teal
+   buttons stays white. Contrast: body text 14:1 on the page, white on night buttons >= 4.5:1. */
 html[data-night] {
   color-scheme: dark;
-  --color-foam: #0a1628;
-  --color-navy: #e6eef5;
-  --color-sand: #1d2b40;
-  --color-white: #12223a;
-  --color-tide-deep: #2b9aa1;
-  --color-tide: #3fb3b9;
-  --color-alert: #ff8a80;
+  --night-page: #07131f;
+  --night-surface: #10233a; /* cards that are white by day */
+  --night-panel: #0b1d31; /* panels that are navy by day */
+  --color-foam: var(--night-page);
+  --color-navy: #dde8f0; /* body text */
+  --color-sand: #1a3048; /* warm cards become dusk blue */
+  --color-tide: #2aa3aa;
+  --color-tide-deep: #17767c; /* button fill under white text */
+  --color-tide-light: #7fd6d9;
+  --color-alert: #d23f35; /* fill under white text */
+  --color-chart-teal: #22aab3;
+  --color-chart-amber: #e09a45;
+  --wave-sand: #16304a;
+  --wave-tide: #135d66;
+  --wave-tide-deep: #0e4c55;
+  --wave-navy: var(--night-panel);
 }
 html[data-night] body {
-  background: var(--color-foam);
+  /* a faint moon glow at the top of the page */
+  background:
+    radial-gradient(60rem 30rem at 50% -8rem, rgb(111 208 212 / 0.1), transparent 70%) no-repeat,
+    var(--night-page);
   color: var(--color-navy);
+}
+html[data-night] .bg-white {
+  background-color: var(--night-surface);
+}
+html[data-night] .bg-navy,
+html[data-night] .hover\:bg-navy:hover,
+html[data-night] .focus\:bg-navy:focus {
+  background-color: var(--night-panel);
+}
+html[data-night] .bg-navy {
+  box-shadow: inset 0 0 0 1px rgb(127 214 217 / 0.12);
+}
+html[data-night] .border-navy {
+  border-color: rgb(221 232 240 / 0.5);
+}
+html[data-night] .text-tide-deep {
+  color: var(--color-tide-light);
+}
+html[data-night] .text-alert {
+  color: #ff9a91;
+}
+/* Status chips that use fixed colours by day */
+html[data-night] .bg-\[\#e3f1e8\] {
+  background-color: rgb(92 196 132 / 0.16);
+}
+html[data-night] .text-\[\#2f5d3f\] {
+  color: #9fe2b6;
+}
+html[data-night] .text-\[\#7a4a10\] {
+  color: #f2bb74;
+}
+html[data-night] .accent-\[\#0e6a70\] {
+  accent-color: var(--color-tide);
+}
+/* Charts (recharts draws with SVG attributes; CSS wins over them) */
+html[data-night] .recharts-cartesian-axis-tick-value,
+html[data-night] .recharts-reference-line text {
+  fill: #b7c8d6;
+}
+html[data-night] .recharts-cartesian-grid line {
+  stroke: rgb(221 232 240 / 0.1);
+}
+html[data-night] .recharts-reference-line line {
+  stroke: rgb(221 232 240 / 0.55);
+}
+html[data-night] .recharts-active-dot circle,
+html[data-night] .recharts-dot {
+  stroke: var(--night-panel);
+}
+
+/* Switching day/night crossfades colours for a moment (set by ThemeToggle), never other motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-fade] *,
+  html[data-theme-fade] *::before,
+  html[data-theme-fade] *::after {
+    transition:
+      background-color 0.3s var(--ease-out),
+      border-color 0.3s var(--ease-out),
+      color 0.3s var(--ease-out),
+      fill 0.3s var(--ease-out),
+      stroke 0.3s var(--ease-out) !important;
+  }
 }

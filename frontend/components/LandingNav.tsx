@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/api";
 import { clearSession, useSession } from "@/lib/session";
+import ThemeToggle from "@/components/ThemeToggle";
 import { focusRing } from "@/lib/ui";
 
 const pill =
@@ -29,6 +30,7 @@ export default function LandingNav() {
         Tidewell
       </Link>
       <nav aria-label="Account" className="flex items-center gap-3">
+        <ThemeToggle />
         {!ready ? (
           <span className="min-h-11 w-28" aria-hidden="true" />
         ) : session?.kind === "user" ? (

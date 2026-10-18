@@ -30,7 +30,7 @@ const STEPS = [
   "How many weeks pregnant were you?",
   "How did you give birth?",
   "How are you feeding your baby?",
-  "Have you ever had depression or anxiety?",
+  "Have you ever been diagnosed with depression or anxiety?",
   "Did any of these happen in your pregnancy?",
   "Who should we tell if you need urgent care?",
   "Ready to start",
@@ -52,7 +52,7 @@ export default function Onboarding() {
   const [weeks, setWeeks] = useState("");
   const [method, setMethod] = useState<DeliveryType | "">("");
   const [feeding, setFeeding] = useState<FeedingType | "">("");
-  const [mental, setMental] = useState<"yes" | "no" | "">("");
+  const [mental, setMental] = useState<"yes" | "no" | "unsure" | "">("");
   const [complications, setComplications] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>("en");
   const [supportName, setSupportName] = useState("");
@@ -109,7 +109,7 @@ export default function Onboarding() {
       case 5:
         return feeding ? null : "Choose how you are feeding your baby.";
       case 6:
-        return mental ? null : "Choose yes or no. Either answer is okay.";
+        return mental ? null : "Choose yes, no or not sure. Any answer is okay.";
       case 8:
         if (!phone.trim()) return null;
         if (digits(phone).length < 10) return "Enter the full phone number, including area code.";
@@ -258,10 +258,10 @@ export default function Onboarding() {
             {step === 6 && (
               <div className="space-y-4">
                 <p className="text-lg leading-relaxed">
-                  Before or during pregnancy. This helps Tidewell check in on your mood more carefully. It
-                  stays private.
+                  By a doctor or other health professional, before or during pregnancy. This helps Tidewell
+                  check in on your mood more carefully. It stays private.
                 </p>
-                <Choices legend="Have you ever had depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]} />
+                <Choices legend="Have you ever been diagnosed with depression or anxiety?" name="mental" value={mental} onChange={(v) => setMental(v as "yes" | "no" | "unsure")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "unsure", label: "Not sure" }]} />
               </div>
             )}
 
@@ -320,7 +320,7 @@ export default function Onboarding() {
                 <Row term="Weeks of pregnancy" value={weeks || "Not given"} />
                 <Row term="Birth" value={DELIVERY.find((d) => d.value === method)?.label ?? ""} />
                 <Row term="Feeding" value={FEEDING.find((f) => f.value === feeding)?.label ?? ""} />
-                <Row term="Depression or anxiety before" value={mental === "yes" ? "Yes" : "No"} />
+                <Row term="Diagnosed with depression or anxiety" value={mental === "yes" ? "Yes" : mental === "unsure" ? "Not sure" : "No"} />
                 <Row term="Pregnancy" value={complications.length ? COMPLICATIONS.filter((c) => complications.includes(c.value)).map((c) => c.label).join("; ") : "Nothing to flag"} />
                 <Row term="Urgent contact" value={phone.trim() ? `${supportName.trim()}, ${phone.trim()}` : "None"} />
                 <Row term="Language" value={LANGUAGES.find((l) => l.value === language)?.label ?? ""} />

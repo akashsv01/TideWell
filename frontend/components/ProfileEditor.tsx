@@ -102,7 +102,7 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
         <Section title="Feeding">
           <Choices legend="Feeding" name={`${ids}-feeding`} value={p.feeding_type} onChange={(v) => set("feeding_type", v as FeedingType)} options={FEEDING} />
         </Section>
-        <Section title="Depression or anxiety, before or during pregnancy">
+        <Section title="Ever diagnosed with depression or anxiety">
           <Choices legend="Depression or anxiety" name={`${ids}-mental`} value={p.history_mental_health ? "yes" : "no"} onChange={(v) => set("history_mental_health", v === "yes")} options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]} />
         </Section>
         <Section title="Pregnancy complications">
