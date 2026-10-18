@@ -10,7 +10,7 @@ import { focusRing } from "@/lib/ui";
 export default function AccountMenu() {
   const router = useRouter();
   const { session } = useSession();
-  const pill = `inline-flex min-h-11 items-center rounded-full border-2 border-navy px-4 text-base font-semibold transition-colors duration-150 hover:bg-navy hover:text-white ${focusRing}`;
+  const pill = `inline-flex min-h-11 items-center rounded-full border-2 border-navy px-4 text-base font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out hover:bg-navy hover:text-white motion-safe:active:scale-[0.97] ${focusRing}`;
 
   if (!session) {
     return (

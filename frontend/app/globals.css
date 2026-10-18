@@ -33,6 +33,7 @@
   --animate-section-in: reply-in 0.3s var(--ease-out) both;
   --animate-backdrop-in: fade-in 0.15s var(--ease-out) both;
   --animate-card-in: card-in 0.2s var(--ease-out) both;
+  --animate-page-in: page-in 0.22s var(--ease-out) both;
 
   @keyframes drift {
     from {
@@ -122,6 +123,17 @@
       opacity: 1;
     }
   }
+  /* Soft page enter for app/(app)/template.tsx. */
+  @keyframes page-in {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
 }
 
 :root {
@@ -132,6 +144,20 @@ body {
   background: var(--color-foam);
   color: var(--color-navy);
   font-family: var(--font-sans);
+}
+
+button,
+a,
+summary,
+[role="button"],
+label[for],
+select {
+  cursor: pointer;
+}
+
+[aria-disabled="true"],
+:disabled {
+  cursor: not-allowed;
 }
 
 /* While Tidewell is thinking, the orb's water runs faster. */

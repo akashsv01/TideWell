@@ -38,7 +38,7 @@ const STEPS = [
 const TOTAL = STEPS.length;
 
 export const choice =
-  "flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 border-navy/25 bg-white px-4 py-3 text-lg transition-colors duration-150 peer-checked:border-tide-deep peer-checked:bg-tide-deep peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-navy peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-foam";
+  "flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 border-navy/25 bg-white px-4 py-3 text-lg transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] peer-checked:border-tide-deep peer-checked:bg-tide-deep peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-navy peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-foam";
 const field = `mt-3 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`;
 
 export default function Onboarding() {
