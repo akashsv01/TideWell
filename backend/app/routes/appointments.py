@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app import auth, booking, db, store
 from app.schemas_data import AppointmentIn, AppointmentOut, JoinOut, ProviderOut, Slot, VisitMode, VisitOut
@@ -121,3 +122,19 @@ def join(
         return booking.join(appointment_id, as_ == "provider")
     except booking.BookingError as e:
         _raise(e)
+
+
+@router.get("/visits/doctor/{room}", include_in_schema=False)
+def doctor_join(room: str):
+    """Link in the doctor's email. The room name is the secret; opening it sends the doctor into the call."""
+    import html as _html
+
+    try:
+        return RedirectResponse(booking.provider_join(room), status_code=302)
+    except booking.BookingError as e:
+        page = ('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                '<title>Tidewell video visit</title><body style="font-family:system-ui,sans-serif;background:#f4f9f9;'
+                'color:#0b2545;display:grid;place-items:center;min-height:100vh;margin:0"><main style="max-width:420px;'
+                'background:#fff;border-radius:24px;padding:32px;margin:16px"><p style="color:#0e6a70;font-weight:700;'
+                f'font-size:22px;margin:0 0 12px">Tidewell</p><p style="font-size:18px;margin:0">{_html.escape(e.message)}</p></main>')
+        return HTMLResponse(page, status_code=e.status)

@@ -8,13 +8,19 @@ from typing import Optional
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from app import db, demo_data, store, video
+from app import db, demo_data, provider_mail, store, video
+from app.config import get_settings
 from app.providers_data import PROVIDERS, PROVIDERS_BY_ID
 
 CLINIC_TZ = ZoneInfo("America/New_York")
 # (first_day_offset, last_day_offset, max_slots). Amber = soon, watch = later this week, routine = any time.
 _WINDOW = {"amber": (1, 3, 5), "watch": (3, 6, 5), "routine": (1, 10, 30)}
 _MOCK_VISITS: dict[UUID, dict] = {}
+
+
+def _anytime() -> bool:
+    """VIDEO_JOIN_ANYTIME=true (testing only) switches the join time window off."""
+    return get_settings().video_join_anytime
 
 
 class BookingError(Exception):
@@ -82,7 +88,7 @@ def _public_visit(row: dict) -> dict:
         opens, closes = video.window(row["slot"])
         now = datetime.now(timezone.utc)
         demo = row["patient_id"] == demo_data.MAYA_ID  # the demo can always be tried
-        out["join"] = {"can_join": demo or opens <= now <= closes, "opens_at": opens, "closes_at": closes}
+        out["join"] = {"can_join": demo or _anytime() or opens <= now <= closes, "opens_at": opens, "closes_at": closes}
     return out
 
 
@@ -119,7 +125,9 @@ def book(patient_id: UUID, provider_id: UUID, slot: datetime, mode: str, reason:
             "provider_address": provider["address"],
         }
         _MOCK_VISITS[new_id] = {**row}
-    return _public_visit(row)
+    out = _public_visit(row)
+    provider_mail.notify("booked", out, row["meeting_room"] or "")
+    return out
 
 
 # --- Listing, cancelling, joining ----------------------------------------------------------
@@ -153,7 +161,9 @@ def cancel(appointment_id: UUID) -> dict:
         row = store.get_visit(appointment_id)
     else:
         row["status"] = "cancelled"
-    return _public_visit(row)
+    out = _public_visit(row)
+    provider_mail.notify("cancelled", out, row["meeting_room"] or "")
+    return out
 
 
 def join(appointment_id: UUID, as_provider: bool = False) -> dict:
@@ -166,7 +176,7 @@ def join(appointment_id: UUID, as_provider: bool = False) -> dict:
     if as_provider and not demo:
         raise BookingError(403, "only the demo visit can be opened as the provider")
     opens, closes = video.window(row["slot"])
-    if not demo and not (opens <= datetime.now(timezone.utc) <= closes):
+    if not demo and not _anytime() and not (opens <= datetime.now(timezone.utc) <= closes):
         raise BookingError(409, "the video room opens 15 minutes before the visit")
     meeting = {"provider": row["meeting_provider"], "room": row["meeting_room"], "url": row["meeting_url"]}
     name = row["provider_name"] if as_provider else "Patient"
@@ -175,3 +185,25 @@ def join(appointment_id: UUID, as_provider: bool = False) -> dict:
     except Exception:  # noqa: BLE001
         raise BookingError(502, "Video is unavailable right now. Try again in a minute.") from None
     return {"url": url, "service": meeting["provider"], "embeddable": meeting["provider"] == "daily"}
+
+
+def provider_join(room: str) -> str:
+    """The doctor's emailed link: check the visit, then return the URL of the video room (doctor side)."""
+    row = store.get_visit_by_room(room) if db.enabled() else next(
+        (v for v in _MOCK_VISITS.values() if v["meeting_room"] == room), None)
+    if row is None:
+        raise BookingError(404, "We could not find this visit.")
+    if row["status"] != "booked":
+        raise BookingError(410, "This visit was cancelled.")
+    opens, closes = video.window(row["slot"])
+    now = datetime.now(timezone.utc)
+    if row["patient_id"] != demo_data.MAYA_ID and not _anytime():
+        if now < opens:
+            raise BookingError(409, "The video room is not open yet. It opens 15 minutes before the visit.")
+        if now > closes:
+            raise BookingError(410, "This visit has ended.")
+    meeting = {"provider": row["meeting_provider"], "room": row["meeting_room"], "url": row["meeting_url"]}
+    try:
+        return video.join_url(meeting, row["slot"], row["provider_name"], owner=True)
+    except Exception:  # noqa: BLE001
+        raise BookingError(502, "Video is unavailable right now. Try the link again in a minute.") from None

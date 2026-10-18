@@ -79,7 +79,8 @@ def test_demo_visit_can_always_be_joined_and_opened_as_provider(monkeypatch):
     v = _book(patient=MAYA, provider=LACTATION, mode="virtual").json()["visit"]
     assert v["join"]["can_join"] is True
     j = client.post(f"/appointments/{v['appointment_id']}/join").json()
-    assert j["service"] == "jitsi" and j["url"].startswith("https://meet.jit.si/tw-") and j["embeddable"] is False
+    assert j["service"] == "webrtc" and j["url"].startswith("http://localhost:5000/?room=tw-") and j["embeddable"] is False
+    assert "role=patient" in j["url"] and "return=http%3A%2F%2Flocalhost%3A3000%2Fvisits" in j["url"]
     assert client.post(f"/appointments/{v['appointment_id']}/join", params={"as": "provider"}).status_code == 200
     # only the demo visit can be opened as the provider
     other = _book(patient=str(uuid4()), provider=LACTATION, mode="virtual").json()["visit"]
@@ -146,7 +147,7 @@ def test_daily_room_and_token_requests(monkeypatch):
         get_settings.cache_clear()
 
 
-def test_room_creation_falls_back_to_jitsi_when_daily_is_down(monkeypatch):
+def test_room_creation_falls_back_to_webrtc_when_daily_is_down(monkeypatch):
     def boom(*a, **k):
         raise RuntimeError("down")
 
@@ -154,7 +155,7 @@ def test_room_creation_falls_back_to_jitsi_when_daily_is_down(monkeypatch):
     get_settings.cache_clear()
     monkeypatch.setattr(video.httpx, "post", boom)
     try:
-        assert video.create_room(datetime.now(timezone.utc) + timedelta(days=1))["provider"] == "jitsi"
+        assert video.create_room(datetime.now(timezone.utc) + timedelta(days=1))["provider"] == "webrtc"
     finally:
         monkeypatch.delenv("DAILY_API_KEY")
         get_settings.cache_clear()
@@ -172,3 +173,125 @@ def test_legacy_booking_without_provider_still_works():
 def test_booking_agent_scheduler_is_unchanged():
     from app.routes.appointments import _generate
     assert 1 <= len(_generate("amber")) <= 5
+
+
+def test_old_jitsi_visits_still_join(monkeypatch):
+    meeting = {"provider": "jitsi", "room": "tw-old", "url": "https://meet.jit.si/tw-old"}
+    assert video.join_url(meeting, datetime.now(timezone.utc), "Patient") == "https://meet.jit.si/tw-old"
+
+
+def test_webrtc_link_uses_current_setting(monkeypatch):
+    monkeypatch.setenv("WEBRTC_BASE_URL", "https://example.ngrok-free.dev/")
+    get_settings.cache_clear()
+    try:
+        meeting = video.create_room(datetime.now(timezone.utc) + timedelta(days=1))
+        url = video.join_url(meeting, datetime.now(timezone.utc), "Patient")
+        assert url.startswith(f"https://example.ngrok-free.dev/?room={meeting['room']}&role=patient")
+    finally:
+        monkeypatch.delenv("WEBRTC_BASE_URL")
+        get_settings.cache_clear()
+
+
+# --- doctor email ---------------------------------------------------------------------------
+def _sent_emails(monkeypatch, key="re_test", to="doctor@example.com"):
+    from app import provider_mail
+
+    monkeypatch.setenv("RESEND_API_KEY", key)
+    monkeypatch.setenv("DOCTOR_EMAIL", to)
+    get_settings.cache_clear()
+    sent = []
+
+    class R:
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(provider_mail, "_run", lambda fn: fn())
+    monkeypatch.setattr(provider_mail.httpx, "post", lambda url, **kw: sent.append((url, kw)) or R())
+    return sent
+
+
+def test_doctor_gets_an_email_with_a_join_link_for_a_video_visit(monkeypatch):
+    sent = _sent_emails(monkeypatch)
+    try:
+        v = _book(patient=MAYA, provider=LACTATION, mode="virtual", reason="Latch pain").json()["visit"]
+        assert len(sent) == 1
+        url, kw = sent[0]
+        assert url == "https://api.resend.com/emails"
+        assert kw["headers"]["Authorization"] == "Bearer re_test" and kw["json"]["to"] == ["doctor@example.com"]
+        assert "/visits/doctor/tw-" in kw["json"]["html"] and "Latch pain" in kw["json"]["text"]
+        assert "Maya" not in kw["json"]["text"]
+        # cancelling tells the doctor too, without a link
+        client.post(f"/appointments/{v['appointment_id']}/cancel")
+        assert len(sent) == 2 and "cancelled" in sent[1][1]["json"]["subject"].lower()
+        assert "/visits/doctor/" not in sent[1][1]["json"]["html"]
+    finally:
+        monkeypatch.delenv("RESEND_API_KEY")
+        monkeypatch.delenv("DOCTOR_EMAIL")
+        get_settings.cache_clear()
+
+
+def test_no_email_for_in_person_visits_or_without_config(monkeypatch):
+    sent = _sent_emails(monkeypatch)
+    try:
+        _book(patient=MAYA, mode="in_person")
+        assert sent == []
+    finally:
+        monkeypatch.delenv("RESEND_API_KEY")
+        monkeypatch.delenv("DOCTOR_EMAIL")
+        get_settings.cache_clear()
+    sent2 = []
+    from app import provider_mail
+
+    monkeypatch.setattr(provider_mail, "_run", lambda fn: fn())
+    monkeypatch.setattr(provider_mail.httpx, "post", lambda *a, **k: sent2.append(1))
+    _book(patient=MAYA, provider=LACTATION, mode="virtual")
+    assert sent2 == []  # no key / address set: nothing is sent and booking still works
+
+
+def test_a_failed_email_does_not_break_booking(monkeypatch):
+    from app import provider_mail
+
+    _sent_emails(monkeypatch)
+
+    def boom(*a, **k):
+        raise RuntimeError("resend down")
+
+    monkeypatch.setattr(provider_mail.httpx, "post", boom)
+    try:
+        assert _book(patient=MAYA, provider=LACTATION, mode="virtual").status_code == 200
+    finally:
+        monkeypatch.delenv("RESEND_API_KEY")
+        monkeypatch.delenv("DOCTOR_EMAIL")
+        get_settings.cache_clear()
+
+
+def test_doctor_link_redirects_into_the_room_and_is_time_boxed():
+    v = _book(patient=MAYA, provider=LACTATION, mode="virtual").json()["visit"]
+    room = next(x["meeting_room"] for x in booking._MOCK_VISITS.values() if x["id"] == __import__("uuid").UUID(v["appointment_id"]))
+    r = client.get(f"/visits/doctor/{room}", follow_redirects=False)
+    assert r.status_code == 302 and "role=provider" in r.headers["location"] and "return=" not in r.headers["location"]
+    # a real patient's visit is not open days ahead
+    other = _book(patient=str(uuid4()), provider=LACTATION, mode="virtual").json()["visit"]
+    room2 = next(x["meeting_room"] for x in booking._MOCK_VISITS.values() if str(x["id"]) == other["appointment_id"])
+    early = client.get(f"/visits/doctor/{room2}", follow_redirects=False)
+    assert early.status_code == 409 and "15 minutes" in early.text
+    assert client.get("/visits/doctor/tw-nope", follow_redirects=False).status_code == 404
+    client.post(f"/appointments/{v['appointment_id']}/cancel")
+    assert client.get(f"/visits/doctor/{room}", follow_redirects=False).status_code == 410
+
+
+def test_join_anytime_setting_opens_the_room_for_testing(monkeypatch):
+    other = _book(patient=str(uuid4()), provider=LACTATION, mode="virtual").json()["visit"]
+    aid = other["appointment_id"]
+    assert other["join"]["can_join"] is False
+    assert client.post(f"/appointments/{aid}/join").status_code == 409
+    monkeypatch.setenv("VIDEO_JOIN_ANYTIME", "true")
+    get_settings.cache_clear()
+    try:
+        assert client.post(f"/appointments/{aid}/join").status_code == 200
+        room = next(x["meeting_room"] for x in booking._MOCK_VISITS.values() if str(x["id"]) == aid)
+        assert client.get(f"/visits/doctor/{room}", follow_redirects=False).status_code == 302
+    finally:
+        monkeypatch.delenv("VIDEO_JOIN_ANYTIME")
+        get_settings.cache_clear()
+    assert client.post(f"/appointments/{aid}/join").status_code == 409

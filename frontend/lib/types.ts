@@ -220,8 +220,8 @@ export interface Visit {
 
 export interface JoinInfo {
   url: string;
-  service: "daily" | "jitsi";
-  /** Daily rooms open inside the app. Jitsi opens in a new tab. */
+  service: "daily" | "webrtc" | "jitsi";
+  /** Daily rooms open inside the app. The WebRTC page opens in a new tab. */
   embeddable: boolean;
 }
 

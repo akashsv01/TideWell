@@ -44,6 +44,24 @@ export default function BookVisit() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const firstRender = useRef(true);
 
+  // Next keeps a page you have visited mounted (hidden), so this form could come back still showing "booked".
+  // Effects are cleaned up when the page is hidden, so reset there: the next visit starts at the first step.
+  useEffect(() => {
+    return () => {
+      setStep("provider");
+      setProviderId("");
+      setMode("");
+      setUrgency(URGENCIES.includes(rawUrgency as VisitUrgency) ? (rawUrgency as VisitUrgency) : "routine");
+      setLoaded(null);
+      setSlot("");
+      setReason(params.get("reason")?.slice(0, 500) ?? "");
+      setError(null);
+      setSaving(false);
+      setVisit(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const slotsKey = `${providerId}|${mode}|${urgency}`;
   const slots = loaded?.key === slotsKey ? loaded.list : null; // null while loading
   const provider = providers?.find((p) => p.id === providerId) ?? null;

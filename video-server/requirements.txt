@@ -1,0 +1,5 @@
+flask>=3.0
+flask-socketio>=5.3
+eventlet>=0.36
+# gunicorn 25+ removed the eventlet worker, so stay on 23
+gunicorn==23.0.0

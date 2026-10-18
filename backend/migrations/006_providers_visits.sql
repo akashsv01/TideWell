@@ -20,7 +20,7 @@ ALTER TABLE appointments ADD COLUMN IF NOT EXISTS provider_id UUID REFERENCES pr
 
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 'in_person';
 
--- Video visits: which service hosts the room ("daily" or the "jitsi" fallback), the room name and its base URL.
+-- Video visits: which service hosts the room ("daily" or "webrtc"; older rows may say "jitsi"), the room name and its base URL.
 -- The URL a person actually joins with (it carries a short-lived token) is built at join time, never stored.
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS meeting_provider TEXT;
 

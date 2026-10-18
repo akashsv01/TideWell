@@ -393,7 +393,7 @@ export async function cancelVisit(appointmentId: string): Promise<Visit> {
 export async function joinVisit(appointmentId: string, asProvider = false): Promise<JoinInfo> {
   if (USE_MOCK) {
     await wait(300);
-    return { url: `https://meet.jit.si/tidewell-mock-${appointmentId}`, service: "jitsi", embeddable: false };
+    return { url: `http://localhost:5000/?room=tidewell-mock-${appointmentId}&role=${asProvider ? "provider" : "patient"}${asProvider ? "" : `&return=${encodeURIComponent(`${window.location.origin}/visits`)}`}`, service: "webrtc", embeddable: false };
   }
   return request(`/appointments/${appointmentId}/join${asProvider ? "?as=provider" : ""}`, { method: "POST" });
 }

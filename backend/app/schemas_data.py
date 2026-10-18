@@ -158,8 +158,8 @@ class AppointmentOut(BaseModel):
 
 class JoinOut(BaseModel):
     url: str
-    service: Literal["daily", "jitsi"]
-    embeddable: bool  # Daily rooms open inside the app; Jitsi opens in a new tab
+    service: Literal["daily", "webrtc", "jitsi"]
+    embeddable: bool  # Daily rooms open inside the app; the WebRTC page opens in a new tab
 
 
 class ClinicianPatient(BaseModel):

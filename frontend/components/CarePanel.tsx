@@ -24,6 +24,8 @@ const CATEGORY: Record<string, string> = {
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
+const PLACES_FIRST = 5; // nearest first; the rest are behind a More button
+
 export default function CarePanel() {
   const { session } = useSession();
   const patientId = session?.patientId ?? null;
@@ -34,6 +36,7 @@ export default function CarePanel() {
   const [locMsg, setLocMsg] = useState<string | null>(null);
   const [editingLoc, setEditingLoc] = useState(false);
   const [finding, setFinding] = useState(false);
+  const [expandedFor, setExpandedFor] = useState<Nearby | null>(null); // a new search is a new object, so it starts collapsed
   const [pick, setPick] = useState<{ slot: string; fac: number } | null>(null);
   const [booking, setBooking] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -276,7 +279,7 @@ export default function CarePanel() {
         {near?.nearest_er && <ErCard place={near.nearest_er} />}
         {near && near.places.length > 0 && (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {near.places.map((p) => (
+            {(expandedFor === near ? near.places : near.places.slice(0, PLACES_FIRST)).map((p) => (
               <li key={`${p.name}-${p.address}`} className="flex flex-col rounded-2xl bg-white p-4 ring-1 ring-navy/10">
                 <span className="text-lg font-semibold">{p.name}</span>
                 <span className="text-base text-navy/80">{p.kind_label} · {p.distance_km} km</span>
@@ -289,6 +292,11 @@ export default function CarePanel() {
               </li>
             ))}
           </ul>
+        )}
+        {near && near.places.length > PLACES_FIRST && expandedFor !== near && (
+          <button type="button" onClick={() => setExpandedFor(near)} className={`mt-4 min-h-12 rounded-full border-2 border-navy px-6 text-lg font-semibold ${focusRing}`}>
+            More ({near.places.length - PLACES_FIRST})
+          </button>
         )}
         {near && !near.needs_location && near.places.length === 0 && (
           <p className="mt-4 text-lg">We couldn&apos;t load places right now. In an emergency, call 911.</p>
@@ -310,9 +318,18 @@ function ErCard({ place }: { place: Place }) {
         <p className="text-lg font-semibold">{place.name}</p>
         <p className="text-base text-navy/80">{place.distance_km} km{place.phone ? ` · ${place.phone}` : ""}</p>
       </div>
-      <a href={place.directions_url} target="_blank" rel="noreferrer" className={`inline-flex min-h-12 items-center rounded-full bg-alert px-5 font-semibold text-white ${focusRing}`}>
-        Directions
-      </a>
+      <div className="flex flex-wrap gap-2">
+        <a href={place.directions_url} target="_blank" rel="noreferrer" className={`inline-flex min-h-12 items-center rounded-full bg-alert px-5 font-semibold text-white ${focusRing}`}>
+          Directions
+        </a>
+        {/* No listed number: fall back to 911, which is right for an emergency room */}
+        <a href={`tel:${place.phone ? place.phone.replace(/[^\d+]/g, "") : "911"}`} className={`inline-flex min-h-12 items-center rounded-full border-2 border-navy px-5 font-semibold ${focusRing}`}>
+          {place.phone ? "Call" : "Call 911"}
+        </a>
+        <Link href="/visits/book" className={`inline-flex min-h-12 items-center rounded-full border-2 border-navy bg-navy px-5 font-semibold text-white ${focusRing}`}>
+          Book an appointment
+        </Link>
+      </div>
     </div>
   );
 }

@@ -331,6 +331,11 @@ def get_visit(appointment_id: UUID) -> Optional[dict]:
         return conn.execute(_VISIT_SELECT + " WHERE a.id = %s", (appointment_id,)).fetchone()
 
 
+def get_visit_by_room(room: str) -> Optional[dict]:
+    with db.connection() as conn:
+        return conn.execute(_VISIT_SELECT + " WHERE a.meeting_room = %s", (room,)).fetchone()
+
+
 def cancel_visit(appointment_id: UUID) -> bool:
     with db.connection() as conn:
         cur = conn.execute(

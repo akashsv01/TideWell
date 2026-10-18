@@ -25,8 +25,18 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
-    # Video visits. Empty = fall back to Jitsi links (see app/video.py).
+    # Video visits. Empty = use the WebRTC video server (see app/video.py and video-server/).
     daily_api_key: str = ""
+    # Testing only: true lets anyone join a video visit at any time (normally 15 minutes before to 2 hours after).
+    video_join_anytime: bool = False
+    # Where video-server/ (the WebRTC signaling page) is reachable from the browser. Use an https ngrok address to test across devices.
+    webrtc_base_url: str = "http://localhost:5000"
+    # Doctor email for video visits (Resend, https://resend.com). One inbox for every doctor. Empty = no email is sent.
+    resend_api_key: str = ""
+    resend_from: str = "Tidewell <onboarding@resend.dev>"
+    doctor_email: str = ""
+    # Where this backend is reachable from the doctor's browser; the emailed join link points here.
+    public_api_url: str = "http://localhost:8000"
     # Comma-separated browser origins allowed by CORS (local Next.js + your Vercel URL).
     frontend_origins: str = "http://localhost:3000,http://localhost:3001"  # local dev server + local prod build
 
