@@ -150,7 +150,7 @@ def _npi_place(r: dict, kind: str) -> Optional[dict]:
     if kind == "hospital" and not _HOSPITAL_NAME.search(name):
         return None  # skips practices and universities registered under a hospital taxonomy
     zip5 = (loc.get("postal_code") or "")[:5]
-    if re.search(r"attn|business office|billing", (loc.get("address_1", "") + " " + loc.get("address_2", "")), re.I):
+    if re.search(r"\battn\b|business office|billing", (loc.get("address_1", "") + " " + loc.get("address_2", "")), re.I):
         return None  # an admin office, not where patients go
     street = _title(" ".join(x for x in [loc.get("address_1"), loc.get("address_2")] if x))
     return {

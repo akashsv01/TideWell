@@ -2,7 +2,7 @@
 
 POST /ask                          Ask Tidewell: safety check, topic guardrail, cited answer
 GET  /patients/{id}/risk           Watch agent analysis now (+ open care request, appointments)
-PUT  /patients/{id}/location       save location (browser coords or ZIP) for nearby care
+PUT/DELETE /patients/{id}/location save or forget location (browser coords or ZIP) for nearby care
 GET  /care/nearby                  nearest maternity care (patient's saved location, coords or ZIP)
 POST /care-requests/{id}/book      patient books a proposed time (Booking agent never books alone)
 POST /care-requests/{id}/dismiss
@@ -158,6 +158,17 @@ def save_location(patient_id: UUID, body: LocationIn, user: auth.User = Depends(
     return {"lat": round(lat, 3), "lon": round(lon, 3), "label": label}
 
 
+@router.delete("/patients/{patient_id}/location", status_code=204)
+def clear_location(patient_id: UUID, user: auth.User = Depends(auth.require_user)) -> Response:
+    """Forget the saved location (the Care page then asks for a ZIP code or location again)."""
+    if auth.is_demo(patient_id):
+        raise HTTPException(403, "the demo is read-only")
+    auth.authorize_patient(patient_id, user)
+    _need_db()
+    store.set_location(patient_id, None, None, None)
+    return Response(status_code=204)
+
+
 @router.get("/care/nearby")
 def nearby(patient_id: Optional[UUID] = None, lat: Optional[float] = None, lon: Optional[float] = None,
            zip: Optional[str] = Query(default=None, max_length=12),
@@ -167,6 +178,7 @@ def nearby(patient_id: Optional[UUID] = None, lat: Optional[float] = None, lon: 
         auth.authorize_patient(patient_id, user)
         prof = store.get_profile(patient_id) or {}
         lat, lon, postal = prof.get("home_lat"), prof.get("home_lon"), postal or prof.get("postal_code")
+        label = f"ZIP {postal}" if postal else ("your location" if lat is not None else None)
         if auth.is_demo(patient_id) and lat is None:
             lat, lon, label, postal = 38.989, -76.943, "College Park, MD (demo)", "20742"
     if (lat is None or lon is None) and zip:

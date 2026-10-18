@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, bookCare, dismissCare, downloadSummary, getNearby, getRisk, saveLocation } from "@/lib/api";
+import { ApiError, bookCare, clearLocation, dismissCare, downloadSummary, getNearby, getNearbyByZip, getRisk, saveLocation } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { Nearby, Place, RiskResult, Tier } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
@@ -31,6 +31,8 @@ export default function CarePanel() {
   const [near, setNear] = useState<Nearby | null>(null);
   const [zip, setZip] = useState("");
   const [locMsg, setLocMsg] = useState<string | null>(null);
+  const [editingLoc, setEditingLoc] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [pick, setPick] = useState<{ slot: string; fac: number } | null>(null);
   const [booking, setBooking] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -46,13 +48,38 @@ export default function CarePanel() {
   async function setLocation(coords?: { lat: number; lon: number }) {
     if (!patientId) return;
     setLocMsg("Finding care near you…");
+    setFinding(true);
     try {
-      await saveLocation(patientId, coords ?? { postal_code: zip.trim() });
+      if (demo) {
+        // The demo can look elsewhere for this visit, but never saves.
+        if (!coords) setNear(await getNearbyByZip(zip.trim()));
+      } else {
+        await saveLocation(patientId, coords ?? { postal_code: zip.trim() });
+        setNear(await getNearby(patientId));
+      }
       setLocMsg(null);
-      load();
+      setEditingLoc(false);
+      setZip("");
     } catch (e) {
-      setLocMsg(e instanceof ApiError ? e.message : "We couldn't save your location.");
+      setLocMsg(e instanceof ApiError ? e.message : "We couldn't find care for that location.");
+    } finally {
+      setFinding(false);
     }
+  }
+
+  async function forgetLocation() {
+    if (!patientId) return;
+    setLocMsg(null);
+    setEditingLoc(false);
+    if (!demo) {
+      try {
+        await clearLocation(patientId);
+      } catch {
+        setLocMsg("We couldn't clear your location. Try again.");
+        return;
+      }
+    }
+    setNear(demo ? await getNearby(patientId).catch(() => null) : { places: [], label: null, nearest_er: null, needs_location: true });
   }
 
   function useMyLocation() {
@@ -209,17 +236,35 @@ export default function CarePanel() {
       {/* Nearby care */}
       <section aria-labelledby="near-title">
         <h2 id="near-title" className="font-display text-2xl">Care near you</h2>
-        {near?.label && <p className="mt-1 text-base text-navy/80">Near {near.label}</p>}
-        {near?.needs_location && !demo && (
-          <div className="mt-4 rounded-3xl bg-white p-5 ring-1 ring-navy/10">
-            <p className="text-lg">Share your location or enter a ZIP code to see the closest hospitals, OB-GYNs and midwives.</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" onClick={useMyLocation} className={btnPrimary}>Use my location</button>
-              <form onSubmit={(e) => { e.preventDefault(); if (zip.trim()) setLocation(); }} className="flex gap-2">
+        {near && !near.needs_location && !editingLoc && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="text-lg text-navy/85">Near {near.label ?? "you"}</p>
+            <button type="button" onClick={() => { setEditingLoc(true); setLocMsg(null); }} className={`rounded-md py-1 text-lg font-semibold underline underline-offset-4 ${focusRing}`}>
+              Change
+            </button>
+            <button type="button" onClick={forgetLocation} className={`rounded-md py-1 text-lg font-semibold underline underline-offset-4 ${focusRing}`}>
+              {demo ? "Reset" : "Clear"}
+            </button>
+          </div>
+        )}
+        {(near?.needs_location || editingLoc) && (
+          <div className="mt-4 rounded-3xl bg-white p-5 ring-1 ring-navy/10 motion-safe:animate-reply-in">
+            <p className="text-lg">
+              {editingLoc ? "Search somewhere else." : "Share your location or enter a ZIP code to see the closest hospitals, OB-GYNs and midwives."}
+              {demo && " (The demo doesn't save it.)"}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <form onSubmit={(e) => { e.preventDefault(); if (zip.trim() && !finding) setLocation(); }} className="flex gap-2">
                 <label htmlFor="zip" className="sr-only">ZIP code</label>
-                <input id="zip" value={zip} onChange={(e) => setZip(e.target.value)} inputMode="numeric" placeholder="ZIP code" maxLength={10} className={`min-h-14 w-36 rounded-full border-2 border-navy bg-white px-5 text-lg ${focusRing}`} />
-                <button type="submit" className={btnOutline}>Search</button>
+                <input id="zip" value={zip} onChange={(e) => setZip(e.target.value)} inputMode="numeric" autoComplete="postal-code" placeholder="ZIP code" maxLength={10} className={`min-h-14 w-36 rounded-full border-2 border-navy bg-white px-5 text-lg ${focusRing}`} />
+                <button type="submit" aria-disabled={finding || !zip.trim()} className={btnPrimary}>Search</button>
               </form>
+              {!demo && <button type="button" onClick={useMyLocation} className={btnOutline}>Use my location</button>}
+              {editingLoc && (
+                <button type="button" onClick={() => { setEditingLoc(false); setLocMsg(null); }} className={`rounded-md px-2 py-2 text-lg font-semibold underline underline-offset-4 ${focusRing}`}>
+                  Cancel
+                </button>
+              )}
             </div>
             {locMsg && <p role="status" className="mt-3 text-lg">{locMsg}</p>}
           </div>

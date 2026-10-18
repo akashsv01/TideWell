@@ -313,6 +313,13 @@ export const saveLocation = (patientId: string, loc: { lat?: number; lon?: numbe
 
 export const getNearby = (patientId: string) => request<Nearby>(`/care/nearby?patient_id=${patientId}`);
 
+/** Nearby care for a ZIP code without saving it (the demo is read-only). */
+export const getNearbyByZip = (zip: string) => request<Nearby>(`/care/nearby?zip=${encodeURIComponent(zip)}`);
+
+export async function clearLocation(patientId: string): Promise<void> {
+  await raw(`/patients/${patientId}/location`, { method: "DELETE" });
+}
+
 export const bookCare = (requestId: string, slot: string, facilityIndex: number) =>
   postJson<{ appointment_id: string }>(`/care-requests/${requestId}/book`, { slot, facility_index: facilityIndex });
 

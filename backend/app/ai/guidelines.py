@@ -1,12 +1,13 @@
 """Guideline answers grounded in trusted sources, instead of a vector index.
 
-1. Claude with the web search tool, restricted (allowed_domains) to the trusted sites below. Each
-   sentence comes back with the page URL and the exact passage it relies on.
-2. Gemini with the Google Search tool (+ URL context for our curated guideline pages). The
-model is told to search only trusted health sites, and we keep ONLY citations whose domain is on the
-allowlist below, so an answer can never cite a random blog. If no trusted citation comes back (or
-the call fails), we fall back to the curated chunks in clinical_assets/guidelines.json, matched by
-keywords. Answers never diagnose and never recommend medication changes.
+1. Gemini with the Google Search tool (+ URL context for our curated guideline pages). The model is
+   told to search only trusted health sites, and we keep ONLY citations whose domain is on the
+   allowlist below, so an answer can never cite a random blog.
+2. If Gemini fails (quota, error) or brings back no trusted citation: Claude with the web search
+   tool, restricted (allowed_domains) to the same sites; each sentence comes back with the page URL
+   and the exact passage it relies on.
+3. Otherwise the curated entries in clinical_assets/guidelines.json, matched by keywords.
+Answers never diagnose and never recommend medication changes.
 
 Gemini API (google-genai): GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch()),
 types.Tool(url_context=types.UrlContext())]); citations in
@@ -44,7 +45,8 @@ SYSTEM = (
     "Answer in 2 to 4 short, plain sentences that will be read aloud. Never diagnose, never recommend "
     "starting, stopping or changing a medication or dose; for medication questions say to ask their "
     "doctor, midwife or pharmacist. If something sounds urgent, say to call their provider now or 911. "
-    "Only answer pregnancy, birth, postpartum, feeding, mood or newborn questions. "
+    "Only answer pregnancy, birth, postpartum, feeding, mood or newborn questions; for anything else "
+    "reply with exactly OFF_TOPIC. "
     "Mention which organisation the information comes from (for example 'The CDC says...')."
 )
 
@@ -129,7 +131,7 @@ def _cite(title: str, url: str, quote: str = "") -> dict:
     return {"title": title or _domain(url), "url": url, "site": _domain(url), "quote": " ".join(quote.split())[:220]}
 
 
-def _claude_answer(question: str, contents: str) -> Optional[dict]:
+def _claude_answer(contents: str) -> Optional[dict]:
     """Claude + the web search tool, locked to the trusted domains. Citations are real page URLs with
     the exact passage each sentence relies on (web_search_result_location.cited_text)."""
     client = _claude.get_client()
@@ -170,48 +172,52 @@ def _claude_answer(question: str, contents: str) -> Optional[dict]:
         return {"answer": OFF_TOPIC_REPLY, "citations": [], "source": "off_topic"}
     if answer and cites:
         return {"answer": answer, "citations": cites[:4], "source": "web"}
-    log.info("Claude answer had no trusted citation; trying Gemini")
+    log.info("Claude answer had no trusted citation; using curated guidelines")
+    return None
+
+
+def _gemini_answer(contents: str) -> Optional[dict]:
+    """Gemini + Google Search grounding. Only citations on trusted domains are kept."""
+    r = generate(
+        contents=contents,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM.format(sites=", ".join(sorted(trusted_domains()))),
+            tools=[types.Tool(google_search=types.GoogleSearch()), types.Tool(url_context=types.UrlContext())],
+            temperature=0.2,
+        ),
+    )
+    meta = r.candidates[0].grounding_metadata if r.candidates else None
+    cites, seen = [], set()
+    for ch in (meta.grounding_chunks or []) if meta else []:
+        web = getattr(ch, "web", None)
+        if not web:
+            continue
+        dom = (web.domain or web.title or "").lower()
+        if not is_trusted(dom) or dom in seen:
+            continue
+        seen.add(dom)
+        # web.uri is a Google redirect; link to the site itself for a clean, trustworthy citation.
+        cites.append(_cite(web.title or dom, f"https://{dom}"))
+    answer = (r.text or "").strip()
+    if answer == OFF_TOPIC_MARK:
+        return {"answer": OFF_TOPIC_REPLY, "citations": [], "source": "off_topic"}
+    if answer and cites:
+        return {"answer": answer, "citations": cites[:3], "source": "web"}
+    log.info("Gemini answer had no trusted citation; trying Claude")
     return None
 
 
 def ask(question: str, patient_context: Optional[str] = None) -> dict:
     """{answer, citations: [{title, url, site, quote}], source: "web" | "curated" | "none" | "off_topic"}.
-    Claude web search first, then Gemini Google Search grounding, then the curated guidelines. Never raises."""
-    sites = ", ".join(sorted(trusted_domains()))
+    Gemini Google Search grounding first, then Claude web search, then the curated guidelines. Never raises."""
     contents = (f"About this parent: {patient_context}\n\n" if patient_context else "") + f"Question: {question}"
-    try:
-        out = _claude_answer(question, contents)
-        if out:
-            return out
-    except Exception as e:  # noqa: BLE001
-        log.warning("Claude web search failed (%s: %s); trying Gemini", type(e).__name__, e)
-    try:
-        r = generate(
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM.format(sites=sites),
-                tools=[types.Tool(google_search=types.GoogleSearch()), types.Tool(url_context=types.UrlContext())],
-                temperature=0.2,
-            ),
-        )
-        meta = r.candidates[0].grounding_metadata if r.candidates else None
-        cites, seen = [], set()
-        for ch in (meta.grounding_chunks or []) if meta else []:
-            web = getattr(ch, "web", None)
-            if not web:
-                continue
-            dom = (web.domain or web.title or "").lower()
-            if not is_trusted(dom) or dom in seen:
-                continue
-            seen.add(dom)
-            # web.uri is a Google redirect; link to the site itself for a clean, trustworthy citation.
-            cites.append(_cite(web.title or dom, f"https://{dom}"))
-        answer = (r.text or "").strip()
-        if answer and cites:
-            return {"answer": answer, "citations": cites[:3], "source": "web"}
-        log.info("web answer had no trusted citation; using curated guidelines")
-    except Exception as e:  # noqa: BLE001
-        log.warning("grounded search failed (%s: %s); using curated guidelines", type(e).__name__, e)
+    for name, answer in (("Gemini", _gemini_answer), ("Claude", _claude_answer)):
+        try:
+            out = answer(contents)
+            if out:
+                return out
+        except Exception as e:  # noqa: BLE001 - quota, network or API errors: try the next source
+            log.warning("%s web answer failed (%s: %s); trying the next source", name, type(e).__name__, e)
     return local_answer(question) or {
         "answer": "I couldn't find trusted guidance on that just now. Please ask your doctor, midwife or care team.",
         "citations": [], "source": "none",

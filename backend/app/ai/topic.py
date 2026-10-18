@@ -1,7 +1,7 @@
 """Topic guardrail for Ask: Tidewell only answers pregnancy, birth and postpartum questions.
 
 Order: obvious postpartum keywords pass at once (no AI call); anything else goes to a small
-classifier (Claude structured output, else Gemini JSON). If both are unavailable we decline, since the
+classifier (Gemini JSON, else Claude structured output). If both are unavailable we decline, since the
 keyword list already covers everyday postpartum questions. The answer prompt also refuses off-topic
 questions (two layers). A question about the parent's own body or mood counts as on-topic: in the
 year after birth it often is.
@@ -83,7 +83,7 @@ def _gemini_verdict(question: str) -> bool | None:
 def is_on_topic(question: str) -> bool:
     if _ON_TOPIC.search(question):
         return True
-    for name, check in (("claude", _claude_verdict), ("gemini", _gemini_verdict)):
+    for name, check in (("gemini", _gemini_verdict), ("claude", _claude_verdict)):
         try:
             v = check(question)
             if v is not None:

@@ -73,6 +73,31 @@ with TestClient(app) as c:
     for q in ("Give me calming exercises", "How is postpartum depression treated?"):
         a = c.post("/ask", headers=H, json={"patient_id": pid, "question": q}).json()
         check(f"Ask: cited answer for {q!r}", a.get("source") in ("web", "curated") and a.get("citations"), a)
+    check("clear saved location", c.delete(f"/patients/{pid}/location", headers=H).status_code == 204)
+    check("Care asks for a location again", c.get(f"/care/nearby?patient_id={pid}", headers=H).json().get("needs_location"))
+    check("demo location can't be cleared", c.delete(f"/patients/{MAYA}/location", headers=H).status_code == 403)
     check("cleanup", c.delete(f"/patients/{pid}", headers=H).status_code == 204)
+
+# Answer sources: Gemini first, Claude only when Gemini fails or has no trusted citation.
+from app.ai import guidelines as g  # noqa: E402
+
+
+def _fail(_contents):
+    calls.append("gemini")
+    raise RuntimeError("429 quota")
+
+
+calls = []
+orig = g._gemini_answer, g._claude_answer
+web = {"answer": "x", "citations": [{"title": "CDC", "url": "https://cdc.gov"}], "source": "web"}
+g._claude_answer = lambda c: calls.append("claude") or web
+g._gemini_answer = lambda c: calls.append("gemini") or web
+g.ask("q")
+check("Gemini answers first; Claude not called", calls == ["gemini"], calls)
+calls.clear()
+g._gemini_answer = _fail
+g.ask("q")
+check("Claude is the fallback when Gemini fails", calls == ["gemini", "claude"], calls)
+g._gemini_answer, g._claude_answer = orig
 
 print("\nALL PASS" if ok else "\nSOME FAILED")

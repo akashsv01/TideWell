@@ -481,7 +481,8 @@ def upcoming_appointments(patient_id: UUID) -> list[dict]:
         ).fetchall()
 
 
-def set_location(patient_id: UUID, lat: float, lon: float, postal_code: Optional[str]) -> None:
+def set_location(patient_id: UUID, lat: Optional[float], lon: Optional[float], postal_code: Optional[str]) -> None:
+    """Save (or with all None, forget) where the patient is, for nearby care."""
     with db.connection() as conn:
         conn.execute("UPDATE patients SET home_lat = %s, home_lon = %s, postal_code = %s WHERE id = %s",
                      (lat, lon, postal_code, patient_id))
