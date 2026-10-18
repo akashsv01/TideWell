@@ -137,6 +137,26 @@ export interface TrendPoint {
   item_10_alert?: boolean;
 }
 
+/** Numbers for one day, typed or corrected (backend DayEntry). */
+export interface DayEntry {
+  mood?: number | null;
+  pain?: number | null;
+  incision_pain?: number | null;
+  sleep_hrs?: number | null;
+  headache?: boolean;
+  bp_sys?: number | null;
+  bp_dia?: number | null;
+}
+
+export interface DayOut {
+  day: string;
+  saved?: boolean;
+  red_flag?: boolean;
+  red_flag_level?: RedFlagLevel | null;
+  red_flag_reason?: string | null;
+  urgent_message?: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Part 2 comes from the plan's API contract (section 7). The backend has not
 // defined these yet. Treat every field as a proposal until P1/P2 confirm it.
