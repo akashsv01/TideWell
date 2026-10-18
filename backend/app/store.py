@@ -7,7 +7,7 @@ Public helpers for Person 1's /checkin pipeline:
     store.get_backboard_ids / set_backboard_ids         # Backboard memory ids per patient
     store.upsert_profile / get_profile / overview       # the onboarding baseline profile
 """
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -337,3 +337,45 @@ def refresh_all() -> None:
     with db.autocommit_connection() as conn:
         for view in ("daily_checkins", "daily_metrics"):
             conn.execute("CALL refresh_continuous_aggregate(%s::regclass, NULL, NULL)", (view,))
+
+
+def save_day(patient_id: UUID, day: date, e) -> None:
+    """Set one day's numbers (DayEntry). Existing check-ins that day are updated in place, so
+    their transcript mentions and red-flag history are kept; a day with none gets one row at noon.
+    Blood pressure works the same way on vitals. Then that day's aggregate bucket is refreshed.
+    Days are UTC days, matching /trends."""
+    start = datetime.combine(day, time(0), tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    fields = {"p": patient_id, "s": start, "e": end, "mood": e.mood, "pain": e.pain,
+              "inc": e.incision_pain, "sleep": e.sleep_hrs, "head": e.headache}
+    with db.connection() as conn:
+        cur = conn.execute(
+            """UPDATE checkins SET mood = %(mood)s, pain = %(pain)s, incision_pain = %(inc)s,
+                      sleep_hrs = %(sleep)s, headache = %(head)s
+               WHERE patient_id = %(p)s AND time >= %(s)s AND time < %(e)s""",
+            fields,
+        )
+        if cur.rowcount == 0:
+            conn.execute(
+                """INSERT INTO checkins (time, patient_id, mood, pain, incision_pain, sleep_hrs, headache,
+                                         vision_change, fever, mentions, red_flag)
+                   VALUES (%(s)s + interval '12 hours', %(p)s, %(mood)s, %(pain)s, %(inc)s, %(sleep)s,
+                           %(head)s, false, false, '{}', false)""",
+                fields,
+            )
+        bp = {"p": patient_id, "s": start, "e": end, "sys": e.bp_sys, "dia": e.bp_dia}
+        cur = conn.execute(
+            """UPDATE vitals SET bp_sys = %(sys)s, bp_dia = %(dia)s
+               WHERE patient_id = %(p)s AND time >= %(s)s AND time < %(e)s AND
+                     (bp_sys IS NOT NULL OR source IN ('typed', 'voice'))""",
+            bp,
+        )
+        if cur.rowcount == 0 and e.bp_sys is not None and e.bp_dia is not None:
+            conn.execute(
+                """INSERT INTO vitals (time, patient_id, bp_sys, bp_dia, source)
+                   VALUES (%(s)s + interval '8 hours', %(p)s, %(sys)s, %(dia)s, 'typed')""",
+                bp,
+            )
+    with db.autocommit_connection() as conn:
+        for view in ("daily_checkins", "daily_metrics"):
+            conn.execute("CALL refresh_continuous_aggregate(%s::regclass, %s, %s)", (view, start, end))

@@ -22,7 +22,7 @@ def submit(body: EpdsIn, user: Optional[auth.User] = Depends(auth.optional_user)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     level, followup = epds.item10_outcome(item10)
-    if db.enabled():
+    if db.enabled() and not auth.is_demo(body.patient_id):  # the shared demo is never written to
         store.save_epds(body.patient_id, total, item10)
         if level == "emergency":
             notify.send_support_alert(body.patient_id)
@@ -35,6 +35,6 @@ def followup(body: EpdsFollowupIn, user: Optional[auth.User] = Depends(auth.opti
     """Answer to "Are you thinking of ending your life or hurting yourself?" after Q10 > 0."""
     auth.authorize_patient(body.patient_id, user)
     level, response = epds.followup_outcome(body.answer)
-    if level == "emergency" and db.enabled():
+    if level == "emergency" and db.enabled() and not auth.is_demo(body.patient_id):
         notify.send_support_alert(body.patient_id)
     return EpdsFollowupOut(level=level, response=response)

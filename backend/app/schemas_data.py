@@ -67,6 +67,26 @@ class Overview(BaseModel):
     last_epds_date: Optional[date] = None
 
 
+class DayEntry(BaseModel):
+    """The numbers for one day, typed or corrected by the patient. None = not recorded."""
+    mood: Optional[int] = Field(default=None, ge=0, le=10)
+    pain: Optional[int] = Field(default=None, ge=0, le=10)
+    incision_pain: Optional[int] = Field(default=None, ge=0, le=10)
+    sleep_hrs: Optional[float] = Field(default=None, ge=0, le=24)
+    headache: bool = False
+    bp_sys: Optional[int] = Field(default=None, ge=50, le=300)
+    bp_dia: Optional[int] = Field(default=None, ge=30, le=200)
+
+
+class DayOut(BaseModel):
+    day: date
+    saved: bool = True
+    red_flag: bool = False
+    red_flag_level: Optional[Literal["emergency", "urgent"]] = None
+    red_flag_reason: Optional[str] = None
+    urgent_message: Optional[str] = None
+
+
 class VitalsIn(BaseModel):
     patient_id: UUID
     bp_sys: Optional[int] = Field(default=None, ge=50, le=300)

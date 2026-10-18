@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 from uuid import UUID
 
-from app import db, notify, store
+from app import db, demo_data, notify, store
 from app.ai import extract, memory, red_flags, stt, tts
 from app.schemas import CheckinMetrics, CheckinRequest, CheckinResponse
 
@@ -129,7 +129,8 @@ def _speak(text: str) -> Optional[str]:
 
 
 def _save(pid: Optional[UUID], metrics: CheckinMetrics, red_flag: bool) -> None:
-    if pid is None or not db.enabled():
+    # The demo patient is shared by everyone, so demo check-ins get a reply but are never saved.
+    if pid is None or not db.enabled() or pid == demo_data.MAYA_ID:
         return
     try:
         store.save_checkin(pid, metrics, red_flag)
@@ -148,7 +149,7 @@ def _refresh_trends() -> None:
 
 def _flagged(pid: Optional[UUID], text: str, flag: red_flags.RedFlagResult, metrics: CheckinMetrics) -> CheckinResponse:
     alerted = False
-    if flag.level == "emergency" and pid is not None:
+    if flag.level == "emergency" and pid is not None and pid != demo_data.MAYA_ID:
         alerted = notify.send_support_alert(pid).get("status") == "sent"
     _save(pid, metrics, True)
     # No reply audio: the frontend shows the fixed card and stops any playback on red_flag.

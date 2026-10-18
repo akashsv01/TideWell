@@ -7,6 +7,7 @@ it (app/auth.py authorize_patient). Onboarding and profile edits need a signed-i
 """
 import logging
 from typing import Optional
+from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -14,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from app import auth, categories, db, demo_data, notify, store
 from app.ai import memory, red_flags
 from app.schemas import CheckinMetrics, Profile, ProfileOut, TrendPoint
-from app.schemas_data import Overview, VitalsIn, VitalsOut
+from app.schemas_data import DayEntry, DayOut, Overview, VitalsIn, VitalsOut
 
 router = APIRouter()
 log = logging.getLogger("tidewell.patients")
@@ -103,7 +104,7 @@ def add_vitals(body: VitalsIn, user: Optional[auth.User] = Depends(auth.optional
 
     # Rules only: there is no transcript here, so the Gemini backup layer would have nothing to read.
     result = red_flags.check_rules("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))
-    if db.enabled():
+    if db.enabled() and not auth.is_demo(body.patient_id):  # the shared demo is never written to
         if not store.patient_exists(body.patient_id):
             raise HTTPException(404, "patient not found")
         store.save_vitals(body)
@@ -115,6 +116,36 @@ def add_vitals(body: VitalsIn, user: Optional[auth.User] = Depends(auth.optional
             notify.send_support_alert(body.patient_id)
     return VitalsOut(saved=db.enabled(), red_flag=result.flag, red_flag_reason=result.reason,
                      urgent_message=result.response)
+
+
+@router.put("/patients/{patient_id}/days/{day}", response_model=DayOut)
+def save_day(patient_id: UUID, day: date, body: DayEntry,
+             user: Optional[auth.User] = Depends(auth.optional_user)) -> DayOut:
+    """Log or correct one day's numbers (the daily log). The demo is read-only."""
+    if auth.is_demo(patient_id):
+        raise HTTPException(403, "the demo is read-only; create an account to log your own days")
+    auth.authorize_patient(patient_id, user)
+    _need_db()
+    if (body.bp_sys is None) != (body.bp_dia is None):
+        raise HTTPException(422, "send both blood pressure numbers, or neither")
+    prof = store.get_profile(patient_id)
+    if not prof:
+        raise HTTPException(404, "patient not found")
+    today = datetime.now(timezone.utc).date()
+    if day > today:
+        raise HTTPException(422, "that day hasn't happened yet")
+    if day < prof["delivery_date"]:
+        raise HTTPException(422, "that day is before your baby was born")
+    store.save_day(patient_id, day, body)
+    out = DayOut(day=day)
+    if day >= today - timedelta(days=1):  # only recent numbers can still need urgent care
+        r = red_flags.check_rules("", CheckinMetrics(bp_sys=body.bp_sys, bp_dia=body.bp_dia))
+        if r.flag:
+            out = DayOut(day=day, red_flag=True, red_flag_level=r.level, red_flag_reason=r.reason,
+                         urgent_message=r.response)
+            if r.level == "emergency":
+                notify.send_support_alert(patient_id)
+    return out
 
 
 @router.delete("/patients/{patient_id}", status_code=204)
