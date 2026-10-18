@@ -1,6 +1,6 @@
 """Agent and care endpoints.
 
-POST /ask                          Care Navigator chat (safety check first; cited answers)
+POST /ask                          Ask Tidewell: safety check, topic guardrail, cited answer
 GET  /patients/{id}/risk           Watch agent analysis now (+ open care request, appointments)
 PUT  /patients/{id}/location       save location (browser coords or ZIP) for nearby care
 GET  /care/nearby                  nearest maternity care (patient's saved location, coords or ZIP)
@@ -28,8 +28,7 @@ from pydantic import BaseModel, Field
 
 from app import auth, care, db, store
 from app.agents import watch
-from app.ai import red_flags
-from app.ai.agent import CareNavigator
+from app.ai import guidelines, red_flags, topic
 from app.ai.checkin import patient_context
 
 router = APIRouter()
@@ -60,16 +59,22 @@ class AskOut(BaseModel):
     tools_called: list[str] = Field(default_factory=list)
     red_flag: bool = False
     red_flag_level: Optional[Literal["emergency", "urgent"]] = None
+    source: Literal["web", "curated", "none", "off_topic", "safety"] = "none"
 
 
 @router.post("/ask", response_model=AskOut)
 def ask(body: AskIn, user: Optional[auth.User] = Depends(auth.optional_user)) -> AskOut:
+    """Safety rules first, then the topic guardrail, then a cited answer (Claude web search ->
+    Gemini Google Search -> curated guidelines), personalised with the patient's profile and trends."""
     auth.authorize_patient(body.patient_id, user)
     flag = red_flags.check(body.question)  # safety before any AI, same as check-ins
     if flag.flag:
-        return AskOut(answer=flag.response, red_flag=True, red_flag_level=flag.level)
-    reply = CareNavigator().run(str(body.patient_id), body.question, context=patient_context(body.patient_id))
-    return AskOut(answer=reply.text, citations=reply.citations, tools_called=reply.tools_called)
+        return AskOut(answer=flag.response, red_flag=True, red_flag_level=flag.level, source="safety")
+    if not topic.is_on_topic(body.question):
+        return AskOut(answer=topic.OFF_TOPIC_REPLY, source="off_topic")
+    r = guidelines.ask(body.question, patient_context(body.patient_id))
+    return AskOut(answer=r["answer"], citations=r["citations"], source=r["source"],
+                  tools_called=["trusted web search"] if r["source"] == "web" else [])
 
 
 # --- Risk + care requests -----------------------------------------------------------------------
@@ -157,13 +162,13 @@ def save_location(patient_id: UUID, body: LocationIn, user: auth.User = Depends(
 def nearby(patient_id: Optional[UUID] = None, lat: Optional[float] = None, lon: Optional[float] = None,
            zip: Optional[str] = Query(default=None, max_length=12),
            user: Optional[auth.User] = Depends(auth.optional_user)) -> dict:
-    label = None
+    label, postal = None, zip
     if patient_id and lat is None:
         auth.authorize_patient(patient_id, user)
         prof = store.get_profile(patient_id) or {}
-        lat, lon = prof.get("home_lat"), prof.get("home_lon")
+        lat, lon, postal = prof.get("home_lat"), prof.get("home_lon"), postal or prof.get("postal_code")
         if auth.is_demo(patient_id) and lat is None:
-            lat, lon, label = 38.989, -76.943, "College Park, MD (demo)"
+            lat, lon, label, postal = 38.989, -76.943, "College Park, MD (demo)", "20742"
     if (lat is None or lon is None) and zip:
         g = care.geocode(zip)
         if not g:
@@ -171,7 +176,7 @@ def nearby(patient_id: Optional[UUID] = None, lat: Optional[float] = None, lon: 
         lat, lon, label = g
     if lat is None or lon is None:
         return {"places": [], "needs_location": True}
-    places = care.nearby(lat, lon)
+    places = care.nearby(lat, lon, postal)
     return {"places": places, "label": label, "nearest_er": care.nearest_er(places), "needs_location": False}
 
 

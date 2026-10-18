@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.6-flash"
     gemini_fast_model: str = "gemini-3.5-flash-lite"  # latency-critical calls (red-flag backup)
+    # Claude: cited web answers in Ask (web search tool) and the topic guardrail. Optional; Gemini is the fallback.
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-opus-5-5"
     backboard_api_key: str = ""
     tiger_database_url: str = ""
     twilio_account_sid: str = ""

@@ -65,6 +65,11 @@ with TestClient(app) as c:
     check("Ask Tidewell answers", bool(a.get("answer")), a)
     a = c.post("/ask", headers=H, json={"patient_id": pid, "question": "my vision is blurry and I see spots"}).json()
     check("Ask: safety first (emergency)", a.get("red_flag_level") == "emergency", a)
+    a = c.post("/ask", headers=H, json={"patient_id": pid, "question": "Write me a python script that sorts a list"}).json()
+    check("Ask: off-topic question declined", a.get("source") == "off_topic" and not a.get("citations"), a)
+    a = c.post("/ask", headers=H, json={"patient_id": pid, "question": "How much bleeding is normal two weeks after birth?"}).json()
+    check("Ask: on-topic answer has trusted citations", a.get("source") in ("web", "curated") and a.get("citations"), a)
+    print("    answer source:", a.get("source"), [x.get("site") for x in a.get("citations", [])])
     check("cleanup", c.delete(f"/patients/{pid}", headers=H).status_code == 204)
 
 print("\nALL PASS" if ok else "\nSOME FAILED")

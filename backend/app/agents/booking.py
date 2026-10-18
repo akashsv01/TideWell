@@ -19,7 +19,7 @@ def _places(profile: dict) -> list[dict]:
     lat, lon = profile.get("home_lat"), profile.get("home_lon")
     if lat is None or lon is None:
         return []
-    return care.nearby(lat, lon)
+    return care.nearby(lat, lon, profile.get("postal_code"))
 
 
 def create_request(patient_id: UUID, level: str, tiers: list[dict], note: str, profile: dict) -> dict:

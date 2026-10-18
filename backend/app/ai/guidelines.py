@@ -1,6 +1,8 @@
 """Guideline answers grounded in trusted sources, instead of a vector index.
 
-Primary: Gemini with the Google Search tool (+ URL context for our curated guideline pages). The
+1. Claude with the web search tool, restricted (allowed_domains) to the trusted sites below. Each
+   sentence comes back with the page URL and the exact passage it relies on.
+2. Gemini with the Google Search tool (+ URL context for our curated guideline pages). The
 model is told to search only trusted health sites, and we keep ONLY citations whose domain is on the
 allowlist below, so an answer can never cite a random blog. If no trusted citation comes back (or
 the call fails), we fall back to the curated chunks in clinical_assets/guidelines.json, matched by
@@ -20,8 +22,10 @@ from urllib.parse import urlparse
 
 from google.genai import types
 
+from app.ai import _claude
 from app.ai._gemini import generate
-from app.config import BACKEND_DIR
+from app.ai.topic import OFF_TOPIC_REPLY
+from app.config import BACKEND_DIR, get_settings
 
 log = logging.getLogger("tidewell.guidelines")
 
@@ -40,7 +44,24 @@ SYSTEM = (
     "Answer in 2 to 4 short, plain sentences that will be read aloud. Never diagnose, never recommend "
     "starting, stopping or changing a medication or dose; for medication questions say to ask their "
     "doctor, midwife or pharmacist. If something sounds urgent, say to call their provider now or 911. "
+    "Only answer pregnancy, birth, postpartum, feeding, mood or newborn questions. "
     "Mention which organisation the information comes from (for example 'The CDC says...')."
+)
+
+OFF_TOPIC_MARK = "OFF_TOPIC"
+
+CLAUDE_SYSTEM = (
+    "You are Tidewell, a postpartum care companion. You answer questions from a parent in the year after "
+    "giving birth, using the web search tool (it only reaches trusted health organisations). Search "
+    "before answering and base every fact on what you found. Answer in 2 to 4 short, warm, plain "
+    "sentences that will be read aloud; no headings, lists or markdown, and do not describe your "
+    "searching. Name the organisation the advice comes from (for example 'The CDC says...'). Never "
+    "diagnose, and never recommend starting, stopping or changing a medication or dose: for medication "
+    "questions share what the source says and tell them to check with their doctor, midwife or "
+    "pharmacist. If something sounds urgent, say to call their provider now, or 911 in an emergency. "
+    "Only answer questions about pregnancy, birth, postpartum recovery, the parent's own health, "
+    "feeding, sleep, mood, contraception or newborn care. For anything else reply with exactly "
+    f"{OFF_TOPIC_MARK} and nothing more."
 )
 
 
@@ -86,15 +107,71 @@ def local_answer(question: str) -> Optional[dict]:
         return None
     return {
         "answer": best["content"],
-        "citations": [{"title": f'{best["source"]}: {best["section"]}', "url": best["url"]}],
+        "citations": [_cite(f'{best["source"]}: {best["section"]}', best["url"])],
         "source": "curated",
     }
 
 
+def _cite(title: str, url: str, quote: str = "") -> dict:
+    return {"title": title or _domain(url), "url": url, "site": _domain(url), "quote": " ".join(quote.split())[:220]}
+
+
+def _claude_answer(question: str, contents: str) -> Optional[dict]:
+    """Claude + the web search tool, locked to the trusted domains. Citations are real page URLs with
+    the exact passage each sentence relies on (web_search_result_location.cited_text)."""
+    client = _claude.get_client()
+    if not client:
+        return None
+    tools = [{
+        "type": "web_search_20260209", "name": "web_search", "max_uses": 3,
+        "allowed_domains": sorted(trusted_domains())[:64],  # API limit: 64 hostnames
+        "user_location": {"type": "approximate", "country": "US"},
+    }]
+    messages = [{"role": "user", "content": contents}]
+    for _ in range(3):  # a long search turn can pause; resend to let the server resume it
+        r = client.beta.messages.create(
+            model=get_settings().claude_model, max_tokens=4000,
+            system=CLAUDE_SYSTEM, messages=messages, tools=tools,
+            output_config={"effort": "low"},
+            betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+        )
+        if r.stop_reason != "pause_turn":
+            break
+        messages = [messages[0], {"role": "assistant", "content": r.content}]
+    if r.stop_reason == "refusal":
+        return None
+    # The answer is the text after the last search result (anything before it is the model working).
+    last_result = max((i for i, b in enumerate(r.content) if b.type == "web_search_tool_result"), default=-1)
+    parts, cites, seen = [], [], set()
+    for b in r.content[last_result + 1:]:
+        if b.type != "text":
+            continue
+        parts.append(b.text)
+        for c in getattr(b, "citations", None) or []:
+            url = getattr(c, "url", "")
+            if getattr(c, "type", "") == "web_search_result_location" and is_trusted(url) and url not in seen:
+                seen.add(url)
+                cites.append(_cite(getattr(c, "title", ""), url, getattr(c, "cited_text", "")))
+    answer = re.sub(r"\s+", " ", "".join(parts)).strip()
+    if answer == OFF_TOPIC_MARK:
+        return {"answer": OFF_TOPIC_REPLY, "citations": [], "source": "off_topic"}
+    if answer and cites:
+        return {"answer": answer, "citations": cites[:4], "source": "web"}
+    log.info("Claude answer had no trusted citation; trying Gemini")
+    return None
+
+
 def ask(question: str, patient_context: Optional[str] = None) -> dict:
-    """{answer, citations: [{title, url}], source: "web" | "curated" | "none"}. Never raises."""
+    """{answer, citations: [{title, url, site, quote}], source: "web" | "curated" | "none" | "off_topic"}.
+    Claude web search first, then Gemini Google Search grounding, then the curated guidelines. Never raises."""
     sites = ", ".join(sorted(trusted_domains()))
     contents = (f"About this parent: {patient_context}\n\n" if patient_context else "") + f"Question: {question}"
+    try:
+        out = _claude_answer(question, contents)
+        if out:
+            return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("Claude web search failed (%s: %s); trying Gemini", type(e).__name__, e)
     try:
         r = generate(
             contents=contents,
@@ -115,7 +192,7 @@ def ask(question: str, patient_context: Optional[str] = None) -> dict:
                 continue
             seen.add(dom)
             # web.uri is a Google redirect; link to the site itself for a clean, trustworthy citation.
-            cites.append({"title": web.title or dom, "url": f"https://{dom}"})
+            cites.append(_cite(web.title or dom, f"https://{dom}"))
         answer = (r.text or "").strip()
         if answer and cites:
             return {"answer": answer, "citations": cites[:3], "source": "web"}

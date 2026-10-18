@@ -46,7 +46,7 @@ def find_nearby_care(patient_id: str, kind: str = "visit") -> list[dict]:
     prof = store.get_profile(UUID(patient_id)) or {}
     if prof.get("home_lat") is None:
         return [{"note": "No location saved. Ask them to add their ZIP code on the Care page."}]
-    places = care.nearby(prof["home_lat"], prof["home_lon"])
+    places = care.nearby(prof["home_lat"], prof["home_lon"], prof.get("postal_code"))
     pick = [care.nearest_er(places)] if kind == "emergency" else care.best_for_visit(places)
     return [{k: p[k] for k in ("name", "kind_label", "address", "phone", "distance_km")} for p in pick if p]
 
