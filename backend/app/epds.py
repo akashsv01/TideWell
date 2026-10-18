@@ -1,4 +1,4 @@
-"""Edinburgh Postnatal Depression Scale (EPDS), the weekly mood check.
+"""Edinburgh Postnatal Depression Scale (EPDS), the daily mood check.
 
 Source: Cox, J.L., Holden, J.M., and Sagovsky, R. (1987). Detection of postnatal depression:
 Development of the 10-item Edinburgh Postnatal Depression Scale. British Journal of Psychiatry
@@ -54,6 +54,15 @@ ITEMS: list[tuple[str, list[tuple[str, int]]]] = [
 
 WATCH_AT = 10  # thresholds.md: 10-12 watch
 AMBER_AT = 13  # thresholds.md: 13+ amber
+
+# What the parent sees is the mood score, 30 minus the EPDS total: 30 is best, lower is harder. The EPDS
+# total stays the clinical number (stored, and shown to clinicians). Below 20 (an EPDS total of 11 or more)
+# the support person is texted and called, with the patient's consent (app/notify.py, "mood").
+MOOD_ALERT_BELOW = 20
+
+
+def mood_score(total: int) -> int:
+    return 30 - total
 
 
 def questions() -> list[dict]:

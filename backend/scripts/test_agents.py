@@ -10,7 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app import mail  # noqa: E402
 from app.main import app  # noqa: E402
+
+mail._run = lambda fn: None  # never send real welcome emails from the test run
 
 MAYA = "00000000-0000-4000-8000-000000000001"
 ok = True
@@ -31,13 +34,23 @@ with TestClient(app) as c:
     pdf = c.get(f"/patients/{MAYA}/summary.pdf")
     check("visit summary PDF", pdf.status_code == 200 and pdf.content[:4] == b"%PDF", pdf.status_code)
 
-    tok = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1"}).json()["token"]
+    tok = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1", "email": "qa@example.invalid"}).json()["token"]
     H = {"Authorization": f"Bearer {tok}"}
     today = datetime.now(timezone.utc).date()
     pid = c.post("/onboard", headers=H, json={
         "consent_granted": True, "delivery_date": str(today - timedelta(days=12)), "delivery_method": "c-section",
         "feeding_type": "breastfeeding", "history_pregnancy_complications": ["gestational hypertension"],
         "language_preference": "en"}).json()["patient_id"]
+    r = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1"})
+    check("register without an email is refused", r.status_code == 422, r.status_code)
+    r = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1", "email": "not-an-email"})
+    check("register with a malformed email is refused", r.status_code == 422, r.status_code)
+    # Daily mood check: EPDS total 11 -> mood score 19 (below 20). No support consent, so no text or call.
+    r = c.post("/epds", headers=H, json={"patient_id": pid, "answers": [2, 2, 1, 2, 2, 2, 2, 3, 3, 3]}).json()
+    check("mood check: EPDS 11 shows as mood score 19", r.get("score") == 11 and r.get("mood_score") == 19, r)
+    check("mood score below 20 without consent: support person not contacted", r.get("support_alerted") is False, r)
+    ov = c.get(f"/patients/{pid}/overview", headers=H).json()
+    check("mood check is daily: not due again today", ov.get("epds_due") is False, ov.get("epds_due"))
     r = c.put(f"/patients/{pid}/location", headers=H, json={"postal_code": "20742"})
     check("save location from ZIP", r.status_code == 200, r.text[:120])
     for i, (s_, d_) in enumerate([(128, 82), (134, 86), (146, 94)]):
@@ -146,7 +159,7 @@ with TestClient(app) as c:
               doc.status_code)
     else:
         check("join waits for the 15-minute window", j.status_code == 409, j.status_code)
-    other = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1"}).json()
+    other = c.post("/auth/register", json={"username": "qa_" + secrets.token_hex(3), "password": "a long password 1", "email": "qa@example.invalid"}).json()
     oh = {"Authorization": f"Bearer {other['token']}"}
     # Two people, one time: the booked time is hidden from everyone and comes back after a cancel.
     other_pid = c.post("/onboard", headers=oh, json={

@@ -31,7 +31,7 @@ CASES = [
     ),
     pytest.param(
         "Mood's like a four out of ten, I slept three and a half hours, and no headache today.",
-        {"mood": 4, "sleep_hrs": 3.5, "headache": False}, id="mood-sleep-negated-headache",
+        {"mood": 12, "sleep_hrs": 3.5, "headache": False}, id="mood-sleep-negated-headache",  # 4/10 on the 0-30 scale
     ),
     pytest.param(
         "Honestly I'm not sure what my blood pressure is, I haven't checked it in days.",

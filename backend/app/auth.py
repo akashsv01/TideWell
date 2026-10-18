@@ -60,14 +60,14 @@ def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def create_user(username: str, password: str) -> Optional[User]:
+def create_user(username: str, password: str, email: Optional[str] = None) -> Optional[User]:
     """None if the username is taken (case-insensitive)."""
     with db.connection() as conn:
         if conn.execute("SELECT 1 FROM users WHERE lower(username) = lower(%s)", (username,)).fetchone():
             return None
         row = conn.execute(
-            "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING id",
-            (username, hash_password(password)),
+            "INSERT INTO users (username, password_hash, email) VALUES (%s, %s, %s) RETURNING id",
+            (username, hash_password(password), email.strip().lower() if email else None),
         ).fetchone()
     return User(id=row["id"], username=username, patient_id=None)
 

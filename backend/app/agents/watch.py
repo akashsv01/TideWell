@@ -67,16 +67,18 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
         age = (datetime.now(timezone.utc) - last_epds["time"]).days
         if last_epds["item10"] and age <= 7:
             tier, why = "amber", ["Mood check mentioned thoughts of self-harm this week"]
+        mood = 30 - last_epds["score"]  # what the parent sees; the EPDS total is in brackets for clinicians
         if last_epds["score"] >= 13:
             tier = max(tier, "amber", key=RANK.get)
-            why.append(f"Latest mood check scored {last_epds['score']} out of 30, where a follow-up is advised (13 or more)")
+            why.append(f"Latest mood check score was {mood} out of 30, low enough that a follow-up is advised "
+                       f"(EPDS {last_epds['score']})")
         elif last_epds["score"] >= 10:
             tier = max(tier, "watch", key=RANK.get)
-            why.append(f"Latest mood check scored {last_epds['score']} out of 30, worth watching (10 to 12)")
+            why.append(f"Latest mood check score was {mood} out of 30, worth watching (EPDS {last_epds['score']})")
     moods = _vals(week, "mood")
-    if len(moods) >= 3 and sum(moods) / len(moods) <= 4:
+    if len(moods) >= 3 and sum(moods) / len(moods) <= 12:  # daily mood is 0-30
         tier = max(tier, "watch", key=RANK.get)
-        why.append(f"Average mood was {sum(moods) / len(moods):.1f} out of 10 this week")
+        why.append(f"Average mood was {sum(moods) / len(moods):.0f} out of 30 this week")
     if profile.get("history_mental_health"):
         tier = max(tier, "watch", key=RANK.get)
         why.append("History of depression or anxiety")

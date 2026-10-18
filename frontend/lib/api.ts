@@ -152,8 +152,8 @@ const EMPTY_METRICS: CheckinMetrics = {
 };
 
 // --- Accounts --------------------------------------------------------------------------
-export const register = (username: string, password: string) =>
-  postJson<AuthResponse>("/auth/register", { username, password });
+export const register = (username: string, password: string, email: string) =>
+  postJson<AuthResponse>("/auth/register", { username, password, email });
 
 export const login = (username: string, password: string) =>
   postJson<AuthResponse>("/auth/login", { username, password });
@@ -187,7 +187,7 @@ export function getProfile(patientId?: string): Promise<ProfileOut> {
 
 export const getOverview = (patientId: string) => request<Overview>(`/patients/${patientId}/overview`);
 
-// --- Weekly mood check (EPDS) -------------------------------------------------------------
+// --- Daily mood check (EPDS) -------------------------------------------------------------
 export const getEpdsQuestions = () => request<EpdsQuestions>("/epds/questions");
 
 export const submitEpds = (patientId: string, answers: number[]) =>

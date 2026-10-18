@@ -16,6 +16,11 @@ class Credentials(BaseModel):
     password: str = Field(min_length=8, max_length=128)
 
 
+class RegisterIn(Credentials):
+    # A plain shape check (the welcome email is the real test). Lowercased before it is stored.
+    email: str = Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 class AuthOut(BaseModel):
     token: str
     username: str
@@ -27,14 +32,16 @@ class AccountOut(BaseModel):
     patient_id: Optional[UUID] = None
 
 
-# --- Weekly EPDS --------------------------------------------------------------------------
+# --- Daily mood check (EPDS) -------------------------------------------------------------------
 class EpdsIn(BaseModel):
     patient_id: UUID
     answers: list[int] = Field(min_length=10, max_length=10)  # option index (0-3) per question, in display order
 
 
 class EpdsOut(BaseModel):
-    score: int
+    score: int  # the EPDS total, 0-30, higher is harder (clinical; clinicians read this)
+    mood_score: int  # what the parent sees: 30 - score, 0-30, lower is harder
+    support_alerted: bool = False  # the support person was texted and called just now
     item10: int
     band: Literal["low", "watch", "amber"]  # thresholds.md: 10-12 watch, 13+ amber
     level: Optional[Literal["emergency", "urgent"]] = None  # question 10 safety outcome
@@ -69,7 +76,7 @@ class Overview(BaseModel):
 
 class DayEntry(BaseModel):
     """The numbers for one day, typed or corrected by the patient. None = not recorded."""
-    mood: Optional[int] = Field(default=None, ge=0, le=10)
+    mood: Optional[int] = Field(default=None, ge=0, le=30)  # 0 worst to 30 best
     pain: Optional[int] = Field(default=None, ge=0, le=10)
     incision_pain: Optional[int] = Field(default=None, ge=0, le=10)
     sleep_hrs: Optional[float] = Field(default=None, ge=0, le=24)

@@ -22,20 +22,21 @@ from app.schemas import CheckinMetrics
 SYSTEM = (
     "You extract structured health check-in data from what a postpartum parent said. "
     "Only record what was explicitly said; leave a field null (or false/empty) when it was not mentioned. "
-    "Never infer a diagnosis. Scales are 0-10. Blood pressure 'X over Y' means bp_sys=X, bp_dia=Y. "
+    "Never infer a diagnosis. Mood is 0-30 (30 is best): if they rate it out of 10, multiply by 3 "
+    "(6 out of 10 is 18). Pain and incision pain are 0-10. Blood pressure 'X over Y' means bp_sys=X, bp_dia=Y. "
     "Put any other symptoms or concerns in 'mentions' as short phrases."
 )
 
-_SCALE_FIELDS = ("mood", "pain", "incision_pain")
+_SCALE_FIELDS = {"mood": 30, "pain": 10, "incision_pain": 10}  # field -> top of its scale
 
 
 def _sanitize(raw: dict) -> dict:
     """Drop values that would fail validation instead of crashing the check-in."""
     out = {k: v for k, v in raw.items() if k in CheckinMetrics.model_fields and v is not None}
-    for f in _SCALE_FIELDS:
+    for f, top in _SCALE_FIELDS.items():
         if f in out:
             try:
-                out[f] = min(10, max(0, int(round(float(out[f])))))
+                out[f] = min(top, max(0, int(round(float(out[f])))))
             except (TypeError, ValueError):
                 out.pop(f)
     if out.get("bleeding") not in (None, "none", "light", "heavy"):

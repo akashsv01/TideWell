@@ -10,6 +10,7 @@ import { signedIn } from "@/lib/session";
 import { btnPrimary, focusRing } from "@/lib/ui";
 
 type Mode = "login" | "register";
+type Field = "username" | "email" | "password";
 
 const input = `mt-2 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`;
 
@@ -18,15 +19,20 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const ids = useId();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [badField, setBadField] = useState<"username" | "password" | null>(null);
+  const [badField, setBadField] = useState<Field | null>(null);
   const [busy, setBusy] = useState(false);
   const isRegister = mode === "register";
 
   // Say what is missing first; the format rules only matter when creating an account.
-  function problem(): [string, "username" | "password"] | null {
+  function problem(): [string, Field] | null {
     if (!username) return ["Enter your username.", "username"];
+    if (isRegister && !email.trim()) return ["Enter your email address.", "email"];
+    if (isRegister && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      return ["Enter an email address like name@example.com.", "email"];
+    }
     if (!password) return ["Enter your password.", "password"];
     if (isRegister && !/^[A-Za-z0-9_.-]{3,30}$/.test(username)) {
       return ["Usernames are 3 to 30 letters, numbers, dots, dashes or underscores.", "username"];
@@ -42,12 +48,12 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     setError(p ? p[0] : null);
     setBadField(p ? p[1] : null);
     if (p) {
-      document.getElementById(`${ids}-${p[1] === "username" ? "u" : "p"}`)?.focus();
+      document.getElementById(`${ids}-${p[1] === "username" ? "u" : p[1] === "email" ? "e" : "p"}`)?.focus();
       return;
     }
     setBusy(true);
     try {
-      const res = isRegister ? await register(username, password) : await login(username, password);
+      const res = isRegister ? await register(username, password, email.trim()) : await login(username, password);
       signedIn(res);
       router.push(res.patient_id ? "/home" : "/onboarding");
     } catch (err) {
@@ -95,6 +101,30 @@ export default function AuthForm({ mode }: { mode: Mode }) {
             aria-describedby={badField === "username" ? `${ids}-err` : undefined}
             className={input}
           />
+
+          {isRegister && (
+            <>
+              <label htmlFor={`${ids}-e`} className="mt-5 text-lg font-semibold">
+                Email
+              </label>
+              <input
+                id={`${ids}-e`}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                aria-invalid={badField === "email" ? true : undefined}
+                aria-describedby={[`${ids}-ehint`, badField === "email" ? `${ids}-err` : ""].join(" ").trim()}
+                className={input}
+              />
+              <p id={`${ids}-ehint`} className="mt-2 text-base text-navy/80">
+                We send a welcome email here. Nothing else, and never your health data.
+              </p>
+            </>
+          )}
 
           <label htmlFor={`${ids}-p`} className="mt-5 text-lg font-semibold">
             Password

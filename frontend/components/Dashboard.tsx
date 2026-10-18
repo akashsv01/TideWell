@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -52,6 +50,9 @@ const xAxisProps = {
 
 const tipMotion = { isAnimationActive: false } as const;
 
+/** Mood score below this is a hard day (matches MOOD_ALERT_BELOW in backend/app/epds.py). */
+const MOOD_HARD_BELOW = 20;
+
 function valued(points: TrendPoint[], key: keyof TrendPoint): number {
   return points.filter((p) => p[key] != null).length;
 }
@@ -81,7 +82,6 @@ export default function Dashboard() {
   const [failed, setFailed] = useState(false);
   // Empty until the client picks today (new Date() during prerender breaks cacheComponents).
   const [logDay, setLogDay] = useState("");
-  const gradientId = `tide-${useId().replace(/:/g, "")}`;
 
   const load = useCallback(() => {
     if (!patientId) return;
@@ -149,16 +149,18 @@ export default function Dashboard() {
     selectedDay < deliveryDate ? deliveryDate : selectedDay > today ? today : selectedDay;
 
   const rise = bpRise(points);
-  // Mood is the mood check (EPDS, out of 30) when one exists; otherwise the 0-10 check-in mood.
-  const epdsMode = points.some((p) => p.epds_score != null);
-  const moodKey = epdsMode ? "epds_score" : "mood";
-  const lastMood = [...points].reverse().find((p) => p.mood != null)?.mood ?? null;
+  // Mood, all on one 0-30 scale where higher is better: the daily mood check score (30 minus the EPDS
+  // total, which stays the clinical number) and the mood from check-ins. Below 20 is a hard day.
+  const moodPoints = points.map((p) => ({ ...p, mood_score: p.epds_score != null ? 30 - p.epds_score : null }));
   const summary = [moodSentence(points), sleepSentence(points)].filter(Boolean).join(" ");
   const lastWeek = points.slice(-7);
   const headacheDays = lastWeek.filter((p) => p.headache).length;
   const hasIncision = ov.delivery_method === "c-section" || points.some((p) => p.incision_pain != null);
   const epds = points.filter((p) => p.epds_score != null);
   const latestEpds = epds[epds.length - 1] ?? null;
+  const latestScore = latestEpds?.epds_score != null ? 30 - latestEpds.epds_score : null;
+  const lowMood = latestScore !== null && latestScore < MOOD_HARD_BELOW;
+  const checkedToday = latestEpds?.day === todayIso();
   const item10 = epds.some((p) => p.item_10_alert);
 
   const moodN = valued(points, "mood");
@@ -222,93 +224,102 @@ export default function Dashboard() {
         <>
           <section aria-labelledby="mood-title">
             <h2 id="mood-title" className="font-display text-2xl font-semibold">
-              {epdsMode ? "Weekly mood check" : "Mood"}
+              Daily mood check
             </h2>
             <p className="text-base text-navy/80">
-              {epdsMode
-                ? "Scored out of 30. Lower is better. A score of 10 or more is worth raising with your care team."
-                : "From your check-ins, 0 to 10. Higher is better."}
+              Scored out of 30. Higher is better. Below 20 is a hard day, worth raising with your care team.
             </p>
-            {epdsMode && latestEpds && (
-              <p className="mt-4 max-w-[52ch] text-xl leading-relaxed">
-                Your latest mood check
-                {latestEpds.day_postpartum != null ? `, on day ${latestEpds.day_postpartum},` : ""} scored{" "}
-                <strong className="font-semibold tabular-nums">{latestEpds.epds_score} out of 30</strong>.{" "}
-                {(latestEpds.epds_score ?? 0) >= 10
-                  ? "That is in the range worth raising with your care team."
-                  : "That is under 10."}
-              </p>
-            )}
-            {!epdsMode && lastMood !== null && (
-              <p className="mt-4 text-xl">
-                Latest: <strong className="font-semibold tabular-nums">{lastMood} out of 10</strong>
-              </p>
-            )}
-            {(epdsMode ? epds.length >= 2 : true) && (
-              <div className="relative mt-4 h-56 rounded-2xl bg-white p-3 shadow-paper ring-1 ring-navy/10">
-                <ChartEmpty show={!epdsMode && moodN === 0} />
-                <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 200 }}>
-                  <AreaChart data={epdsMode ? epds : points} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-                    <defs>
-                      <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={TEAL} stopOpacity={0.22} />
-                        <stop offset="100%" stopColor={TEAL} stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} stroke={GRID} />
-                    {epdsMode && (
-                      <ReferenceArea
-                        y1={10}
-                        y2={30}
-                        fill="#b3801f"
-                        fillOpacity={0.1}
-                        label={{
-                          value: "10 or more: talk to your care team",
-                          position: "insideTopRight",
-                          fill: "#1b2a22",
-                          fontSize: 13,
-                        }}
-                      />
-                    )}
-                    <XAxis {...xAxisProps} tick={AXIS} />
-                    <YAxis
-                      domain={epdsMode ? [0, 30] : [0, 10]}
-                      ticks={epdsMode ? [0, 10, 20, 30] : [0, 5, 10]}
-                      tick={AXIS}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip content={<ChartTip units={{ "Mood check": " / 30", Mood: " / 10" }} />} {...tipMotion} />
-                    <Area
-                      {...drawIn}
-                      type="monotone"
-                      dataKey={moodKey}
-                      name={epdsMode ? "Mood check" : "Mood"}
-                      stroke={TEAL}
-                      strokeWidth={2.5}
-                      fill={`url(#${gradientId})`}
-                      connectNulls={epdsMode}
-                      dot={
-                        epdsMode
-                          ? {
-                              r: 4.5,
-                              fill: TEAL,
-                              stroke: palette.dotRing,
-                              strokeWidth: 2,
-                            }
-                          : showDots(moodN)
-                      }
-                      activeDot={{
-                        r: 6,
-                        fill: TEAL,
-                        stroke: palette.dotRing,
-                        strokeWidth: 2,
-                      }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+
+            {/* today's score, set apart so it is the first thing read */}
+            <div
+              className={`mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-white p-5 shadow-paper sm:p-6 ${
+                lowMood ? "ring-2 ring-navy/35" : "ring-1 ring-navy/10"
+              }`}
+            >
+              {latestScore !== null ? (
+                <>
+                  <p className="font-display text-5xl font-semibold leading-none tabular-nums">
+                    {latestScore}
+                    <span className="text-2xl text-navy/70"> / 30</span>
+                  </p>
+                  <div className="min-w-0 flex-1 basis-60">
+                    <p className="flex items-center gap-2 text-lg font-semibold">
+                      {lowMood && <AlertIcon className="size-5 shrink-0" />}
+                      {lowMood ? "A hard day" : checkedToday ? "Today's mood score" : "Your latest mood score"}
+                    </p>
+                    <p className="mt-1 text-lg leading-relaxed text-navy/85">
+                      {latestEpds?.day_postpartum != null ? `From day ${latestEpds.day_postpartum}. ` : ""}
+                      {lowMood
+                        ? "That is below 20, so it is worth raising with your care team."
+                        : "That is 20 or above."}
+                      {!checkedToday && " Take today's mood check to keep it current."}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-lg">No mood check yet. It is 10 short questions, about two minutes.</p>
+              )}
+              {!checkedToday && (
+                <Link href="/mood-check" className={`${btnPrimary} min-h-12 px-6 text-base`}>
+                  Take today&apos;s mood check
+                </Link>
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+              <h3 className="text-lg font-semibold">Mood over time</h3>
+              <ul className="flex gap-5 text-base" aria-label="Legend">
+                <li className="flex items-center gap-2">
+                  <span aria-hidden="true" className="h-1 w-6 rounded-full" style={{ background: TEAL }} />
+                  Mood check
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden="true" className="h-1 w-6 rounded-full" style={{ background: AMBER }} />
+                  Check-in mood
+                </li>
+              </ul>
+            </div>
+            <div className="relative mt-3 h-60 rounded-2xl bg-white p-3 shadow-paper ring-1 ring-navy/10">
+              <ChartEmpty show={epds.length === 0 && moodN === 0} />
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 216 }}>
+                <LineChart data={moodPoints} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid vertical={false} stroke={GRID} />
+                  <ReferenceArea
+                    y1={0}
+                    y2={MOOD_HARD_BELOW}
+                    fill={palette.teal}
+                    fillOpacity={0.07}
+                    label={{ value: "Below 20: a hard day", position: "insideBottomRight", fill: "#1b2a22", fontSize: 13 }}
+                  />
+                  <XAxis {...xAxisProps} tick={AXIS} />
+                  <YAxis domain={[0, 30]} ticks={[0, 10, 20, 30]} tick={AXIS} tickLine={false} axisLine={false} />
+                  <Tooltip content={<ChartTip units={{ "Mood check": " / 30", "Check-in mood": " / 30" }} />} {...tipMotion} />
+                  <Line
+                    {...drawIn}
+                    type="monotone"
+                    dataKey="mood_score"
+                    name="Mood check"
+                    stroke={TEAL}
+                    strokeWidth={2.5}
+                    connectNulls
+                    dot={{ r: 4.5, fill: TEAL, stroke: palette.dotRing, strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: TEAL, stroke: palette.dotRing, strokeWidth: 2 }}
+                  />
+                  <Line
+                    {...drawIn}
+                    type="monotone"
+                    dataKey="mood"
+                    name="Check-in mood"
+                    stroke={AMBER}
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                    connectNulls={false}
+                    dot={showDots(moodN)}
+                    activeDot={{ r: 6, stroke: palette.dotRing, strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
             {item10 && (
               <div
                 role="note"
@@ -627,7 +638,7 @@ export default function Dashboard() {
                     <td className="py-2 pr-4 tabular-nums">{p.pain ?? "–"}</td>
                     <td className="py-2 pr-4 tabular-nums">{p.incision_pain ?? "–"}</td>
                     <td className="py-2 pr-4">{p.headache ? "Yes" : "–"}</td>
-                    <td className="py-2 pr-4 tabular-nums">{p.epds_score != null ? `${p.epds_score} / 30` : "–"}</td>
+                    <td className="py-2 pr-4 tabular-nums">{p.epds_score != null ? `${30 - p.epds_score} / 30` : "–"}</td>
                     <td className="py-2">
                       <button
                         type="button"

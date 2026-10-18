@@ -171,9 +171,9 @@ function DayEditorForm({
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor={`${ids}-mood`} className="text-base font-semibold">
-              Mood (0–10)
+              Mood (0–30, higher is better)
             </label>
-            <input id={`${ids}-mood`} type="number" inputMode="numeric" min={0} max={10} value={mood} onChange={(e) => setMood(e.target.value)} className={field} />
+            <input id={`${ids}-mood`} type="number" inputMode="numeric" min={0} max={30} value={mood} onChange={(e) => setMood(e.target.value)} className={field} />
           </div>
           <div>
             <label htmlFor={`${ids}-pain`} className="text-base font-semibold">

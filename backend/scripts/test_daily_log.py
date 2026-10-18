@@ -67,7 +67,7 @@ def main() -> int:
 
     user = f"qa_{secrets.token_hex(4)}"
     password = "testpass99"
-    code, auth = req("POST", "/auth/register", {"username": user, "password": password}, expect=201)
+    code, auth = req("POST", "/auth/register", {"username": user, "password": password, "email": "qa@example.invalid"}, expect=201)
     if code != 201 or not auth or "token" not in auth:
         print("register failed; abort")
         return 1

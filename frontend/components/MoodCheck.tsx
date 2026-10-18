@@ -9,8 +9,9 @@ import { usePatientId } from "@/lib/session";
 import type { EpdsQuestions, EpdsResult, RedFlagLevel } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
-// Weekly mood check (EPDS). One question per screen; tapping an answer moves on. Scoring and the
-// question 10 safety rule run on the backend (app/epds.py). This never diagnoses.
+// Daily mood check (EPDS). One question per screen; tapping an answer moves on. Scoring and the
+// question 10 safety rule run on the backend (app/epds.py). The parent sees a mood score of 30 minus the
+// EPDS total, so higher is better and below 20 is a hard day. This never diagnoses.
 
 type Phase = "questions" | "sending" | "followup" | "done" | "error";
 
@@ -118,15 +119,24 @@ export default function MoodCheck() {
         <h1 ref={headingRef} tabIndex={-1} className="mt-4 font-display text-4xl font-semibold leading-tight focus:outline-none">
           Thank you for checking in
         </h1>
-        <div className="mt-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10">
-          <p className={result.band === "low" ? "text-xl" : "font-display text-2xl font-semibold leading-snug"}>
-            Your score this week is <span className="tabular-nums">{result.score} out of 30</span>.
+        <div
+          className={`mt-6 rounded-2xl bg-white p-6 shadow-paper ${result.mood_score < 20 ? "ring-2 ring-navy/35" : "ring-1 ring-navy/10"}`}
+        >
+          <p className="text-lg font-semibold">Your mood score today</p>
+          <p className="mt-1 font-display text-5xl font-semibold leading-none tabular-nums">
+            {result.mood_score}
+            <span className="text-2xl text-navy/70"> / 30</span>
           </p>
-          <p className="mt-1 text-base text-navy/80">Lower is better. 10 or more is worth raising with your care team.</p>
+          <p className="mt-3 text-base text-navy/80">Higher is better. Below 20 is a hard day, worth raising with your care team.</p>
           <p className="mt-4 text-lg leading-relaxed">{BAND_TEXT[result.band]}</p>
+          {result.support_alerted && (
+            <p className="mt-4 text-lg leading-relaxed">
+              We have also texted and called your support person so they can check on you.
+            </p>
+          )}
         </div>
         <p className="mt-4 text-base text-navy/80">
-          This is a screening check, not a diagnosis. You can see your weekly scores on My tide.
+          This is a screening check, not a diagnosis. You can see your daily scores on My tide.
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <Link href="/dashboard" className={btnPrimary}>See my tide</Link>
@@ -144,7 +154,7 @@ export default function MoodCheck() {
       <div className="flex items-center justify-between gap-4">
         <BackLink href="/home">Check in</BackLink>
         <p className="text-base text-navy/80">
-          Weekly mood check, question {i + 1} of {qs.questions.length}
+          Daily mood check, question {i + 1} of {qs.questions.length}
         </p>
       </div>
       <div aria-hidden="true" className="mt-2 h-2 overflow-hidden rounded-full bg-navy/10">

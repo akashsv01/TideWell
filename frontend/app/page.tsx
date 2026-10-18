@@ -149,7 +149,7 @@ export default function Welcome() {
               <dl className="mt-10 divide-y divide-navy/10 border-y border-navy/10">
                 {[
                   ["Voice first", "Talk, or type if you'd rather. Replies can be read aloud."],
-                  ["A weekly mood check", "Ten questions from the Edinburgh Postnatal Depression Scale. A screening, never a diagnosis."],
+                  ["A daily mood check", "Ten questions from the Edinburgh Postnatal Depression Scale, scored out of 30. A screening, never a diagnosis."],
                   ["It remembers you", "Day 18 after your C-section, Tuesday's headache: you never start over."],
                 ].map(([t, d]) => (
                   <div key={t} className="py-4">

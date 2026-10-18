@@ -8,8 +8,8 @@ import { usePatientId } from "@/lib/session";
 import type { Overview } from "@/lib/types";
 import { focusRing } from "@/lib/ui";
 
-// Top of the check-in screen: a personal greeting, the mood check (weekly reminder, available any
-// day, editable the same day), and a nudge when the care agents suggest a visit.
+// Top of the check-in screen: a personal greeting, the daily mood check (editable the same day), and a
+// nudge when the care agents suggest a visit.
 export default function TodayCard() {
   const patientId = usePatientId();
   const [ov, setOv] = useState<Overview | null>(null);
@@ -57,7 +57,7 @@ export default function TodayCard() {
         <Link href="/mood-check" className={row}>
           <span>
             <span className="block text-lg font-semibold">
-              {taken ? "Change today's mood check" : ov.epds_due ? "Your weekly mood check is due" : "Weekly mood check"}
+              {taken ? "Change today's mood check" : "Today's mood check"}
             </span>
             <span className="mt-0.5 block text-base text-navy/80">
               {taken ? "You can change any answer from today." : "10 short questions, about two minutes."}

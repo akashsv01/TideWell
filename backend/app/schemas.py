@@ -59,7 +59,7 @@ class CheckinRequest(BaseModel):
 
 
 class CheckinMetrics(BaseModel):
-    mood: Optional[int] = Field(default=None, ge=0, le=10, description="Self-reported mood, 0 (worst) to 10 (best)")
+    mood: Optional[int] = Field(default=None, ge=0, le=30, description="Self-reported mood, 0 (worst) to 30 (best)")
     pain: Optional[int] = Field(default=None, ge=0, le=10, description="General pain, 0 to 10")
     incision_pain: Optional[int] = Field(default=None, ge=0, le=10, description="C-section incision pain, 0 to 10")
     sleep_hrs: Optional[float] = Field(default=None, ge=0, le=24, description="Hours slept in the last night")
@@ -105,5 +105,5 @@ class TrendPoint(BaseModel):
     bp_sys: Optional[int] = None
     bp_dia: Optional[int] = None
     resting_hr: Optional[int] = None  # from Apple Health (vitals.heart_rate), beats per minute
-    epds_score: Optional[int] = None  # weekly (about days 7, 14, 21); null on other days
+    epds_score: Optional[int] = None  # the daily mood check's EPDS total (higher is harder); null when not taken
     item_10_alert: bool = False  # EPDS question 10 (self-harm thoughts) answered above "Never"

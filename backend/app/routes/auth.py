@@ -3,8 +3,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
 
-from app import auth, db
-from app.schemas_data import AccountOut, AuthOut, Credentials
+from app import auth, db, mail
+from app.schemas_data import AccountOut, AuthOut, Credentials, RegisterIn
 
 router = APIRouter(prefix="/auth")
 
@@ -15,11 +15,12 @@ def _need_db() -> None:
 
 
 @router.post("/register", response_model=AuthOut, status_code=201)
-def register(body: Credentials) -> AuthOut:
+def register(body: RegisterIn) -> AuthOut:
     _need_db()
-    user = auth.create_user(body.username, body.password)
+    user = auth.create_user(body.username, body.password, body.email)
     if user is None:
         raise HTTPException(409, "that username is taken")
+    mail.welcome(body.email.strip().lower(), user.username)  # background thread; never blocks or fails sign-up
     return AuthOut(token=auth.create_session(user.id), username=user.username, patient_id=None)
 
 

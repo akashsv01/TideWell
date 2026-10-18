@@ -69,7 +69,9 @@ export interface EpdsQuestions {
 }
 
 export interface EpdsResult {
-  score: number;
+  score: number; // EPDS total, 0-30, higher is harder (clinical)
+  mood_score: number; // what the parent sees: 30 - score, lower is harder
+  support_alerted: boolean; // the support person was texted and called just now
   item10: number;
   band: "low" | "watch" | "amber";
   level: RedFlagLevel | null;
@@ -134,7 +136,7 @@ export interface TrendPoint {
   bp_sys: number | null;
   bp_dia: number | null;
   resting_hr?: number | null; // from Apple Health
-  epds_score?: number | null; // weekly; null on other days
+  epds_score?: number | null; // daily mood check EPDS total (higher is harder); the UI shows 30 - this
   item_10_alert?: boolean;
 }
 

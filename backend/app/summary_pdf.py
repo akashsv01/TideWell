@@ -62,7 +62,7 @@ def build(profile: dict, points: list[dict], tiers: list[dict], appointments: li
 
     recent = points[-14:]
     out.append(Paragraph(f"Last {len(recent)} days", h2))
-    data = [["Date", "Day", "Mood", "Sleep", "Pain", "Incision", "BP", "Headache", "Mood check"]]
+    data = [["Date", "Day", "Mood /30", "Sleep", "Pain", "Incision", "BP", "Headache", "Mood check (EPDS)"]]
     for p in recent:
         bp = f"{p['bp_sys']}/{p['bp_dia']}" if p.get("bp_sys") else "–"
         data.append([f"{p['day']:%b %d}", _v(p.get("day_postpartum")), _v(p.get("mood")), _v(p.get("sleep_hrs"), " h"),

@@ -14,7 +14,7 @@ DAYS = 18  # Maya is on postpartum day 18 "today"
 _LAST_BP = {12: (132, 84), 14: (136, 88), 16: (141, 90), 18: (144, 92)}  # 4 rising readings
 _HEADACHE_DAYS = {13, 16, 18}  # 3 of the last 7 days
 _SLEEP_LAST_WEEK = {12: 4.0, 13: 3.5, 14: 4.2, 15: 3.6, 16: 3.9, 17: 3.8, 18: 3.6}  # mean 3.8
-_MOOD_LAST_WEEK = {12: 5, 13: 5, 14: 4, 15: 5, 16: 4, 17: 4, 18: 4}
+_MOOD_LAST_WEEK = {12: 15, 13: 15, 14: 12, 15: 15, 16: 12, 17: 12, 18: 12}  # daily mood, 0-30
 
 
 def _today() -> date:
@@ -53,7 +53,7 @@ def checkins(today: date | None = None) -> list[dict]:
         late = n >= 12
         rows.append({
             "time": _at(d, 14),
-            "mood": _MOOD_LAST_WEEK[n] if late else rng.choice([6, 7, 7, 8]),
+            "mood": _MOOD_LAST_WEEK[n] if late else rng.choice([18, 21, 21, 24]),
             "pain": rng.choice([2, 3, 3]) if late else max(2, 6 - n // 2),
             "incision_pain": 3,  # stable
             "sleep_hrs": _SLEEP_LAST_WEEK[n] if late else round(rng.uniform(4.8, 5.8), 1),

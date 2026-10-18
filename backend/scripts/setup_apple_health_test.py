@@ -90,9 +90,9 @@ def main() -> None:
 
         c = TestClient(app)
 
-    r = c.post("/auth/login", json={"username": USERNAME, "password": PASSWORD})
+    r = c.post("/auth/login", json={"username": USERNAME, "password": PASSWORD, "email": "qa@example.invalid"})
     if r.status_code != 200:
-        r = c.post("/auth/register", json={"username": USERNAME, "password": PASSWORD})
+        r = c.post("/auth/register", json={"username": USERNAME, "password": PASSWORD, "email": "qa@example.invalid"})
         r.raise_for_status()
     token = r.json()["token"]
     h = {"Authorization": f"Bearer {token}"}

@@ -102,7 +102,7 @@ def patient_context(pid: Optional[UUID]) -> Optional[str]:
         if w.get("avg_sleep") is not None:
             parts.append(f"average sleep {w['avg_sleep']} hours")
         if w.get("avg_mood") is not None:
-            parts.append(f"average mood {w['avg_mood']} out of 10")
+            parts.append(f"average mood {w['avg_mood']} out of 30")
         parts.append(f"headaches on {w['headache_days']} days")
         lines.append("Last 7 days: " + ", ".join(parts) + ".")
     else:

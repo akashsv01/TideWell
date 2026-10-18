@@ -19,13 +19,14 @@ export function moodSentence(points: TrendPoint[]): string | null {
   const early = mean(mood.slice(0, 5))!;
   const late = mean(mood.slice(-5))!;
   const diff = late - early;
-  if (diff <= -1) {
-    return `Your mood has drifted down, from about ${Math.round(early)} to about ${Math.round(late)} out of 10.`;
+  // Daily mood is 0-30 (higher is better); a change of 3 or more is a real drift.
+  if (diff <= -3) {
+    return `Your mood has drifted down, from about ${Math.round(early)} to about ${Math.round(late)} out of 30.`;
   }
-  if (diff >= 1) {
-    return `Your mood has been lifting, from about ${Math.round(early)} to about ${Math.round(late)} out of 10.`;
+  if (diff >= 3) {
+    return `Your mood has been lifting, from about ${Math.round(early)} to about ${Math.round(late)} out of 30.`;
   }
-  return `Your mood has held steady, around ${Math.round(late)} out of 10.`;
+  return `Your mood has held steady, around ${Math.round(late)} out of 30.`;
 }
 
 export function sleepSentence(points: TrendPoint[]): string | null {

@@ -167,7 +167,7 @@ def save_vitals(v: VitalsIn) -> None:
 
 def trends(patient_id: UUID, days: int) -> list[dict]:
     """Daily points: check-ins and BP from the two continuous aggregates (real-time, so today is
-    included), plus the weekly EPDS score on the day it was taken. day_postpartum is counted from
+    included), plus the EPDS score (the daily mood check) on the day it was taken. day_postpartum is counted from
     the delivery date."""
     with db.connection() as conn:
         return conn.execute(
@@ -203,13 +203,11 @@ def trends(patient_id: UUID, days: int) -> list[dict]:
 
 
 def epds_due(day_postpartum: int, last: Optional[dict], today: Optional[date] = None) -> bool:
-    """Weekly from day 7: due when there is no score in the last 7 days."""
-    if day_postpartum < 7:
-        return False
+    """Daily: due when today's mood check has not been done yet."""
     if not last:
         return True
     today = today or date.today()
-    return (today - last["time"].date()).days >= 7
+    return last["time"].date() < today
 
 
 def booked_slots() -> set:

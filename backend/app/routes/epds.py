@@ -1,4 +1,7 @@
-"""Weekly EPDS mood check: GET /epds/questions, POST /epds, POST /epds/followup."""
+"""Daily mood check (EPDS): GET /epds/questions, POST /epds, POST /epds/followup.
+
+The parent sees a mood score of 30 minus the EPDS total (lower is harder). Below 20 the support person is
+texted and called with the gentle fixed message; a self-harm answer sends the urgent one instead."""
 from typing import Optional
 from uuid import UUID
 
@@ -23,15 +26,19 @@ def submit(body: EpdsIn, user: Optional[auth.User] = Depends(auth.optional_user)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     level, followup = epds.item10_outcome(item10)
+    mood = epds.mood_score(total)
+    alerted = False
     if db.enabled() and not auth.is_demo(body.patient_id):  # the shared demo is never written to
         store.save_epds(body.patient_id, total, item10, body.answers)
         from app.routes.agents import analyse_later
 
         analyse_later(body.patient_id)
         if level == "emergency":
-            notify.send_support_alert(body.patient_id)
-    return EpdsOut(score=total, item10=item10, band=epds.band(total), level=level,
-                   needs_followup=followup, response=epds.response_for(level))
+            alerted = notify.send_support_alert(body.patient_id).get("status") == "sent"
+        elif mood < epds.MOOD_ALERT_BELOW:
+            alerted = notify.send_support_alert(body.patient_id, kind="mood").get("status") == "sent"
+    return EpdsOut(score=total, mood_score=mood, support_alerted=alerted, item10=item10, band=epds.band(total),
+                   level=level, needs_followup=followup, response=epds.response_for(level))
 
 
 @router.post("/followup", response_model=EpdsFollowupOut)

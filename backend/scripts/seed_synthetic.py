@@ -47,7 +47,7 @@ def main() -> None:
             for k in range(min(day, 21)):
                 d = today - timedelta(days=min(day, 21) - 1 - k)
                 prog = k / 20
-                mood = max(0, min(10, round(rng.gauss(7 - (3 * prog if kind == "low_mood" else 0), 1))))
+                mood = max(0, min(30, round(rng.gauss(21 - (9 * prog if kind == "low_mood" else 0), 3))))  # 0-30
                 sleep = max(1.5, round(rng.gauss(4.0 if kind == "poor_sleep" else 5.5, 0.6), 1))
                 head = rng.random() < (0.45 if kind == "rising_bp" and prog > 0.6 else 0.08)
                 bp = (round(118 + (28 * prog if kind == "rising_bp" else 0) + rng.gauss(0, 3)),
