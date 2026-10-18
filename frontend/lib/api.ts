@@ -1,4 +1,4 @@
-import { authToken, clearSession, getSession } from "@/lib/session";
+import { authToken, clearSession, getSession, startDemo } from "@/lib/session";
 import type {
   Account,
   AuthResponse,
@@ -6,6 +6,8 @@ import type {
   CheckinRequest,
   CheckinResponse,
   ClinicianPatient,
+  DayEntry,
+  DayOut,
   EpdsQuestions,
   EpdsResult,
   Overview,
@@ -151,6 +153,12 @@ export async function logout(): Promise<void> {
   }
 }
 
+/** Leave a signed-in account (revoking the token) and open the shared Maya demo. */
+export async function switchToDemo(): Promise<void> {
+  await logout();
+  startDemo();
+}
+
 export const getAccount = () => request<Account>("/auth/me");
 
 // --- Profile ------------------------------------------------------------------------------
@@ -235,6 +243,11 @@ export async function getTrends(patientId: string, range = "21d"): Promise<Trend
     return mockTrends();
   }
   return request(`/trends/${patientId}?range=${range}`);
+}
+
+/** Log or correct one day's numbers (PUT /patients/{id}/days/{day}). */
+export function saveDay(patientId: string, day: string, entry: DayEntry): Promise<DayOut> {
+  return sendJson<DayOut>("PUT", `/patients/${patientId}/days/${day}`, entry);
 }
 
 export async function getSlots(urgency = "amber"): Promise<Slot[]> {

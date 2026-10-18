@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { switchToDemo } from "@/lib/api";
 import { startDemo, useSession } from "@/lib/session";
 import { btnPrimary, focusRing } from "@/lib/ui";
 
@@ -9,12 +10,13 @@ import { btnPrimary, focusRing } from "@/lib/ui";
 export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "dark" }) {
   const router = useRouter();
   const { session } = useSession();
-  const link = `rounded-md py-2 text-lg font-semibold underline underline-offset-4 ${
+  const link = `rounded-md py-2 text-lg font-semibold underline underline-offset-4 transition-transform duration-150 ease-out motion-safe:active:scale-[0.97] ${
     tone === "dark" ? "text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white" : focusRing
   }`;
 
-  function tryDemo() {
-    startDemo();
+  async function tryDemo() {
+    if (session?.kind === "user") await switchToDemo();
+    else startDemo();
     router.push("/home");
   }
 
@@ -34,7 +36,7 @@ export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "d
           I have an account
         </Link>
       )}
-      {session?.kind !== "user" && (
+      {session?.kind !== "demo" && (
         <button type="button" onClick={tryDemo} className={link}>
           Try the demo
         </button>

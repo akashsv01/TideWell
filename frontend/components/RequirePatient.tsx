@@ -54,7 +54,7 @@ export default function RequirePatient({ children }: { children: React.ReactNode
       ) : (
         !session && <StartChooser />
       )}
-      <div hidden={!show} className="flex flex-1 flex-col">
+      <div key={session?.patientId ?? "none"} hidden={!show} className="flex flex-1 flex-col">
         {children}
       </div>
     </>

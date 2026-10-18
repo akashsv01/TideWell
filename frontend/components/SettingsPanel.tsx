@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import ProfileEditor from "@/components/ProfileEditor";
-import { deleteMyData, logout } from "@/lib/api";
+import { deleteMyData, logout, switchToDemo } from "@/lib/api";
 import {
   getSpokenReplies,
   setSpokenReplies,
@@ -126,9 +126,21 @@ export default function SettingsPanel() {
             <p className="mt-2 text-lg">
               Signed in as <strong>{session?.kind === "user" ? session.username : ""}</strong>.
             </p>
-            <button type="button" onClick={signOut} className={`${btnOutline} mt-4`}>
-              Log out
-            </button>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button type="button" onClick={signOut} className={btnOutline}>
+                Log out
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await switchToDemo();
+                  router.push("/home");
+                }}
+                className={btnOutline}
+              >
+                Try the demo
+              </button>
+            </div>
           </>
         )}
       </section>
