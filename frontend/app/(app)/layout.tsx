@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5">
       <header className="flex h-16 items-center justify-between">
         <Link
-          href="/"
+          href="/home"
           className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}
         >
           Tidewell

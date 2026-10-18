@@ -1,9 +1,9 @@
-import Link from "next/link";
 import HeroDevice from "@/components/HeroDevice";
+import LandingNav from "@/components/LandingNav";
 import Reveal from "@/components/Reveal";
 import Waves, { type WaveLayer } from "@/components/Waves";
 import WelcomeActions from "@/components/WelcomeActions";
-import { focusRing, focusRingLight } from "@/lib/ui";
+import { focusRingLight } from "@/lib/ui";
 
 // Public home page. Organic, calm, ocean-toned: flowing wave shapes, one primary action per
 // screen, motion that is slow and quiet (entrances once, decorative loops off with reduced motion).
@@ -38,23 +38,7 @@ const ICONS = {
 export default function Welcome() {
   return (
     <div className="flex min-h-dvh flex-col bg-foam text-navy">
-      {/* ---------------- nav ---------------- */}
-      <header className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
-        <Link href="/" className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}>
-          Tidewell
-        </Link>
-        <nav aria-label="Account" className="flex items-center gap-3">
-          <Link href="/login" className={`hidden rounded-full px-4 py-2 text-base font-semibold sm:inline-block ${focusRing}`}>
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className={`inline-flex min-h-11 items-center rounded-full bg-tide-deep px-5 text-base font-semibold text-white transition-colors duration-150 hover:bg-navy ${focusRing}`}
-          >
-            Get started
-          </Link>
-        </nav>
-      </header>
+      <LandingNav />
 
       <main id="main" className="flex flex-1 flex-col">
         {/* ---------------- hero ---------------- */}
