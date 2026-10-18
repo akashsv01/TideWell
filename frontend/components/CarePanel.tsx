@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, bookCare, clearLocation, dismissCare, downloadSummary, getNearby, getNearbyByZip, getRisk, saveLocation } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -202,7 +203,10 @@ export default function CarePanel() {
 
       {risk && risk.appointments.length > 0 && (
         <section aria-labelledby="appt-title">
-          <h2 id="appt-title" className="font-display text-2xl">Upcoming visits</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="appt-title" className="font-display text-2xl">Upcoming visits</h2>
+            <Link href="/visits" className={`rounded-md py-1 text-lg font-semibold underline underline-offset-4 ${focusRing}`}>Your video and in-person visits</Link>
+          </div>
           <ul className="mt-3 space-y-2">
             {risk.appointments.map((a) => (
               <li key={a.id} className="rounded-2xl bg-white p-4 ring-1 ring-navy/10">
@@ -280,6 +284,7 @@ export default function CarePanel() {
                 <span className="mt-3 flex flex-wrap gap-2">
                   <a href={p.directions_url} target="_blank" rel="noreferrer" className={`rounded-full border-2 border-navy px-4 py-1.5 text-base font-semibold ${focusRing}`}>Directions</a>
                   {p.phone && <a href={`tel:${p.phone.replace(/[^\d+]/g, "")}`} className={`rounded-full border-2 border-navy px-4 py-1.5 text-base font-semibold ${focusRing}`}>Call</a>}
+                  <Link href="/visits/book" className={`rounded-full border-2 border-navy bg-navy px-4 py-1.5 text-base font-semibold text-white ${focusRing}`}>Book an appointment</Link>
                 </span>
               </li>
             ))}
