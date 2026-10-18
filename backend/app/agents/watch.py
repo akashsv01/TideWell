@@ -47,9 +47,9 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
     if sys_:
         ls, ld = sys_[-1], dia[-1]
         if ls >= 160 or ld >= 110:
-            tier, why = "red", [f"Severe-range blood pressure {ls}/{ld}"]
+            tier, why = "red", [f"Latest blood pressure was {ls}/{ld}, in the severe range (160/110 or higher)"]
         elif ls >= 140 or ld >= 90:
-            tier, why = "amber", [f"Blood pressure {ls}/{ld} is 140/90 or higher"]
+            tier, why = "amber", [f"Latest blood pressure was {ls}/{ld}, at or above the 140/90 limit"]
         if _rising(sys_, 3) and tier != "red":
             why.append(f"Top number rose {len(sys_[-3:])} readings in a row ({', '.join(map(str, sys_[-3:]))})")
             tier = "amber" if headaches >= 3 or tier == "amber" else max(tier, "watch", key=RANK.get)
@@ -69,14 +69,14 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
             tier, why = "amber", ["Mood check mentioned thoughts of self-harm this week"]
         if last_epds["score"] >= 13:
             tier = max(tier, "amber", key=RANK.get)
-            why.append(f"Mood check score {last_epds['score']}/30 (13 or more)")
+            why.append(f"Latest mood check scored {last_epds['score']} out of 30, where a follow-up is advised (13 or more)")
         elif last_epds["score"] >= 10:
             tier = max(tier, "watch", key=RANK.get)
-            why.append(f"Mood check score {last_epds['score']}/30 (10 to 12)")
+            why.append(f"Latest mood check scored {last_epds['score']} out of 30, worth watching (10 to 12)")
     moods = _vals(week, "mood")
     if len(moods) >= 3 and sum(moods) / len(moods) <= 4:
         tier = max(tier, "watch", key=RANK.get)
-        why.append(f"Average mood {sum(moods) / len(moods):.1f}/10 this week")
+        why.append(f"Average mood was {sum(moods) / len(moods):.1f} out of 10 this week")
     if profile.get("history_mental_health"):
         tier = max(tier, "watch", key=RANK.get)
         why.append("History of depression or anxiety")
@@ -87,7 +87,7 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
         inc = _vals(points, "incision_pain")
         tier, why = "green", []
         if inc and inc[-1] >= 7:
-            tier, why = "amber", [f"Incision pain {inc[-1]}/10"]
+            tier, why = "amber", [f"Incision pain was {inc[-1]} out of 10"]
         elif _rising(inc, 3):
             tier, why = "watch", [f"Incision pain rising ({', '.join(map(str, inc[-3:]))})"]
         out.append({"category": "post_cesarean", "tier": tier, "reasons": why or ["Incision pain stable or improving"]})

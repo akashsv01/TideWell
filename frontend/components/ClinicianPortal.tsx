@@ -1,18 +1,44 @@
 "use client";
 
-import Link from "next/link";
+import Wordmark from "@/components/Wordmark";
 import { useEffect, useMemo, useState } from "react";
+import { AlertIcon } from "@/components/icons";
 import { getClinicianOverview } from "@/lib/api";
+import { DEMO_PATIENT_ID } from "@/lib/config";
 import type { Tier } from "@/lib/types";
 import { focusRing } from "@/lib/ui";
 
 // Clinician portal: every patient the Watch agent has assessed, most urgent first, with the reasons
-// and its handoff note, plus booked visits. The timing panel shows Tiger Data serving it live.
+// and its handoff note, plus booked visits. Database timings (Tiger Data) are kept out of the
+// clinical view, in a labelled "technical details" disclosure at the end.
 // Hackathon demo: no clinician login yet (noted on the page).
 
 type Data = Awaited<ReturnType<typeof getClinicianOverview>>;
+// Plain labels, said as text; the more serious tiers are set larger and carry the alert icon.
+// The API prefixes each reason with its category key ("high_blood_pressure: ..."); say it in words.
+const CATEGORY: Record<string, string> = {
+  high_blood_pressure: "Blood pressure", depression_anxiety: "Mood", post_cesarean: "C-section recovery",
+  sleep: "Sleep", disengagement: "Check-ins",
+};
+// Stored reasons may also be several joined with "; ". Each becomes its own sentence, and the
+// category word is dropped when the reason already names it ("Blood pressure 144/93 ...").
+function plainReasons(reasons: string[]): string {
+  return reasons
+    .flatMap((r) => {
+      const m = r.match(/^([a-z_]+): ([\s\S]*)$/);
+      const label = m ? CATEGORY[m[1]] : undefined;
+      const parts = (m ? m[2] : r).split(/;\s+/).map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+      if (!label) return parts;
+      const first = label.split(" ")[0].toLowerCase();
+      const says = (x: string) => x.toLowerCase().startsWith(first) || x.toLowerCase().includes(label.toLowerCase());
+      return parts.map((x) => (says(x) ? x : `${label}: ${x}`));
+    })
+    .map((x) => `${x}.`)
+    .join(" ");
+}
+
 const TIER: Record<Tier, string> = {
-  red: "bg-alert text-white", amber: "bg-chart-amber text-white", watch: "bg-tide-light/40 text-tide-deep", green: "bg-[#e3f1e8] text-[#2f5d3f]",
+  red: "Needs care now", amber: "Visit soon", watch: "Watching", green: "Steady",
 };
 
 export default function ClinicianPortal() {
@@ -37,25 +63,22 @@ export default function ClinicianPortal() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
-      <header className="flex h-20 items-center justify-between">
-        <Link href="/" className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}>Tidewell</Link>
-        <span className="rounded-full bg-sand px-3 py-1 text-sm font-semibold">Clinician view · demo</span>
+      <header className="flex h-20 items-center justify-between gap-4">
+        <Wordmark href="/" />
+        <p className="text-right text-base text-navy/80">Clinician view, demo without login</p>
       </header>
-      <main id="main">
-        <h1 className="font-display text-4xl leading-tight">Your patients</h1>
-        <p className="mt-2 max-w-[60ch] text-lg text-navy/85">
-          Sorted by the Watch agent&apos;s latest assessment. Reasons come from patients&apos; own check-ins; Tidewell never diagnoses.
+      <main id="main" className="pt-4">
+        <h1 className="font-display text-4xl font-semibold leading-tight">Your patients</h1>
+        <p className="mt-2 max-w-[62ch] text-lg text-navy/85">
+          Most urgent first, by Tidewell&apos;s latest check of each patient&apos;s numbers against guideline limits.
+          Reasons come from patients&apos; own check-ins. Tidewell never diagnoses.
         </p>
-
         {data && (
-          <div className="mt-6 grid gap-3 sm:grid-cols-4">
-            <Stat label="Patients (30 days)" value={data.timing.patients_30d.toLocaleString()} />
-            <Stat label="Check-ins (30 days)" value={data.timing.checkins_30d.toLocaleString()} />
-            <Stat label="Risk overview query" value={`${data.timing.overview_ms} ms`} />
-            <Stat label="Continuous aggregate" value={`${data.timing.aggregate_ms} ms`} />
-          </div>
+          <p className="mt-3 text-lg">
+            {data.timing.patients_30d.toLocaleString()} patients and {data.timing.checkins_30d.toLocaleString()} check-ins
+            in the last 30 days. Most are synthetic demo patients.
+          </p>
         )}
-        {data && <p className="mt-2 text-sm text-navy/70">Live from Tiger Data: hypertables + continuous aggregates.</p>}
 
         <div className="mt-8 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by tier">
           {(["all", "red", "amber", "watch", "green"] as const).map((t) => (
@@ -64,13 +87,13 @@ export default function ClinicianPortal() {
               type="button"
               aria-pressed={filter === t}
               onClick={() => setFilter(t)}
-              className={`min-h-11 rounded-full border-2 px-4 text-base font-semibold capitalize transition-[background-color,color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] ${filter === t ? "border-navy bg-navy text-white" : "border-navy/25 bg-white"} ${focusRing}`}
+              className={`min-h-11 rounded-full border-2 px-4 text-base font-semibold transition-[background-color,color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] ${filter === t ? "border-navy bg-navy text-white" : "border-navy/25 bg-white"} ${focusRing}`}
             >
-              {t}{t !== "all" ? ` (${counts[t]})` : ""}
+              {t === "all" ? "All" : `${TIER[t]} (${counts[t]})`}
             </button>
           ))}
           <label className="ml-auto flex cursor-pointer items-center gap-2 text-base">
-            <input type="checkbox" checked={showSynthetic} onChange={(e) => setShowSynthetic(e.target.checked)} className="size-5 accent-[#0e6a70]" />
+            <input type="checkbox" checked={showSynthetic} onChange={(e) => setShowSynthetic(e.target.checked)} className="size-5 accent-tide-deep" />
             Include synthetic patients
           </label>
         </div>
@@ -78,28 +101,46 @@ export default function ClinicianPortal() {
         {failed && <p role="alert" className="mt-6 text-lg text-alert">Couldn&apos;t load patients.</p>}
         {!data && !failed && <p role="status" className="mt-6 text-lg">Loading…</p>}
 
-        <ul className="mt-6 space-y-3">
-          {rows.slice(0, 60).map((p) => (
-            <li key={p.patient_id} className="rounded-2xl bg-white p-5 ring-1 ring-navy/10">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-sm font-bold uppercase ${TIER[p.overall_tier]}`}>{p.overall_tier}</span>
-                <span className="text-lg font-semibold">{p.name ?? "Patient"}</span>
-                <span className="text-base text-navy/75">Day {p.day_postpartum} · {p.delivery_type === "c-section" ? "C-section" : "Vaginal"}</span>
-                {p.is_synthetic && <span className="rounded-full bg-navy/10 px-2 py-0.5 text-xs font-semibold">synthetic</span>}
-              </div>
-              {p.reasons.length > 0 && <p className="mt-2 text-base leading-relaxed text-navy/85">{p.reasons.join(" · ")}</p>}
-              {p.note && <p className="mt-2 rounded-xl bg-sand/60 p-3 text-base"><strong>Agent note:</strong> {p.note}</p>}
-            </li>
-          ))}
+        <ul className="mt-6 divide-y divide-navy/10 rounded-2xl bg-white shadow-paper ring-1 ring-navy/10">
+          {rows.slice(0, 60).map((p) => {
+            const serious = p.overall_tier === "red" || p.overall_tier === "amber";
+            return (
+              <li key={p.patient_id} className="flex gap-3 p-5">
+                {serious ? (
+                  <AlertIcon className={`mt-1 size-6 shrink-0 ${p.overall_tier === "red" ? "text-alert" : "text-navy"}`} />
+                ) : (
+                  <span aria-hidden="true" className="size-6 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className={serious ? "text-xl font-semibold" : "text-lg font-semibold"}>{p.name ?? "Patient"}</span>
+                    <span className="text-base text-navy/75">
+                      Day {p.day_postpartum}, {p.delivery_type === "c-section" ? "C-section" : "vaginal birth"}
+                      {p.is_synthetic
+                        ? " (synthetic)"
+                        : p.patient_id === DEMO_PATIENT_ID
+                          ? " (demo patient)"
+                          : " (account created in the app, may be a test)"}
+                    </span>
+                  </p>
+                  <p className={`mt-1 ${serious ? "text-lg" : "text-base text-navy/85"}`}>
+                    <span className={`font-semibold ${p.overall_tier === "red" ? "text-alert" : ""}`}>{TIER[p.overall_tier]}.</span>{" "}
+                    {plainReasons(p.reasons)}
+                  </p>
+                  {p.note && <p className="mt-2 rounded-xl bg-sand/60 p-3 text-base"><strong>Handoff note:</strong> {p.note}</p>}
+                </div>
+              </li>
+            );
+          })}
         </ul>
         {rows.length > 60 && <p className="mt-3 text-base text-navy/75">Showing the 60 most urgent of {rows.length}.</p>}
 
         {data && data.appointments.length > 0 && (
           <section className="mt-10" aria-labelledby="appts">
-            <h2 id="appts" className="font-display text-2xl">Booked visits</h2>
-            <ul className="mt-3 space-y-2">
+            <h2 id="appts" className="font-display text-2xl font-semibold">Booked visits</h2>
+            <ul className="mt-3 divide-y divide-navy/10 rounded-2xl bg-white shadow-paper ring-1 ring-navy/10">
               {data.appointments.map((a, i) => (
-                <li key={i} className="rounded-2xl bg-white p-4 ring-1 ring-navy/10">
+                <li key={i} className="p-4">
                   <p className="font-semibold">{new Date(a.slot).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} · {a.facility_name ?? "Clinic"}</p>
                   {a.clinician_note && <p className="mt-1 text-base text-navy/85">{a.clinician_note}</p>}
                 </li>
@@ -107,16 +148,19 @@ export default function ClinicianPortal() {
             </ul>
           </section>
         )}
-      </main>
-    </div>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-navy p-4 text-white">
-      <p className="text-sm text-white/75">{label}</p>
-      <p className="font-display text-2xl tabular-nums">{value}</p>
+        {data && (
+          <details className="mt-12 text-base text-navy/80">
+            <summary className={`w-fit cursor-pointer rounded-md font-semibold ${focusRing}`}>
+              Technical details for the demo (not clinical)
+            </summary>
+            <p className="mt-2 max-w-[62ch]">
+              This page is served live from Tiger Data (hypertables and continuous aggregates). The risk overview query
+              took {data.timing.overview_ms} ms and the continuous aggregate {data.timing.aggregate_ms} ms on this load.
+            </p>
+          </details>
+        )}
+      </main>
     </div>
   );
 }

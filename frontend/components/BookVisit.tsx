@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, bookVisit, getSlots, listProviders } from "@/lib/api";
@@ -201,25 +202,31 @@ export default function BookVisit() {
   const position = steps.indexOf(step) + 1;
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      {step !== "done" && (
-        <p className="text-base font-semibold text-tide-deep">
-          Step {position} of {steps.length}
-        </p>
-      )}
+    <div className="w-full">
+      <div className="flex items-center justify-between gap-4">
+        <BackLink href="/care">Care</BackLink>
+        {step !== "done" && (
+          <p className="text-base text-navy/75">
+            Step {position} of {steps.length}
+          </p>
+        )}
+      </div>
       <form
         key={step}
         onSubmit={step === "confirm" ? confirm : (e) => (e.preventDefault(), next())}
         noValidate
-        className="mt-2 flex flex-col motion-safe:animate-step-in"
+        className="mt-4 flex max-w-xl flex-col motion-safe:animate-step-in"
       >
-        <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
+        <h1 ref={headingRef} tabIndex={-1} className="font-display text-4xl font-semibold leading-tight focus:outline-none">
           {heading}
         </h1>
 
         {step === "provider" && (
           <fieldset className="mt-6">
             <legend className="sr-only">Provider</legend>
+            <p className="mb-4 text-base text-navy/80">
+              These providers are made up for the demo. Real clinics will replace them.
+            </p>
             {!providers && !error && <p className="text-lg text-navy/80">Loading providers.</p>}
             <div className="space-y-3">
               {providers?.map((p) => (
@@ -244,9 +251,6 @@ export default function BookVisit() {
               ))}
             </div>
             {provider?.bio && <p className="mt-4 text-base text-navy/80">{provider.bio}</p>}
-            <p className="mt-4 text-base text-navy/80">
-              These providers are made up for the demo. Real clinics will replace them.
-            </p>
           </fieldset>
         )}
 
@@ -289,7 +293,7 @@ export default function BookVisit() {
             <p className="text-base text-navy/80">Times are in Eastern time.</p>
             {slots === null && !error && <p className="text-lg text-navy/80">Looking for open times.</p>}
             {slots?.length === 0 && !error && (
-              <p className="rounded-2xl bg-sand/70 p-4 text-lg">
+              <p className="rounded-2xl bg-white p-4 text-lg shadow-paper ring-1 ring-navy/10">
                 No times are open in this window.
                 {urgency !== "routine" && (
                   <>
@@ -341,7 +345,7 @@ export default function BookVisit() {
 
         {step === "confirm" && provider && mode && (
           <div className="mt-6">
-            <dl className="divide-y divide-navy/10 rounded-3xl bg-sand/70 px-5 text-lg">
+            <dl className="divide-y divide-navy/10 rounded-2xl bg-white px-5 text-lg shadow-paper ring-1 ring-navy/10">
               <Row term="With" value={`${provider.name}, ${provider.specialty}`} />
               <Row term="When" value={whenLabel(slot)} />
               <Row
@@ -368,15 +372,15 @@ export default function BookVisit() {
         )}
 
         {step === "done" && visit && (
-          <div className="mt-6">
-            <p className="flex items-center gap-2 text-lg font-semibold text-tide-deep">
-              {visit.mode === "virtual" ? <VideoIcon className="size-6" /> : <PinIcon className="size-6" />}
-              {modeLabel(visit.mode)}
+          <div className="mt-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10">
+            <p className="font-display text-2xl font-semibold">
+              {dayLabel(visit.slot)}, {timeLabel(visit.slot, true)}
             </p>
-            <p className="mt-2 font-display text-2xl">{visit.provider.name}</p>
-            <p className="mt-1 text-xl">{dayLabel(visit.slot)}</p>
-            <p className="text-xl font-semibold">{timeLabel(visit.slot, true)}</p>
-            <p className="mt-4 max-w-[40ch] text-lg leading-relaxed">
+            <p className="mt-2 flex items-center gap-2 text-lg font-semibold">
+              {visit.mode === "virtual" ? <VideoIcon className="size-5 shrink-0" /> : <PinIcon className="size-5 shrink-0" />}
+              {modeLabel(visit.mode)} with {visit.provider.name}
+            </p>
+            <p className="mt-4 max-w-[48ch] text-lg leading-relaxed">
               {visit.mode === "virtual"
                 ? "Open Your visits (under Care) and tap Join video visit. The room opens 15 minutes before."
                 : `${visit.provider.clinic ?? ""}${visit.provider.address ? `, ${visit.provider.address}` : ""}. Bring your home blood pressure readings if you have them.`}

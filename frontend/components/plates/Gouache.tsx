@@ -63,7 +63,12 @@ function Finish({ id, w, h }: { id: string; w: number; h: number }) {
   );
 }
 
-/** The hero plate: a parent feeding a baby in an armchair by a night window, the moon over the tide. */
+/** Background that continues the hero plate's wall and floor past its edges, so the plate can be
+ *  shown whole (never cropped) in a box of any shape. The floor starts at y=652 of 760. */
+export const NIGHT_FEED_BACKDROP = `linear-gradient(to bottom, ${C.wall} 85.8%, ${C.wallDeep} 85.8%)`;
+
+/** The hero plate: a parent feeding a baby in an armchair by a night window, the moon over the tide.
+ *  Shown whole by default; put it on NIGHT_FEED_BACKDROP so the letterbox reads as the same room. */
 export function NightFeedPlate({ className = "" }: { className?: string }) {
   const id = useId().replace(/:/g, "");
   const arch = "M150 452 V212 A150 150 0 0 1 450 212 V452 Z";
@@ -73,7 +78,7 @@ export function NightFeedPlate({ className = "" }: { className?: string }) {
       role="img"
       aria-labelledby={`${id}-t`}
       className={`plate ${className}`}
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="xMidYMid meet"
     >
       <title id={`${id}-t`}>
         A painting of a parent feeding a baby in an armchair at night, by a window where the moon rises over the sea.
@@ -187,41 +192,135 @@ export function NightFeedPlate({ className = "" }: { className?: string }) {
   );
 }
 
-type Hour = "night" | "late" | "dawn";
-const HOURS: Record<Hour, { sky: string; skyLow: string; sea: string; sun: string; y: number; label: string }> = {
-  night: { sky: C.night, skyLow: C.nightSoft, sea: C.sea, sun: C.gold, y: 96, label: "The window at night, the moon high over the sea." },
-  late: { sky: "#16271e", skyLow: "#22392c", sea: C.sea, sun: C.gold, y: 150, label: "The window later in the night, the moon lower." },
-  dawn: { sky: "#e8d6a8", skyLow: "#efdfb6", sea: "#7d9a86", sun: "#e9a65a", y: 196, label: "The window at dawn, a low sun over a pale sea." },
+export type Moment = "talk" | "safety" | "morning";
+
+const MOMENT_LABEL: Record<Moment, string> = {
+  talk: "A painting of a hand holding a phone by lamplight at night, the parent's voice rising from it as soft tide lines.",
+  safety: "A painting of a checklist pinned to the wall, three items ticked and a call button at the bottom.",
+  morning: "A painting of a morning table: a cup of tea beside an open notebook with a gentle tide line drawn across it.",
 };
 
-/** One window at three hours of the same night: the strip under "One night with Tidewell". */
-export function WindowPlate({ hour, className = "" }: { hour: Hour; className?: string }) {
+/** One moment of the night (the strip under "One night with Tidewell"): talk, the safety check, the
+ *  morning tide. Same paint as the hero plate: flat gouache shapes, pigment edges, paper grain. */
+export function MomentPlate({ moment, className = "" }: { moment: Moment; className?: string }) {
   const id = useId().replace(/:/g, "");
-  const h = HOURS[hour];
-  const arch = "M40 330 V120 A110 110 0 0 1 260 120 V330 Z";
+  const edge = `url(#${id}-edge)`;
   return (
-    <svg viewBox="0 0 300 360" role="img" aria-label={h.label} className={`plate ${className}`}>
+    <svg
+      viewBox="0 0 300 360"
+      role="img"
+      aria-label={MOMENT_LABEL[moment]}
+      className={`plate ${className}`}
+      preserveAspectRatio="xMidYMid meet"
+    >
       <Paint id={id} />
-      <clipPath id={`${id}-win`}>
-        <path d={arch} />
-      </clipPath>
-      <rect width="300" height="360" fill={C.wall} />
-      <g clipPath={`url(#${id}-win)`}>
-        <rect x="30" y="0" width="240" height="340" fill={h.sky} />
-        <rect x="30" y="210" width="240" height="50" fill={h.skyLow} />
-        <g className="moon">
-          <circle cx="182" cy={h.y} r="46" fill={`url(#${id}-glow)`} />
-          <circle cx="182" cy={h.y} r="24" fill={h.sun} filter={`url(#${id}-edge)`} />
-        </g>
-        <g className="tide" filter={`url(#${id}-edge)`}>
-          <path d="M30 262 C80 254 120 268 160 260 S230 252 270 262 V340 H30 Z" fill={h.sea} />
-        </g>
-      </g>
-      <g filter={`url(#${id}-edge)`} fill="none" stroke={C.frame} strokeLinecap="round">
-        <path d={arch} strokeWidth="12" />
-        <path d="M150 12 V330" strokeWidth="5" />
-      </g>
-      <rect x="26" y="326" width="248" height="14" rx="3" fill={C.frame} filter={`url(#${id}-edge)`} />
+      {moment === "talk" && (
+        <>
+          <rect width="300" height="360" fill={C.wall} />
+          {/* lamp and its glow */}
+          <circle cx="54" cy="176" r="150" fill={`url(#${id}-glow)`} />
+          <g filter={edge}>
+            <rect x="50" y="196" width="7" height="84" fill={C.frame} />
+            <path d="M22 140 H86 L100 198 H8 Z" fill={C.terracotta} />
+            <path d="M22 140 H86 L88 148 H20 Z" fill={C.terracottaDeep} />
+          </g>
+          {/* bedside table */}
+          <rect x="0" y="278" width="300" height="82" fill={C.wallDeep} filter={edge} />
+          <rect x="0" y="276" width="300" height="7" fill={C.chair} opacity="0.55" />
+          {/* the voice, rising as tide lines */}
+          <g fill="none" stroke={C.gold} strokeLinecap="round" filter={edge}>
+            <path d="M146 96 C162 88 178 104 194 96 S226 88 246 96" strokeWidth="5" opacity="0.9" />
+            <path d="M158 74 C172 67 186 81 200 74 S226 67 240 74" strokeWidth="4" opacity="0.62" />
+            <path d="M170 54 C182 48 194 60 206 54 S224 48 232 54" strokeWidth="3" opacity="0.38" />
+          </g>
+          {/* sleeve and palm under the phone */}
+          <g filter={edge}>
+            <path d="M126 360 C130 332 140 314 156 304 L246 304 C258 318 264 338 266 360 Z" fill={C.robe} />
+            <path d="M150 314 C146 292 146 264 152 248 L234 248 C240 270 240 294 236 314 Z" fill={C.skin} />
+          </g>
+          {/* phone, with the moon button on its screen */}
+          <g filter={edge}>
+            <rect x="156" y="112" width="80" height="150" rx="14" fill={C.chair} />
+            <rect x="163" y="122" width="66" height="130" rx="8" fill={C.nightSoft} />
+          </g>
+          <clipPath id={`${id}-btn`}>
+            <circle cx="196" cy="190" r="21" />
+          </clipPath>
+          <circle cx="196" cy="190" r="21" fill={C.goldDeep} />
+          <path d="M174 196 C184 191 192 200 202 195 S214 191 220 196 V214 H174 Z" fill={C.sea} clipPath={`url(#${id}-btn)`} />
+          <circle cx="196" cy="190" r="8" fill={C.ivory} />
+          <rect x="178" y="226" width="36" height="4" rx="2" fill={C.ivory} opacity="0.5" />
+          {/* fingers over the right edge, the thumb on the left */}
+          <g fill={C.skin} filter={edge}>
+            <rect x="226" y="166" width="21" height="15" rx="7.5" />
+            <rect x="228" y="185" width="21" height="15" rx="7.5" />
+            <rect x="227" y="204" width="20" height="15" rx="7.5" />
+            <rect x="149" y="214" width="16" height="30" rx="8" transform="rotate(-12 157 229)" />
+          </g>
+        </>
+      )}
+      {moment === "safety" && (
+        <>
+          <rect width="300" height="360" fill={C.wall} />
+          <rect x="0" y="300" width="300" height="60" fill={C.wallDeep} filter={edge} />
+          {/* the card's shadow, then the card, pinned */}
+          <g transform="rotate(-4 150 176)">
+            <rect x="68" y="60" width="170" height="240" rx="10" fill={C.night} opacity="0.45" />
+            <rect x="60" y="50" width="170" height="240" rx="10" fill={C.ivory} filter={edge} />
+            <circle cx="145" cy="64" r="7" fill={C.goldDeep} />
+            {[106, 148, 190].map((y) => (
+              <g key={y}>
+                <circle cx="92" cy={y} r="11" fill={C.wall} />
+                <path d={`M86 ${y} L90.5 ${y + 4.5} L98.5 ${y - 5}`} fill="none" stroke={C.ivory} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="112" y={y - 7} width="92" height="7" rx="3.5" fill={C.robeShade} />
+                <rect x="112" y={y + 4} width="60" height="5" rx="2.5" fill={C.robeShade} opacity="0.7" />
+              </g>
+            ))}
+            {/* the call button: the number to call, right away */}
+            <rect x="80" y="230" width="130" height="34" rx="17" fill={C.sea} filter={edge} />
+            <circle cx="104" cy="247" r="7" fill={C.ivory} />
+            <rect x="120" y="244" width="70" height="6" rx="3" fill={C.ivory} opacity="0.85" />
+          </g>
+        </>
+      )}
+      {moment === "morning" && (
+        <>
+          <rect width="300" height="360" fill="#eadbb5" />
+          {/* morning light through a window out of frame */}
+          <path d="M150 0 H300 V230 L96 270 Z" fill="#f4e9cc" opacity="0.7" />
+          <circle cx="262" cy="40" r="170" fill={`url(#${id}-glow)`} />
+          {/* table */}
+          <rect x="0" y="262" width="300" height="98" fill="#c3ab80" filter={edge} />
+          <rect x="0" y="258" width="300" height="8" fill="#d6c19a" />
+          {/* notebook with the tide drawn across it */}
+          <g transform="rotate(-5 120 224)">
+            <rect x="40" y="176" width="170" height="112" rx="6" fill="#9c855d" opacity="0.4" />
+            <rect x="34" y="168" width="170" height="112" rx="6" fill={C.ivory} filter={edge} />
+            <g fill={C.robeShade}>
+              <rect x="50" y="200" width="138" height="1.6" />
+              <rect x="50" y="228" width="138" height="1.6" />
+              <rect x="50" y="256" width="138" height="1.6" />
+            </g>
+            <path d="M52 250 C70 244 84 248 98 236 S130 214 148 218 S174 204 188 200" fill="none" stroke={C.wall} strokeWidth="4" strokeLinecap="round" filter={edge} />
+            <g fill={C.wall}>
+              <circle cx="52" cy="250" r="4.5" />
+              <circle cx="98" cy="236" r="4.5" />
+              <circle cx="148" cy="218" r="4.5" />
+              <circle cx="188" cy="200" r="4.5" />
+            </g>
+          </g>
+          {/* a cup of tea, still warm */}
+          <g filter={edge}>
+            <path d="M272 222 C292 222 292 250 272 250" fill="none" stroke={C.terracotta} strokeWidth="8" strokeLinecap="round" />
+            <rect x="222" y="206" width="52" height="58" rx="11" fill={C.terracotta} />
+            <ellipse cx="248" cy="208" rx="26" ry="5.5" fill={C.terracottaDeep} />
+          </g>
+          <g fill="none" stroke={C.ivory} strokeWidth="3.5" strokeLinecap="round" opacity="0.85" filter={edge}>
+            <path d="M240 194 C230 182 248 174 238 160" />
+            <path d="M257 192 C247 180 265 172 255 158" />
+          </g>
+        </>
+      )}
       <Finish id={id} w={300} h={360} />
     </svg>
   );

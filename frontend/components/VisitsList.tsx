@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, cancelVisit, joinVisit, listVisits } from "@/lib/api";
 import { CalendarIcon, PinIcon, VideoIcon } from "@/components/icons";
@@ -41,18 +42,16 @@ export default function VisitsList() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Link href="/care" className={`w-fit rounded-md py-1 text-lg font-semibold underline underline-offset-4 ${focusRing}`}>
-        Back to Care
-      </Link>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-4xl">Your visits</h1>
+      <BackLink href="/care">Care</BackLink>
+      <div className="-mt-4 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-display text-4xl font-semibold">Your visits</h1>
         <Link href="/visits/book" className={btnPrimary}>
           Book a visit
         </Link>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-3xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
+        <p role="alert" className="rounded-2xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
           {error}{" "}
           <button type="button" onClick={load} className={`rounded font-semibold underline ${focusRing}`}>
             Try again
@@ -63,11 +62,14 @@ export default function VisitsList() {
       {visits === null && !error && <p className="text-lg text-navy/80">Loading your visits.</p>}
 
       {visits && upcoming.length === 0 && (
-        <section aria-label="No upcoming visits" className="rounded-3xl bg-sand/70 p-6">
-          <p className="font-display text-2xl">Nothing booked yet</p>
-          <p className="mt-2 max-w-[44ch] text-lg leading-relaxed">
-            See a doctor, midwife or counselor in person or by video, whenever you want a second opinion.
-          </p>
+        <section aria-label="No upcoming visits" className="flex items-start gap-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-2xl font-semibold">No upcoming visits</p>
+            <p className="mt-2 max-w-[48ch] text-lg leading-relaxed">
+              When you want to see a doctor, midwife or counselor, book a visit in person near you or by video from
+              home. If Tidewell suggests a visit, it shows on the Care page with the reasons.
+            </p>
+          </div>
         </section>
       )}
 
@@ -86,7 +88,7 @@ export default function VisitsList() {
       )}
 
       {earlier.length > 0 && (
-        <details className="rounded-3xl border-2 border-navy/15 bg-white p-5">
+        <details className="rounded-2xl bg-white p-5 shadow-paper ring-1 ring-navy/10">
           <summary className={`cursor-pointer rounded text-lg font-semibold ${focusRing}`}>
             Past and cancelled ({earlier.length})
           </summary>
@@ -173,16 +175,15 @@ function VisitCard({
   }
 
   return (
-    <article aria-label={`Visit with ${v.provider.name}`} className="rounded-3xl bg-sand/70 p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-base font-semibold text-tide-deep">
-        {virtual ? <VideoIcon className="size-5" /> : <PinIcon className="size-5" />}
-        {modeLabel(v.mode)}
-      </p>
-      <h2 className="mt-1 font-display text-2xl">{v.provider.name}</h2>
-      <p className="text-lg text-navy/80">{v.provider.specialty}</p>
-      <p className="mt-3 text-xl font-semibold">
+    <article aria-label={`Visit with ${v.provider.name}`} className="rounded-2xl bg-white p-5 shadow-paper ring-1 ring-navy/10 sm:p-6">
+      <h2 className="font-display text-2xl font-semibold">
         {dayLabel(v.slot)}, {timeLabel(v.slot, true)}
+      </h2>
+      <p className="mt-2 flex items-center gap-2 text-lg font-semibold">
+        {virtual ? <VideoIcon className="size-5 shrink-0" /> : <PinIcon className="size-5 shrink-0" />}
+        {modeLabel(v.mode)} with {v.provider.name}
       </p>
+      <p className="text-lg text-navy/80">{v.provider.specialty}</p>
       {!virtual && v.provider.address && (
         <p className="mt-1 text-lg">
           {v.provider.clinic}, {v.provider.address}

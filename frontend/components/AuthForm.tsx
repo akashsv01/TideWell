@@ -1,9 +1,10 @@
 "use client";
 
+import Wordmark from "@/components/Wordmark";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
-import Waves from "@/components/Waves";
+import { NIGHT_FEED_BACKDROP, NightFeedPlate } from "@/components/plates/Gouache";
 import { ApiError, login, register } from "@/lib/api";
 import { signedIn } from "@/lib/session";
 import { btnPrimary, focusRing } from "@/lib/ui";
@@ -19,14 +20,18 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [badField, setBadField] = useState<"username" | "password" | null>(null);
   const [busy, setBusy] = useState(false);
   const isRegister = mode === "register";
 
-  function problem(): string | null {
-    if (!/^[A-Za-z0-9_.-]{3,30}$/.test(username)) {
-      return "Usernames are 3 to 30 letters, numbers, dots, dashes or underscores.";
+  // Say what is missing first; the format rules only matter when creating an account.
+  function problem(): [string, "username" | "password"] | null {
+    if (!username) return ["Enter your username.", "username"];
+    if (!password) return ["Enter your password.", "password"];
+    if (isRegister && !/^[A-Za-z0-9_.-]{3,30}$/.test(username)) {
+      return ["Usernames are 3 to 30 letters, numbers, dots, dashes or underscores.", "username"];
     }
-    if (password.length < 8) return "Passwords need at least 8 characters.";
+    if (isRegister && password.length < 8) return ["Passwords need at least 8 characters.", "password"];
     return null;
   }
 
@@ -34,14 +39,19 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     e.preventDefault();
     if (busy) return;
     const p = problem();
-    setError(p);
-    if (p) return;
+    setError(p ? p[0] : null);
+    setBadField(p ? p[1] : null);
+    if (p) {
+      document.getElementById(`${ids}-${p[1] === "username" ? "u" : "p"}`)?.focus();
+      return;
+    }
     setBusy(true);
     try {
       const res = isRegister ? await register(username, password) : await login(username, password);
       signedIn(res);
       router.push(res.patient_id ? "/home" : "/onboarding");
     } catch (err) {
+      setBadField(null);
       setError(
         err instanceof ApiError
           ? err.status === 409
@@ -57,14 +67,12 @@ export default function AuthForm({ mode }: { mode: Mode }) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-foam text-navy">
-      <header className="mx-auto flex h-16 w-full max-w-md items-center px-5">
-        <Link href="/" className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}>
-          Tidewell
-        </Link>
+      <header className="mx-auto flex h-16 w-full max-w-5xl items-center px-5 sm:px-8 md:h-20">
+        <Wordmark href="/" />
       </header>
-      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-10">
-        <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col motion-safe:animate-reply-in">
-          <h1 className="font-display text-4xl leading-tight">
+      <main id="main" className="mx-auto grid w-full max-w-5xl flex-1 gap-12 px-5 pb-12 sm:px-8 lg:grid-cols-[minmax(0,28rem)_1fr] lg:items-start">
+        <form onSubmit={onSubmit} noValidate className="mt-4 flex flex-col motion-safe:animate-reply-in lg:mt-10">
+          <h1 className="font-display text-4xl font-semibold leading-tight">
             {isRegister ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-3 text-lg leading-relaxed text-navy/85">
@@ -83,7 +91,8 @@ export default function AuthForm({ mode }: { mode: Mode }) {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            aria-invalid={error ? true : undefined}
+            aria-invalid={badField === "username" ? true : undefined}
+            aria-describedby={badField === "username" ? `${ids}-err` : undefined}
             className={input}
           />
 
@@ -97,8 +106,8 @@ export default function AuthForm({ mode }: { mode: Mode }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={isRegister ? "new-password" : "current-password"}
-              aria-describedby={isRegister ? `${ids}-hint` : undefined}
-              aria-invalid={error ? true : undefined}
+              aria-describedby={[isRegister ? `${ids}-hint` : "", badField === "password" ? `${ids}-err` : ""].join(" ").trim() || undefined}
+              aria-invalid={badField === "password" ? true : undefined}
               className={`${input} pr-24`}
             />
             <button
@@ -117,7 +126,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
           )}
 
           {error && (
-            <p role="alert" className="mt-5 rounded-2xl bg-white p-4 text-lg text-alert ring-2 ring-alert/30">
+            <p id={`${ids}-err`} role="alert" className="mt-5 rounded-2xl bg-white p-4 text-lg text-alert ring-2 ring-alert/30">
               {error}
             </p>
           )}
@@ -136,15 +145,16 @@ export default function AuthForm({ mode }: { mode: Mode }) {
             </Link>
           </p>
         </form>
+        {/* The same night-feed picture as the landing page, on wide screens only; on phones the form
+            is the whole page. */}
+        <div
+          aria-hidden="true"
+          className="plate hidden h-[36rem] overflow-hidden rounded-[10px] shadow-lift ring-1 ring-navy/10 lg:block"
+          style={{ background: NIGHT_FEED_BACKDROP }}
+        >
+          <NightFeedPlate className="block size-full" />
+        </div>
       </main>
-      <Waves
-        className="relative h-24 motion-safe:animate-rise"
-        layers={[
-          { color: "#efe3c8", amp: 8, cycles: 2, top: 60, seconds: 34 },
-          { color: "#13828a", amp: 10, cycles: 3, top: 86, seconds: 26, reverse: true },
-          { color: "#0b2545", amp: 11, cycles: 2, top: 112, seconds: 20 },
-        ]}
-      />
     </div>
   );
 }

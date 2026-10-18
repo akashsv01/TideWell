@@ -43,7 +43,7 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
 
   return (
     <div
-      className={`fixed inset-0 z-50 overflow-y-auto animate-backdrop-in ${emergency ? "bg-alert" : "bg-chart-amber"}`}
+      className={`fixed inset-0 z-50 overflow-y-auto animate-backdrop-in ${emergency ? "bg-alert" : "bg-tide-deep"}`}
     >
       {/* min-h-full + items-center centers short content without cutting off tall content. */}
       <div className="flex min-h-full items-center justify-center p-4">
@@ -54,7 +54,7 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
           aria-labelledby="urgent-title"
           aria-describedby={context ? "urgent-context urgent-body-1 urgent-body-2" : "urgent-body-1 urgent-body-2"}
           tabIndex={-1}
-          className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl focus:outline-none motion-safe:animate-card-in motion-reduce:animate-fade-in"
+          className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lift focus:outline-none motion-safe:animate-card-in motion-reduce:animate-fade-in"
         >
           {context && (
             <p id="urgent-context" className="mb-3 rounded-xl bg-navy/5 px-3 py-2 text-base font-semibold text-navy">
@@ -63,7 +63,7 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
           )}
           {emergency ? (
             <>
-              <h1 id="urgent-title" className="text-2xl font-bold text-alert">
+              <h1 id="urgent-title" className="font-display text-4xl font-semibold leading-tight text-alert">
                 Get care now
               </h1>
               <p id="urgent-body-1" className="mt-3 text-lg leading-relaxed text-navy">
@@ -78,7 +78,7 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
             </>
           ) : (
             <>
-              <h1 id="urgent-title" className="text-2xl font-bold text-navy">
+              <h1 id="urgent-title" className="font-display text-4xl font-semibold leading-tight text-navy">
                 Call your care team today
               </h1>
               <p id="urgent-body-1" className="mt-3 text-lg leading-relaxed text-navy">
@@ -134,7 +134,10 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
               onClick={onBack}
               className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-lg font-semibold text-navy underline underline-offset-4 hover:bg-navy/5 focus:outline-none focus-visible:ring-4 focus-visible:ring-tide"
             >
-              <span aria-hidden="true">←</span> Go back
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6 shrink-0">
+                <path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Go back
             </button>
           )}
 

@@ -87,7 +87,7 @@ export default function AppleHealthButton() {
       {state === "done" && res && (
         <section
           aria-label="Apple Health data added"
-          className="mt-4 w-full rounded-3xl bg-white p-5 ring-1 ring-navy/10 motion-safe:animate-reply-in"
+          className="mt-4 w-full rounded-2xl bg-white p-5 shadow-paper ring-1 ring-navy/10 motion-safe:animate-reply-in"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-xl">{sample ? "Sample Apple Health data" : "From your iPhone"}</h2>

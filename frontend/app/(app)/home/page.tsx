@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Check in" };
 
 export default function HomePage() {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center">
+    <div className="flex w-full flex-1 flex-col items-center">
       <h1 className="mt-2 text-center font-display text-4xl font-semibold leading-tight">How are you today?</h1>
       <div className="mt-4 flex w-full flex-col">
         <CheckinPanel />

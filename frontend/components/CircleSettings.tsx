@@ -24,7 +24,7 @@ export default function CircleSettings({ patientId }: { patientId: string }) {
 
   return (
     <section aria-labelledby="circle-title">
-      <h2 id="circle-title" className="font-display text-2xl">Care Circle</h2>
+      <h2 id="circle-title" className="font-display text-2xl font-semibold">Care Circle</h2>
       <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
         Share a private link with someone who helps you. They see how you&apos;re doing this week and how
         they can help, never what you said or your mood answers.

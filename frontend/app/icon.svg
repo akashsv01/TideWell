@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Tidewell mark (components/plates/Gouache.tsx Mark): the gold moon over a tide line, on forest. -->
+  <rect width="32" height="32" rx="7" fill="#23463a"/>
+  <circle cx="16" cy="12" r="6.5" fill="#d9b75c"/>
+  <path d="M4 21.5 C8 19 11.5 19 16 21.5 S24 24 28 21.5" fill="none" stroke="#f7f1e4" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M7 26.5 C10 24.8 13 24.8 16 26.5 S22 28.2 25 26.5" fill="none" stroke="#f7f1e4" stroke-width="2.4" stroke-linecap="round" opacity="0.55"/>
+</svg>

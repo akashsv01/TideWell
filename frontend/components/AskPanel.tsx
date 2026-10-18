@@ -50,8 +50,8 @@ export default function AskPanel() {
   if (urgent) return <UrgentCard level={urgent} onBack={() => setUrgent(null)} />;
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-      <h1 className="font-display text-4xl leading-tight">Ask Tidewell</h1>
+    <div className="flex w-full flex-1 flex-col">
+      <h1 className="font-display text-4xl font-semibold leading-tight">Ask Tidewell</h1>
       <p className="mt-3 max-w-[48ch] text-lg leading-relaxed text-navy/85">
         Questions about pregnancy, recovery, feeding, sleep, mood or your baby. Answers come from trusted
         sources like the CDC, NIH and ACOG, and show where they came from. Tidewell does not diagnose.
@@ -59,19 +59,24 @@ export default function AskPanel() {
 
       <div aria-live="polite" className="mt-8 space-y-6">
         {turns.length === 0 && (
-          <ul className="grid gap-3 sm:grid-cols-2" aria-label="Example questions">
-            {STARTERS.map((s) => (
-              <li key={s}>
-                <button
-                  type="button"
-                  onClick={() => send(s)}
-                  className={`w-full rounded-2xl bg-white p-4 text-left text-lg ring-1 ring-navy/10 transition-[background-color,transform] duration-150 ease-out hover:bg-sand/60 motion-safe:active:scale-[0.98] ${focusRing}`}
-                >
-                  {s}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <section aria-labelledby="ask-starters">
+            <h2 id="ask-starters" className="text-lg font-semibold">
+              Not sure how to start? Try one of these.
+            </h2>
+            <ul className="mt-3 divide-y divide-navy/10 overflow-hidden rounded-2xl bg-white shadow-paper ring-1 ring-navy/10">
+              {STARTERS.map((s) => (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => send(s)}
+                    className={`w-full px-5 py-4 text-left text-lg transition-[background-color] duration-150 ease-out hover:bg-sand/50 ${focusRing}`}
+                  >
+                    {s}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
         {turns.map((t, i) => (
           <div key={i} className="space-y-3">
@@ -79,11 +84,11 @@ export default function AskPanel() {
               {t.q}
             </p>
             {t.a && (
-              <div className={`max-w-[92%] rounded-3xl rounded-bl-lg p-5 motion-safe:animate-reply-in ${t.a.source === "off_topic" ? "bg-white ring-1 ring-navy/15" : "bg-sand/70"}`}>
+              <div className={`max-w-[92%] rounded-3xl rounded-bl-lg p-5 motion-safe:animate-reply-in ${t.a.source === "off_topic" ? "bg-sand/60" : "bg-white shadow-paper ring-1 ring-navy/10"}`}>
                 <p className="text-lg leading-relaxed">{t.a.answer}</p>
                 {t.a.citations.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-sm font-semibold uppercase tracking-wide text-navy/70">
+                    <p className="text-base font-semibold text-navy/80">
                       {t.a.source === "web" ? "From trusted sites" : "From Tidewell's guidelines"}
                     </p>
                     <ol className="mt-2 space-y-2">
@@ -93,7 +98,7 @@ export default function AskPanel() {
                             href={c.url}
                             target="_blank"
                             rel="noreferrer"
-                            className={`group block rounded-2xl bg-white p-3 ring-1 ring-navy/10 transition-[background-color] duration-150 ease-out hover:bg-foam ${focusRing}`}
+                            className={`group block rounded-xl bg-foam/70 p-3 ring-1 ring-navy/10 transition-[background-color] duration-150 ease-out hover:bg-sand/50 ${focusRing}`}
                           >
                             <span className="flex items-baseline gap-2">
                               <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-tide-deep text-xs font-bold text-white">{j + 1}</span>
@@ -102,7 +107,7 @@ export default function AskPanel() {
                                 {c.site && <span className="block text-sm text-navy/70">{c.site}<span className="sr-only"> (opens in a new tab)</span></span>}
                               </span>
                             </span>
-                            {c.quote && <span className="mt-2 block border-l-4 border-tide pl-3 text-base italic text-navy/85">&ldquo;{c.quote}&rdquo;</span>}
+                            {c.quote && <span className="mt-2 block pl-8 text-base italic text-navy/85">&ldquo;{c.quote}&rdquo;</span>}
                           </a>
                         </li>
                       ))}
@@ -132,7 +137,7 @@ export default function AskPanel() {
           e.preventDefault();
           send(q);
         }}
-        className="sticky bottom-24 mt-8 flex gap-3 rounded-3xl bg-foam/95 py-3 backdrop-blur"
+        className="sticky bottom-24 mt-8 flex gap-3 bg-foam/95 py-3 backdrop-blur md:bottom-0 md:pb-6"
       >
         <label htmlFor="ask-q" className="sr-only">Your question</label>
         <input

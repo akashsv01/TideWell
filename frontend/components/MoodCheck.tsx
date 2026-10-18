@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import BackLink from "@/components/BackLink";
 import UrgentCard from "@/components/UrgentCard";
 import { epdsFollowup, getEpdsQuestions, getTodaysEpds, submitEpds } from "@/lib/api";
 import { usePatientId } from "@/lib/session";
@@ -87,7 +88,7 @@ export default function MoodCheck() {
 
   if (phase === "error") {
     return (
-      <p role="alert" className="rounded-3xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
+      <p role="alert" className="rounded-2xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
         We couldn&apos;t load the mood check. Check your connection and try again.
       </p>
     );
@@ -96,8 +97,8 @@ export default function MoodCheck() {
 
   if (phase === "followup") {
     return (
-      <section className="mx-auto w-full max-w-md motion-safe:animate-reply-in">
-        <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
+      <section className="w-full max-w-xl motion-safe:animate-reply-in">
+        <h1 ref={headingRef} tabIndex={-1} className="font-display text-4xl font-semibold leading-tight focus:outline-none">
           One more question
         </h1>
         <p className="mt-4 text-xl leading-relaxed">{qs.followup_question}</p>
@@ -112,13 +113,16 @@ export default function MoodCheck() {
 
   if (phase === "done" && result) {
     return (
-      <section className="mx-auto w-full max-w-md motion-safe:animate-reply-in">
-        <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
+      <section className="w-full max-w-xl motion-safe:animate-reply-in">
+        <BackLink href="/home">Check in</BackLink>
+        <h1 ref={headingRef} tabIndex={-1} className="mt-4 font-display text-4xl font-semibold leading-tight focus:outline-none">
           Thank you for checking in
         </h1>
-        <div className="mt-6 rounded-3xl bg-sand/70 p-6">
-          <p className="text-base text-navy/80">This week&apos;s score</p>
-          <p className="font-display text-5xl tabular-nums">{result.score}<span className="text-2xl text-navy/70"> / 30</span></p>
+        <div className="mt-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10">
+          <p className={result.band === "low" ? "text-xl" : "font-display text-2xl font-semibold leading-snug"}>
+            Your score this week is <span className="tabular-nums">{result.score} out of 30</span>.
+          </p>
+          <p className="mt-1 text-base text-navy/80">Lower is better. 10 or more is worth raising with your care team.</p>
           <p className="mt-4 text-lg leading-relaxed">{BAND_TEXT[result.band]}</p>
         </div>
         <p className="mt-4 text-base text-navy/80">
@@ -136,22 +140,25 @@ export default function MoodCheck() {
   const q = qs.questions[i];
   const sending = phase === "sending";
   return (
-    <section className="mx-auto w-full max-w-md">
-      <p className="text-base font-semibold text-navy/80">
-        Weekly mood check · {i + 1} of {qs.questions.length}
-      </p>
+    <section className="w-full">
+      <div className="flex items-center justify-between gap-4">
+        <BackLink href="/home">Check in</BackLink>
+        <p className="text-base text-navy/80">
+          Weekly mood check, question {i + 1} of {qs.questions.length}
+        </p>
+      </div>
       <div aria-hidden="true" className="mt-2 h-2 overflow-hidden rounded-full bg-navy/10">
         <div
           className="h-full origin-left rounded-full bg-tide-deep transition-transform duration-300 ease-out"
           style={{ transform: `scaleX(${(i + 1) / qs.questions.length})` }}
         />
       </div>
-      <div key={i} className="motion-safe:animate-step-in motion-reduce:animate-fade-in">
+      <div key={i} className="max-w-xl motion-safe:animate-step-in motion-reduce:animate-fade-in">
         {editing && i === 0 && (
-          <p className="mt-6 rounded-2xl bg-sand/70 p-3 text-base">You already did today&apos;s check. Your answers are selected; change any of them.</p>
+          <p className="mt-6 rounded-xl bg-sand/60 p-3 text-base">You already did today&apos;s check. Your answers are selected; change any of them.</p>
         )}
         <p className="mt-6 text-lg text-navy/85">In the past 7 days:</p>
-        <h1 ref={headingRef} tabIndex={-1} className="mt-1 font-display text-3xl leading-tight focus:outline-none">
+        <h1 ref={headingRef} tabIndex={-1} className="mt-1 font-display text-3xl font-semibold leading-tight focus:outline-none">
           {q.text}
         </h1>
         <div role="group" aria-label="Choose one answer" className="mt-6 flex flex-col gap-3">

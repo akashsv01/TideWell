@@ -10,7 +10,7 @@ import { btnMoon, focusRing } from "@/lib/ui";
 export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "dark" }) {
   const router = useRouter();
   const { session } = useSession();
-  const link = `rounded-md py-2 text-lg font-semibold underline underline-offset-4 transition-transform duration-150 ease-out motion-safe:active:scale-[0.97] ${
+  const link = `inline-flex min-h-12 items-center whitespace-nowrap rounded-md text-base font-semibold sm:text-lg underline underline-offset-4 transition-transform duration-150 ease-out motion-safe:active:scale-[0.97] ${
     tone === "dark" ? "text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white" : focusRing
   }`;
 
@@ -21,26 +21,30 @@ export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "d
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+    // The primary action, then the two quiet options together on one line underneath it, starting at
+    // the button's left edge. On phones the button takes the full width and the options centre under it.
+    <div className="flex flex-col items-stretch gap-3 sm:items-start">
       {session?.kind === "user" ? (
-        <Link href="/home" className={btnMoon}>
+        <Link href="/home" className={`${btnMoon} w-full sm:w-auto`}>
           Continue to check-in
         </Link>
       ) : (
-        <Link href="/register" className={btnMoon}>
-          Start tonight
+        <Link href="/register" className={`${btnMoon} w-full sm:w-auto`}>
+          Start today
         </Link>
       )}
-      {!session && (
-        <Link href="/login" className={link}>
-          I have an account
-        </Link>
-      )}
-      {session?.kind !== "demo" && (
-        <button type="button" onClick={tryDemo} className={link}>
-          Try the demo
-        </button>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-x-6 sm:justify-start">
+        {!session && (
+          <Link href="/login" className={link}>
+            I have an account
+          </Link>
+        )}
+        {session?.kind !== "demo" && (
+          <button type="button" onClick={tryDemo} className={link}>
+            Try the demo
+          </button>
+        )}
+      </div>
     </div>
   );
 }

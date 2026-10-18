@@ -3,21 +3,29 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, bookCare, clearLocation, dismissCare, downloadSummary, getNearby, getNearbyByZip, getRisk, saveLocation } from "@/lib/api";
-import { PinIcon, VideoIcon } from "@/components/icons";
+import { AlertIcon, PinIcon, VideoIcon } from "@/components/icons";
 import PlaceBooking from "@/components/PlaceBooking";
 import { useSession } from "@/lib/session";
 import type { Nearby, Place, RiskResult, Tier } from "@/lib/types";
 import { btnOutline, btnPrimary, focusRing } from "@/lib/ui";
 
-// Care, top to bottom: what the Watch agent sees; its suggested visit (why, where, when); your
+// Care, top to bottom: what Tidewell is watching (status in sentences, the most serious first); its
+// suggested visit (why, where, when); your
 // upcoming visits; care near you (OB-GYNs, midwives and hospitals from the NPI Registry, each bookable,
 // plus video visits with Tidewell's providers); and the visit summary PDF.
 
-const TIER_STYLE: Record<Tier, { label: string; cls: string }> = {
-  green: { label: "Steady", cls: "bg-[#e3f1e8] text-[#2f5d3f]" },
-  watch: { label: "Watching", cls: "bg-tide-light/30 text-tide-deep" },
-  amber: { label: "Visit soon", cls: "bg-chart-amber/20 text-[#7a4a10]" },
-  red: { label: "Get care now", cls: "bg-alert/15 text-alert" },
+// Status is said in a sentence, never a badge. The more serious the tier, the larger it is set.
+const TIER_SAYS: Record<Tier, string> = {
+  green: "Steady.",
+  watch: "Keeping an eye on this.",
+  amber: "Worth a visit in the next few days.",
+  red: "Needs care now.",
+};
+const OVERALL_SAYS: Record<Tier, string> = {
+  green: "Everything Tidewell checks looks steady right now.",
+  watch: "Nothing needs a visit yet. Tidewell is keeping an eye on a few things.",
+  amber: "Tidewell suggests a visit in the next few days.",
+  red: "Tidewell suggests getting care now. If it feels like an emergency, call 911.",
 };
 const CATEGORY: Record<string, string> = {
   high_blood_pressure: "Blood pressure", depression_anxiety: "Mood", post_cesarean: "C-section recovery",
@@ -151,45 +159,61 @@ export default function CarePanel() {
   return (
     <div className="space-y-12">
       <header>
-        <h1 className="font-display text-4xl leading-tight">Care</h1>
-        <p className="mt-3 max-w-[50ch] text-lg leading-relaxed text-navy/85">
-          Tidewell&apos;s Watch agent looks over your check-ins after every update. When something needs a
+        <h1 className="font-display text-4xl font-semibold leading-tight">Care</h1>
+        <p className="mt-3 max-w-[52ch] text-lg leading-relaxed text-navy/85">
+          After every check-in, Tidewell compares your numbers with guideline limits. When something needs a
           doctor, it finds care near you and suggests times. Nothing is booked until you choose.
         </p>
       </header>
 
-      {/* Watch agent */}
-      <section aria-labelledby="watch-title" className="motion-safe:animate-section-in">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="watch-title" className="font-display text-2xl">What Tidewell is watching</h2>
-          {risk && <span className={`rounded-full px-3 py-1 text-base font-semibold ${TIER_STYLE[risk.overall].cls}`}>{TIER_STYLE[risk.overall].label}</span>}
-        </div>
+      {/* What Tidewell is watching */}
+      <section aria-labelledby="watch-title">
         {!risk ? (
-          <p role="status" className="mt-4 text-lg">Checking…</p>
+          <h2 id="watch-title" role="status" className="text-lg">Checking your latest numbers…</h2>
         ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {risk.tiers.map((t) => (
-              <li key={t.category} className="rounded-2xl bg-white p-4 ring-1 ring-navy/10">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-lg font-semibold">{CATEGORY[t.category] ?? t.category}</span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${TIER_STYLE[t.tier].cls}`}>{TIER_STYLE[t.tier].label}</span>
-                </div>
-                <p className="mt-2 text-base leading-relaxed text-navy/85">{t.reasons.join(". ")}.</p>
-              </li>
-            ))}
-          </ul>
+          <>
+            <h2
+              id="watch-title"
+              className={`max-w-[48ch] font-display font-semibold leading-snug ${RANK[risk.overall] >= 2 ? "text-3xl" : "text-2xl"}`}
+            >
+              {OVERALL_SAYS[risk.overall]}
+            </h2>
+            <ul className="mt-5 divide-y divide-navy/10 rounded-2xl bg-white shadow-paper ring-1 ring-navy/10">
+              {[...risk.tiers].sort((a, b) => RANK[b.tier] - RANK[a.tier]).map((t) => {
+                const serious = RANK[t.tier] >= 2;
+                return (
+                  <li key={t.category} className="flex gap-3 p-5">
+                    {serious ? (
+                      <AlertIcon className={`mt-1 size-6 shrink-0 ${t.tier === "red" ? "text-alert" : "text-navy"}`} />
+                    ) : (
+                      <span aria-hidden="true" className="size-6 shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className={serious ? "text-xl font-semibold" : "text-lg font-semibold"}>
+                        {CATEGORY[t.category] ?? t.category}
+                      </h3>
+                      <p className={`mt-1 leading-relaxed ${serious ? "text-lg" : "text-base text-navy/80"}`}>
+                        <span className={serious ? "font-semibold" : ""}>{TIER_SAYS[t.tier]}</span>{" "}
+                        {t.reasons.join(". ")}.
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </section>
 
       {/* Booking agent proposal */}
       {req && req.tier !== "red" && booking !== "done" && (
-        <section aria-labelledby="book-title" className="rounded-3xl border-l-8 border-chart-amber bg-sand/70 p-6 motion-safe:animate-reply-in">
-          <h2 id="book-title" className="font-display text-2xl">Suggested visit</h2>
+        <section aria-labelledby="book-title" className="rounded-2xl bg-white p-6 shadow-lift ring-1 ring-navy/10 motion-safe:animate-reply-in sm:p-8">
+          <h2 id="book-title" className="font-display text-3xl font-semibold">Suggested visit</h2>
           <p className="mt-1 text-base text-navy/80">
-            Suggested by Tidewell&apos;s Watch agent{req.created_at ? ` on ${day(req.created_at)}` : ""}, from your check-ins.
+            Tidewell suggested this{req.created_at ? ` on ${day(req.created_at)}` : ""}, from your check-ins.
           </p>
           {req.outdated && (
-            <p className="mt-3 rounded-2xl bg-white p-3 text-base">
+            <p className="mt-3 rounded-xl bg-sand/60 p-3 text-base">
               Your numbers look steadier now than when this was suggested. You can still book, or tap Not now.
             </p>
           )}
@@ -207,8 +231,8 @@ export default function CarePanel() {
               <legend className="text-lg font-semibold">Where</legend>
               <div className="mt-2 space-y-2">
                 {req.facilities.map((f, i) => (
-                  <label key={f.name} className={`flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-4 ring-2 transition-colors duration-150 ${(pick?.fac ?? 0) === i ? "ring-tide-deep" : "ring-transparent"}`}>
-                    <input type="radio" name="fac" checked={(pick?.fac ?? 0) === i} onChange={() => setPick((p) => ({ slot: p?.slot ?? "", fac: i }))} className="mt-1.5 size-5 accent-[#0e6a70]" />
+                  <label key={f.name} className={`flex cursor-pointer items-start gap-3 rounded-xl bg-foam/70 p-4 ring-2 transition-colors duration-150 ${(pick?.fac ?? 0) === i ? "ring-tide-deep" : "ring-navy/10"}`}>
+                    <input type="radio" name="fac" checked={(pick?.fac ?? 0) === i} onChange={() => setPick((p) => ({ slot: p?.slot ?? "", fac: i }))} className="mt-1.5 size-5 accent-tide-deep" />
                     <span>
                       <span className="block text-lg font-semibold">{f.name}</span>
                       <span className="block text-base text-navy/80">{f.kind_label} · {f.distance_km} km{f.address ? ` · ${f.address}` : ""}</span>
@@ -260,7 +284,7 @@ export default function CarePanel() {
       )}
 
       {booking === "done" && (
-        <p role="status" className="rounded-3xl bg-[#e3f1e8] p-5 text-lg font-semibold text-[#2f5d3f] motion-safe:animate-reply-in">
+        <p role="status" className="rounded-2xl bg-white p-5 text-lg font-semibold shadow-paper ring-2 ring-tide-deep/40 motion-safe:animate-reply-in">
           Booked. Your doctor will see Tidewell&apos;s summary of why. It&apos;s also in your visit summary.
         </p>
       )}
@@ -268,7 +292,7 @@ export default function CarePanel() {
       {/* Upcoming visits: everything booked, whichever way */}
       {risk && !demo && (
         <section aria-labelledby="appt-title">
-          <h2 id="appt-title" className="font-display text-2xl">Your upcoming visits</h2>
+          <h2 id="appt-title" className="font-display text-2xl font-semibold">Your upcoming visits</h2>
           {risk.appointments.length === 0 ? (
             <p className="mt-2 text-lg text-navy/85">
               Nothing booked yet. Book a suggested visit above, a place near you below, or a video visit.
@@ -276,7 +300,7 @@ export default function CarePanel() {
           ) : (
             <ul className="mt-3 space-y-2">
               {risk.appointments.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-4 ring-1 ring-navy/10">
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-4 shadow-paper ring-1 ring-navy/10">
                   <span>
                     <span className="block text-lg font-semibold">{when(a.slot)}</span>
                     <span className="block text-base text-navy/80">
@@ -297,7 +321,7 @@ export default function CarePanel() {
 
       {/* Book a visit: two clear paths, in person near you or by video from home */}
       <section aria-labelledby="near-title">
-        <h2 id="near-title" className="font-display text-2xl">Book a visit</h2>
+        <h2 id="near-title" className="font-display text-2xl font-semibold">Book a visit</h2>
         <p className="mt-1 text-lg text-navy/85">See someone in person near you, or by video from home.</p>
 
         <div role="tablist" aria-label="How would you like to be seen?" className="mt-4 grid grid-cols-2 gap-2 rounded-full bg-navy/5 p-1.5" onKeyDown={onTabKey}>
@@ -335,7 +359,7 @@ export default function CarePanel() {
               </div>
             )}
             {(near?.needs_location || editingLoc) && (
-              <div className="mt-4 rounded-3xl bg-white p-5 ring-1 ring-navy/10 motion-safe:animate-reply-in">
+              <div className="mt-4 rounded-2xl bg-white p-5 shadow-paper ring-1 ring-navy/10 motion-safe:animate-reply-in">
                 <p className="text-lg">
                   {editingLoc ? "Search somewhere else." : "Share your location or enter a ZIP code to see the closest hospitals, OB-GYNs and midwives you can book."}
                   {demo && " (The demo doesn't save it.)"}
@@ -370,16 +394,16 @@ export default function CarePanel() {
             )}
 
             {near && near.places.length > 0 && (
-              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              <ul className="mt-4 divide-y divide-navy/10 rounded-2xl bg-white shadow-paper ring-1 ring-navy/10">
                 {(expandedFor === near ? near.places : near.places.slice(0, PLACES_FIRST)).map((p) => {
                   const key = `${p.name}-${p.address}`;
                   const open = bookingAt === key;
                   return (
-                    <li key={key} className={`flex flex-col rounded-2xl bg-white p-4 ring-1 ring-navy/10 ${open ? "sm:col-span-2" : ""}`}>
+                    <li key={key} className="flex flex-col p-4 sm:p-5">
                       <span className="text-lg font-semibold">{p.name}</span>
                       <span className="text-base text-navy/80">{p.kind_label} · {p.distance_km} km</span>
                       {p.address && <span className="text-base text-navy/80">{p.address}</span>}
-                      <span className="mt-auto flex flex-wrap gap-2 pt-3">
+                      <span className="flex flex-wrap gap-2 pt-3">
                         <button
                           type="button"
                           aria-expanded={open}
@@ -413,19 +437,18 @@ export default function CarePanel() {
             </p>
           </div>
         ) : (
-          <div id="panel-video" role="tabpanel" aria-labelledby="tab-video" className="mt-4 rounded-3xl bg-white p-6 ring-1 ring-navy/10 motion-safe:animate-fade-in">
+          <div id="panel-video" role="tabpanel" aria-labelledby="tab-video" className="mt-4 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10 motion-safe:animate-fade-in">
             <p className="text-lg leading-relaxed">
               Talk to a Tidewell doctor, midwife, lactation consultant or counselor by video. You only need a phone or computer.
             </p>
-            <ol className="mt-4 space-y-3">
+            <ol className="mt-4 list-decimal space-y-2 pl-6 marker:font-semibold">
               {[
                 "Choose who you'd like to see and a time.",
                 "The video room opens 15 minutes before your visit. Join from Your upcoming visits.",
                 "Your provider gets a link by email and joins you there.",
-              ].map((t, i) => (
-                <li key={t} className="flex gap-3 text-lg">
-                  <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-tide-deep text-base font-bold text-white">{i + 1}</span>
-                  <span className="pt-0.5">{t}</span>
+              ].map((t) => (
+                <li key={t} className="text-lg leading-relaxed">
+                  {t}
                 </li>
               ))}
             </ol>
@@ -438,9 +461,9 @@ export default function CarePanel() {
         )}
       </section>
 
-      <section aria-labelledby="pdf-title" className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-navy p-6 text-white">
+      <section aria-labelledby="pdf-title" className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-navy p-6 text-white sm:p-8">
         <div>
-          <h2 id="pdf-title" className="font-display text-2xl">Visit summary</h2>
+          <h2 id="pdf-title" className="font-display text-2xl font-semibold">Visit summary</h2>
           <p className="mt-1 text-lg text-white/85">One page for your doctor: your numbers, what was flagged, and questions to ask.</p>
         </div>
         <button
@@ -463,11 +486,12 @@ export default function CarePanel() {
 function ErCard({ place, open, onToggle, children }: { place: Place; open: boolean; onToggle: () => void; children?: React.ReactNode }) {
   const emergency = place.kind === "emergency";
   return (
-    <div className="mt-4 rounded-3xl border-l-8 border-alert bg-white p-5 ring-1 ring-alert/20">
+    <div className="mt-4 rounded-2xl bg-white p-5 shadow-paper ring-2 ring-alert/35">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-base font-semibold text-alert">{emergency ? "Nearest emergency room" : "Nearest hospital"}</p>
-          <p className="text-lg font-semibold">{place.name}</p>
+          <h3 className="text-lg font-semibold">
+            {emergency ? "Nearest emergency room" : "Nearest hospital"}: {place.name}
+          </h3>
           <p className="text-base text-navy/80">{place.distance_km} km{place.phone ? ` · ${place.phone}` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-2">

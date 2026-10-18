@@ -65,9 +65,9 @@ function StartChooser() {
   return (
     <section
       aria-labelledby="start-title"
-      className="mx-auto mt-6 w-full max-w-md rounded-3xl bg-sand/70 p-7 motion-safe:animate-reply-in"
+      className="mt-2 w-full max-w-xl rounded-2xl bg-white p-7 shadow-paper ring-1 ring-navy/10 motion-safe:animate-reply-in"
     >
-      <h1 id="start-title" className="font-display text-3xl leading-tight">
+      <h1 id="start-title" className="font-display text-4xl font-semibold leading-tight">
         Let&apos;s get you set up
       </h1>
       <p className="mt-3 text-lg leading-relaxed">

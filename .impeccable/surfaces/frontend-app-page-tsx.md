@@ -25,7 +25,7 @@ OWN-WORLD: Warm ivory paper and deep forest green as the two fields; muted gold 
 
 STORY: The visitor sees a parent feeding a baby by a night window and the moon over a tide line, reads one sentence of what Tidewell does, and starts a check-in. Lower pages show one night in three moments (talk, safety check, morning tide), the risk in one sourced sentence, an annotated sample tide, and four promises, ending on a night page with the same action.
 
-FIRST VIEWPORT: An open picture-book spread on one gutter. Left page: the gouache night-feed plate (chair, parent and baby, window, moon rising over the tide line) taking the full page height. Right page, on ivory: "How are you, really?" in large Alegreya, two lines of plain copy, the gold primary action "Start tonight", a quiet "I have an account" and "Try the demo". On phones the plate becomes a short band above the text page.
+FIRST VIEWPORT: An open picture-book spread on one gutter. Left page: the gouache night-feed plate (chair, parent and baby, window, moon rising over the tide line) taking the full page height. Right page, on ivory: "How are you, really?" in large Alegreya, two lines of plain copy, the gold primary action "Start today", a quiet "I have an account" and "Try the demo". On phones the plate becomes a short band above the text page.
 
 FORM: Night-Feed Picture Book, position 3 on the ordered list; seed key 6cef850d. Raises kept: status in sentences not badges; literal labels; one mark (moon over tide line) everywhere; type scale tied to urgency; every state addressable with a way back.
 

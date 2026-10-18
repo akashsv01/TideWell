@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AlertIcon } from "@/components/icons";
 import { getOverview, getRisk, getTodaysEpds } from "@/lib/api";
 import { usePatientId } from "@/lib/session";
 import type { Overview } from "@/lib/types";
@@ -45,7 +46,7 @@ export default function TodayCard() {
           <Link href="/care" className={row}>
             <span>
               <span className="flex items-center gap-2 text-lg font-semibold">
-                <span aria-hidden="true" className="size-2.5 rounded-full bg-gold" />
+                <AlertIcon className="size-5 shrink-0 text-navy" />
                 Tidewell suggests a visit
               </span>
               <span className="mt-0.5 block text-base text-navy/80">See why, and pick a time that suits you.</span>

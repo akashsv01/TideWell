@@ -81,11 +81,11 @@ export default function Orb({ state, seconds, levelRef, onClick }: Props) {
             className="absolute inset-0 transition-transform duration-300 ease-out"
             style={{ transform: "translateY(calc((1 - var(--level, 0.42)) * 100%))" }}
           >
-            <Waves layers={water} className="absolute inset-0" />
+            <Waves layers={water} still={state === "idle"} className="absolute inset-0" />
           </span>
           {/* the icon sits on a paper disc so it stays readable whatever the water level */}
           <span className="absolute inset-0 grid place-items-center">
-            <span className="grid size-20 place-items-center rounded-full bg-white text-[#1b2a22] shadow-paper">
+            <span className="grid size-20 place-items-center rounded-full bg-[#fffdf8] text-[#1b2a22] shadow-paper">
               {recording ? <StopIcon className="size-10" /> : <MicIcon className="size-11" />}
             </span>
           </span>

@@ -32,7 +32,11 @@ export function sleepSentence(points: TrendPoint[]): string | null {
   const sleep = nums(points.slice(-7), "sleep_hrs");
   if (!sleep.length) return null;
   const avg = mean(sleep)!;
-  return `You have been sleeping about ${avg.toFixed(1)} hours a night this week.`;
+  // "5 hours", "5.5 hours": no trailing ".0".
+  const hours = Math.round(avg * 2) / 2;
+  const unit = hours === 1 ? "hour" : "hours";
+  if (sleep.length === 1) return `You logged about ${hours} ${unit} of sleep.`;
+  return `You have been sleeping about ${hours} ${unit} a night over the past week.`;
 }
 
 export type BpRise = {

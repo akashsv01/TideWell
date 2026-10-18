@@ -13,7 +13,7 @@ export default function NightModeSetting() {
   const pref = useNightPref();
   return (
     <section aria-labelledby="night-title">
-      <h2 id="night-title" className="font-display text-2xl">Night mode</h2>
+      <h2 id="night-title" className="font-display text-2xl font-semibold">Night mode</h2>
       <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">A dark, low-glare screen for night feeds, so checking in doesn&apos;t wake you up.</p>
       <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="night-title">
         {OPTIONS.map((o) => (

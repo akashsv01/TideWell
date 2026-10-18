@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { Choices, choice } from "@/components/Onboarding";
+import { CheckMark, Choices, checkChoice, choice } from "@/components/Onboarding";
 import { ApiError, getProfile, updateProfile } from "@/lib/api";
 import { COMPLICATIONS, DELIVERY, FEEDING, LANGUAGES, fromE164, profileProblem, toE164, todayIso, yearAgoIso } from "@/lib/profile";
 import type { DeliveryType, FeedingType, Language, Profile, ProfileOut } from "@/lib/types";
@@ -113,7 +113,7 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
               return (
                 <div key={c.value}>
                   <input id={id} type="checkbox" checked={on} onChange={(e) => set("history_pregnancy_complications", e.target.checked ? [...p.history_pregnancy_complications, c.value] : p.history_pregnancy_complications.filter((v) => v !== c.value))} className="peer sr-only" />
-                  <label htmlFor={id} className={choice}>{c.label}</label>
+                  <label htmlFor={id} className={checkChoice}><CheckMark /><span>{c.label}</span></label>
                 </div>
               );
             })}
@@ -143,8 +143,9 @@ export default function ProfileEditor({ patientId, demo }: { patientId: string; 
           {phone.trim() && (
             <div className="mt-4">
               <input id={`${ids}-sms`} type="checkbox" checked={p.support_sms_consent} onChange={(e) => set("support_sms_consent", e.target.checked)} className="peer sr-only" />
-              <label htmlFor={`${ids}-sms`} className={`${choice} items-start`}>
-                It is okay for Tidewell to text this person if my check-ins show I need emergency care.
+              <label htmlFor={`${ids}-sms`} className={`${checkChoice} items-start`}>
+                <CheckMark />
+                <span>It is okay for Tidewell to text this person if my check-ins show I need emergency care.</span>
               </label>
             </div>
           )}

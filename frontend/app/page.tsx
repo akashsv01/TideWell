@@ -1,7 +1,7 @@
 import LandingNav from "@/components/LandingNav";
 import TideSample from "@/components/TideSample";
 import WelcomeActions from "@/components/WelcomeActions";
-import { Mark, NightFeedPlate, WindowPlate } from "@/components/plates/Gouache";
+import { Mark, MomentPlate, NIGHT_FEED_BACKDROP, NightFeedPlate } from "@/components/plates/Gouache";
 import { focusRingLight } from "@/lib/ui";
 
 // Public home page, built as a picture book you are awake inside at 3 a.m. The first viewport is an
@@ -11,19 +11,19 @@ import { focusRingLight } from "@/lib/ui";
 
 const night = [
   {
-    hour: "night" as const,
+    moment: "talk" as const,
     time: "11:42 pm",
     title: "Talk for a minute",
     body: "Tap the moon and say how you are: sleep, pain, mood, a blood pressure reading. No forms on a hard night.",
   },
   {
-    hour: "late" as const,
+    moment: "safety" as const,
     time: "11:43 pm",
     title: "Safety comes first",
     body: "Before any AI replies, fixed rules check what you said for warning signs. If one shows up, you get the number to call, right away.",
   },
   {
-    hour: "dawn" as const,
+    moment: "morning" as const,
     time: "7:10 am",
     title: "Your tide, in the morning",
     body: "Tidewell adds last night to the picture and says plainly what changed, so you and your care team can read it at a glance.",
@@ -37,6 +37,13 @@ const promises = [
   ["It is yours to delete", "One tap in Settings removes your account and everything in it."],
 ];
 
+// Under the hero actions: what Tidewell commits to, said plainly.
+const assurances = [
+  "Fixed safety checks run before any AI reply.",
+  "Supports your care team. It does not diagnose.",
+  "Your data is yours to delete at any time.",
+];
+
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 
 export default function Welcome() {
@@ -48,7 +55,7 @@ export default function Welcome() {
         {/* ---------- the open spread ---------- */}
         <section aria-labelledby="hero-title" className={`${container} pb-20 pt-2`}>
           <div className="grid overflow-hidden rounded-[10px] bg-white shadow-lift ring-1 ring-navy/10 lg:grid-cols-2">
-            <div className="relative h-72 sm:h-96 lg:h-auto lg:min-h-[640px]">
+            <div className="plate relative h-80 sm:h-[28rem] lg:h-auto lg:min-h-[640px]" style={{ background: NIGHT_FEED_BACKDROP }}>
               <NightFeedPlate className="plate-hero absolute inset-0 size-full" />
             </div>
             {/* the right page: the gutter shadow falls on its inner edge */}
@@ -68,10 +75,16 @@ export default function Welcome() {
               <div className="mt-9">
                 <WelcomeActions />
               </div>
-              <p className="mt-10 border-t border-navy/10 pt-5 text-base text-navy/75">
-                Warning signs checked first <span aria-hidden="true">·</span> Never diagnoses{" "}
-                <span aria-hidden="true">·</span> Delete your data any time
-              </p>
+              <ul aria-label="How Tidewell keeps you safe" className="mt-10 space-y-2.5 border-t border-navy/10 pt-6 text-base text-navy/85">
+                {assurances.map((a) => (
+                  <li key={a} className="flex items-start gap-3">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-tide-deep">
+                      <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {a}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
@@ -109,7 +122,7 @@ export default function Welcome() {
           <ol className="mt-14 grid gap-12 md:grid-cols-3 md:gap-8">
             {night.map((s) => (
               <li key={s.time} className="grid grid-cols-[6.5rem_1fr] items-start gap-5 md:block">
-                <WindowPlate hour={s.hour} className="h-auto w-full max-w-[300px] rounded-[6px]" />
+                <MomentPlate moment={s.moment} className="h-auto w-full max-w-[300px] rounded-[6px]" />
                 <div>
                   <p className="font-display text-2xl text-tide-deep tabular md:mt-6">
                     <time>{s.time}</time>
@@ -176,7 +189,7 @@ export default function Welcome() {
           <div className={`${container} pb-12 pt-20`}>
             <Mark className="size-12 text-white/80" />
             <h2 id="cta-title" className="mt-6 max-w-[18ch] font-display text-4xl font-semibold leading-tight sm:text-5xl">
-              Start tonight. Setup takes two minutes.
+              Start today. Setup takes two minutes.
             </h2>
             <p className="mt-4 max-w-[46ch] text-xl leading-relaxed text-white/85">
               Make an account, answer a few questions about your birth, then do your first check-in. Or look around

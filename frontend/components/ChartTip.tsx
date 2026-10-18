@@ -14,7 +14,7 @@ type Props = {
 export default function ChartTip({ active, payload, label, units }: Props) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-navy/15 bg-white px-3 py-2 text-sm text-navy shadow-lg">
+    <div className="rounded-xl border border-navy/15 bg-white px-3 py-2 text-sm text-navy shadow-lift">
       <p className="font-semibold">{shortDay(String(label))}</p>
       <ul className="mt-1 space-y-0.5">
         {payload.map((row) => (

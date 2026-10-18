@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Wordmark from "@/components/Wordmark";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, onboard } from "@/lib/api";
@@ -39,6 +39,23 @@ const TOTAL = STEPS.length;
 
 export const choice =
   "flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 border-navy/25 bg-white px-4 py-3 text-lg transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] peer-checked:border-tide-deep peer-checked:bg-tide-deep peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-navy peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-foam";
+/** Choice card for a checkbox: a visible box on the left, ticked when chosen. */
+export const checkChoice = `${choice} peer-checked:[&_.tw-box]:border-white peer-checked:[&_.tw-box]:bg-white peer-checked:[&_.tw-tick]:opacity-100`;
+
+/** The drawn checkbox inside a checkChoice label (the real input is the sr-only peer before it). */
+export function CheckMark() {
+  return (
+    <span
+      aria-hidden="true"
+      className="tw-box mt-0.5 grid size-7 shrink-0 place-items-center rounded-md border-2 border-navy bg-white text-tide-deep transition-colors duration-150"
+    >
+      <svg viewBox="0 0 24 24" className="tw-tick size-5 opacity-0 transition-opacity duration-150">
+        <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
 const field = `mt-3 min-h-14 w-full rounded-2xl border-2 border-navy bg-white px-4 text-lg ${focusRing}`;
 
 export default function Onboarding() {
@@ -158,12 +175,10 @@ export default function Onboarding() {
   const skippable = (step === 3 && !weeks) || (step === 7 && !complications.length) || (step === 8 && !phone.trim());
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-10">
-      <header className="flex h-16 items-center justify-between">
-        <Link href="/" className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}>
-          Tidewell
-        </Link>
-        <p className="text-base font-semibold">
+    <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pb-10 sm:px-8">
+      <header className="flex h-16 items-center justify-between md:h-20">
+        <Wordmark href="/" />
+        <p className="text-base text-navy/80">
           Step {step + 1} of {TOTAL}
         </p>
       </header>
@@ -181,7 +196,7 @@ export default function Onboarding() {
           noValidate
           className={`mt-8 flex flex-1 flex-col ${direction < 0 ? "motion-safe:animate-step-back" : "motion-safe:animate-step-in"} motion-reduce:animate-fade-in`}
         >
-          <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl leading-tight focus:outline-none">
+          <h1 ref={headingRef} tabIndex={-1} className="font-display text-4xl font-semibold leading-tight focus:outline-none">
             {STEPS[step]}
           </h1>
 
@@ -193,9 +208,13 @@ export default function Onboarding() {
                   not a doctor and does not diagnose. If something feels like an emergency, call 911.
                 </p>
                 <div>
-                  <input id="consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="peer sr-only" />
-                  <label htmlFor="consent" className={`${choice} items-start`}>
-                    {CONSENT_TEXT}
+                  <input id="consent" type="checkbox" checked={consent} onChange={(e) => {
+                    setConsent(e.target.checked);
+                    if (e.target.checked) setError(null);
+                  }} className="peer sr-only" />
+                  <label htmlFor="consent" className={`${checkChoice} items-start`}>
+                    <CheckMark />
+                    <span>{CONSENT_TEXT}</span>
                   </label>
                 </div>
               </div>
@@ -280,8 +299,9 @@ export default function Onboarding() {
                         }
                         className="peer sr-only"
                       />
-                      <label htmlFor={`cond-${c.value}`} className={choice}>
-                        {c.label}
+                      <label htmlFor={`cond-${c.value}`} className={checkChoice}>
+                        <CheckMark />
+                        <span>{c.label}</span>
                       </label>
                     </div>
                   ))}
@@ -305,8 +325,9 @@ export default function Onboarding() {
                 {phone.trim() && (
                   <div className="mt-5">
                     <input id="sms" type="checkbox" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} className="peer sr-only" />
-                    <label htmlFor="sms" className={`${choice} items-start`}>
-                      It is okay for Tidewell to text this person if my check-ins show I need emergency care.
+                    <label htmlFor="sms" className={`${checkChoice} items-start`}>
+                      <CheckMark />
+                      <span>It is okay for Tidewell to text this person if my check-ins show I need emergency care.</span>
                     </label>
                   </div>
                 )}
@@ -314,7 +335,7 @@ export default function Onboarding() {
             )}
 
             {step === 9 && (
-              <dl className="divide-y divide-navy/10 rounded-3xl bg-sand/70 px-5 text-lg">
+              <dl className="divide-y divide-navy/10 rounded-2xl bg-white px-5 text-lg shadow-paper ring-1 ring-navy/10">
                 <Row term="Name" value={name.trim() || "Not given"} />
                 <Row term="Baby born" value={deliveryDate ? new Date(`${deliveryDate}T00:00:00`).toLocaleDateString("en-US", { dateStyle: "long" }) : ""} />
                 <Row term="Weeks of pregnancy" value={weeks || "Not given"} />

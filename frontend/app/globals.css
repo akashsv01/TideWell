@@ -252,19 +252,6 @@ html[data-night] .text-tide-deep {
 html[data-night] .text-alert {
   color: #ff9d92;
 }
-/* Status chips that use fixed colours by day */
-html[data-night] .bg-\[\#e3f1e8\] {
-  background-color: rgb(140 194 166 / 0.16);
-}
-html[data-night] .text-\[\#2f5d3f\] {
-  color: #b6e0c8;
-}
-html[data-night] .text-\[\#7a4a10\] {
-  color: #f0c97a;
-}
-html[data-night] .accent-\[\#0e6a70\] {
-  accent-color: var(--color-tide);
-}
 /* Charts (recharts draws with SVG attributes; CSS wins over them) */
 html[data-night] .recharts-cartesian-axis-tick-value,
 html[data-night] .recharts-reference-line text {
@@ -283,6 +270,9 @@ html[data-night] .recharts-dot {
 html[data-night] .plate {
   /* illustrations dim with the lamp off, so they never out-shine the information */
   filter: brightness(0.86) saturate(0.9);
+}
+html[data-night] .plate .plate {
+  filter: none; /* a plate on its own backdrop dims once, with the backdrop */
 }
 
 /* Switching day/night crossfades colours for a moment (set by ThemeToggle), never other motion. */
@@ -313,6 +303,7 @@ textarea {
   caret-color: var(--color-tide-deep);
 }
 html {
+  scrollbar-gutter: stable;
   scrollbar-color: color-mix(in oklab, var(--color-navy) 35%, transparent) transparent;
 }
 a {
@@ -360,4 +351,7 @@ a {
     transform-box: fill-box;
     transform-origin: bottom;
   }
+}
+html[data-night] .recharts-label {
+  fill: #cfc6b2;
 }

@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T11:58:19+00:00",
+  "title": "Design System: Tidewell",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Forest Ink",
+        "canonical": "#1b2a22",
+        "purpose": "Body text, ink strokes, focus ring; light ivory under night mode.",
+        "tonalRamp": [
+          "#1e2f26",
+          "#345141",
+          "#4a735d",
+          "#609579",
+          "#83af98",
+          "#a8c7b7",
+          "#cddfd6",
+          "#eff5f2"
+        ]
+      },
+      "tide": {
+        "role": "primary",
+        "displayName": "Mid Forest",
+        "canonical": "#3c6a55",
+        "purpose": "Waves and ring colour on dark buttons.",
+        "tonalRamp": [
+          "#1c3127",
+          "#305544",
+          "#447861",
+          "#589c7d",
+          "#7db59b",
+          "#a4cbb9",
+          "#cbe2d7",
+          "#eff6f3"
+        ]
+      },
+      "tide-deep": {
+        "role": "primary",
+        "displayName": "Deep Forest",
+        "canonical": "#23463a",
+        "purpose": "Default action fill, dark sections, call-today safety field.",
+        "tonalRamp": [
+          "#1a332a",
+          "#2c5849",
+          "#3f7e68",
+          "#52a387",
+          "#77bba4",
+          "#a0cfbf",
+          "#c9e4da",
+          "#eef6f4"
+        ]
+      },
+      "tide-light": {
+        "role": "secondary",
+        "displayName": "Gold on Dark",
+        "canonical": "#d9b75c",
+        "purpose": "Figures and emphasis on forest fields.",
+        "tonalRamp": [
+          "#3e310e",
+          "#6c5519",
+          "#997924",
+          "#c79d2e",
+          "#d8b65a",
+          "#e4cc8b",
+          "#f0e2bd",
+          "#faf6ea"
+        ]
+      },
+      "foam": {
+        "role": "neutral",
+        "displayName": "Ivory Page",
+        "canonical": "#f7f1e4",
+        "purpose": "Page background.",
+        "tonalRamp": [
+          "#3b2e11",
+          "#66501e",
+          "#92712b",
+          "#bd9338",
+          "#d0ad62",
+          "#dec691",
+          "#ecdec0",
+          "#f9f5eb"
+        ]
+      },
+      "sand": {
+        "role": "neutral",
+        "displayName": "Deeper Ivory",
+        "canonical": "#ece2ca",
+        "purpose": "Quiet fills and row hover.",
+        "tonalRamp": [
+          "#382e14",
+          "#624f23",
+          "#8b7132",
+          "#b49241",
+          "#c9ad69",
+          "#d9c596",
+          "#e9dec3",
+          "#f8f5ec"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#fffdf8",
+        "purpose": "Every health-information surface.",
+        "tonalRamp": [
+          "#4c3700",
+          "#855f00",
+          "#bd8700",
+          "#f5af00",
+          "#ffc533",
+          "#ffd670",
+          "#ffe8ad",
+          "#fff8e5"
+        ]
+      },
+      "alert": {
+        "role": "neutral",
+        "displayName": "Alert Crimson",
+        "canonical": "#a3261c",
+        "purpose": "Emergency field and Call 911 only.",
+        "tonalRamp": [
+          "#410f0b",
+          "#711a13",
+          "#a1261c",
+          "#d13124",
+          "#e15c51",
+          "#ea8d85",
+          "#f3beb9",
+          "#fbebe9"
+        ]
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Moon Gold",
+        "canonical": "#c99a2e",
+        "purpose": "The moon: mark, plates, voice orb, the one landing primary.",
+        "tonalRamp": [
+          "#3e300e",
+          "#6c5319",
+          "#9a7623",
+          "#c7992e",
+          "#d9b259",
+          "#e4c98b",
+          "#f0e0bd",
+          "#faf5ea"
+        ]
+      },
+      "gold-hover": {
+        "role": "secondary",
+        "displayName": "Moon Gold Hover",
+        "canonical": "#d8ab43",
+        "purpose": "Hover on the gold action.",
+        "tonalRamp": [
+          "#3f300d",
+          "#6e5417",
+          "#9c7720",
+          "#cb9a2a",
+          "#dcb456",
+          "#e6ca89",
+          "#f1e1bb",
+          "#fbf6ea"
+        ]
+      },
+      "gold-soft": {
+        "role": "secondary",
+        "displayName": "Soft Gold",
+        "canonical": "#efdfae",
+        "purpose": "Text selection.",
+        "tonalRamp": [
+          "#40330d",
+          "#6f5916",
+          "#9e7e1f",
+          "#cca428",
+          "#ddbc55",
+          "#e7d088",
+          "#f2e4bb",
+          "#fbf7ea"
+        ]
+      },
+      "terracotta": {
+        "role": "tertiary",
+        "displayName": "Lamp Terracotta",
+        "canonical": "#b45f3e",
+        "purpose": "Illustrations and sample-tide markers only; never status.",
+        "tonalRamp": [
+          "#391e14",
+          "#633422",
+          "#8c4a30",
+          "#b6603f",
+          "#cb8367",
+          "#daa895",
+          "#eacdc2",
+          "#f8f0ec"
+        ]
+      },
+      "forest": {
+        "role": "primary",
+        "displayName": "Plate Forest",
+        "canonical": "#1f3d32",
+        "purpose": "Illustration forest field.",
+        "tonalRamp": [
+          "#1a332a",
+          "#2d5848",
+          "#407d67",
+          "#52a285",
+          "#78baa2",
+          "#a0cfbe",
+          "#c9e4da",
+          "#eef6f3"
+        ]
+      },
+      "night": {
+        "role": "primary",
+        "displayName": "Plate Night",
+        "canonical": "#142019",
+        "purpose": "Illustration night field.",
+        "tonalRamp": [
+          "#1d2f25",
+          "#335240",
+          "#49745b",
+          "#5e9776",
+          "#81b195",
+          "#a7c8b5",
+          "#cde0d5",
+          "#eff5f2"
+        ]
+      },
+      "chart-teal": {
+        "role": "neutral",
+        "displayName": "Chart Forest",
+        "canonical": "#2d5a48",
+        "purpose": "Chart series one (day).",
+        "tonalRamp": [
+          "#193329",
+          "#2c5847",
+          "#3f7e65",
+          "#52a383",
+          "#77bba0",
+          "#a0cfbc",
+          "#c9e4d9",
+          "#eef6f3"
+        ]
+      },
+      "chart-amber": {
+        "role": "neutral",
+        "displayName": "Chart Amber",
+        "canonical": "#b3801f",
+        "purpose": "Chart series two (day).",
+        "tonalRamp": [
+          "#412f0b",
+          "#715114",
+          "#a1731c",
+          "#d19524",
+          "#e1af51",
+          "#eac785",
+          "#f3dfb9",
+          "#fbf5e9"
+        ]
+      },
+      "night-page": {
+        "role": "neutral",
+        "displayName": "Night Page",
+        "canonical": "#101a15",
+        "purpose": "Page under html[data-night].",
+        "tonalRamp": [
+          "#1d2f26",
+          "#335242",
+          "#48755e",
+          "#5d987a",
+          "#81b199",
+          "#a7c9b8",
+          "#cce0d6",
+          "#eff5f2"
+        ]
+      },
+      "night-surface": {
+        "role": "neutral",
+        "displayName": "Night Paper",
+        "canonical": "#18261f",
+        "purpose": "Paper surfaces at night.",
+        "tonalRamp": [
+          "#1e2f26",
+          "#335142",
+          "#49745e",
+          "#5f967a",
+          "#82b099",
+          "#a7c8b8",
+          "#cddfd6",
+          "#eff5f2"
+        ]
+      },
+      "night-panel": {
+        "role": "neutral",
+        "displayName": "Night Panel",
+        "canonical": "#0b130f",
+        "purpose": "Ink panels at night.",
+        "tonalRamp": [
+          "#1c3026",
+          "#315442",
+          "#45785e",
+          "#5a9b7a",
+          "#7eb499",
+          "#a5cbb8",
+          "#cbe1d6",
+          "#eff6f2"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#efe7d5",
+        "purpose": "Body text at night (navy override).",
+        "tonalRamp": [
+          "#372d15",
+          "#604e25",
+          "#896f34",
+          "#b19044",
+          "#c7ab6b",
+          "#d8c498",
+          "#e8ddc4",
+          "#f8f4ed"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero question only (48px, 60px sm, 72px lg)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen titles and safety-card headlines; 48px on landing section heads at sm+."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and section titles, wordmark; the high-risk Care sentence steps up to 30px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default reading size; Atkinson slashed zero kept. Landing leads 20px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Nav tabs, row subtitles, captions; 14px floor for footnotes and phone tab labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-paper",
+        "value": "0 1px 2px rgb(27 42 34 / 0.06), 0 8px 24px -12px rgb(27 42 34 / 0.18)",
+        "purpose": "Every health-information surface, with a 1px ink/10 ring."
+      },
+      {
+        "name": "shadow-lift",
+        "value": "0 2px 4px rgb(27 42 34 / 0.08), 0 18px 40px -18px rgb(27 42 34 / 0.32)",
+        "purpose": "Landing spread, voice orb, menus."
+      },
+      {
+        "name": "shadow-moon",
+        "value": "0 2px 4px rgb(27 42 34 / 0.12), 0 12px 28px -14px rgb(27 42 34 / 0.45)",
+        "purpose": "The gold primary action only."
+      },
+      {
+        "name": "night-panel-inset",
+        "value": "inset 0 0 0 1px rgb(226 192 106 / 0.12)",
+        "purpose": "Ink panels under night mode."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Default curve for all UI transitions (150-300ms)."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "Tide-line breathe on the landing plate."
+      },
+      {
+        "name": "moonrise",
+        "value": "moonrise 0.7s var(--ease-out) both",
+        "purpose": "The moon lifts 14px once on the landing plate, then stays still."
+      },
+      {
+        "name": "tide-breathe",
+        "value": "tide-breathe 2.4s var(--ease-in-out) 0.3s 1 both",
+        "purpose": "The tide line breathes once with the moonrise."
+      },
+      {
+        "name": "page-in",
+        "value": "page-in 0.22s var(--ease-out)",
+        "purpose": "App page enter, 8px rise, no fill-mode."
+      },
+      {
+        "name": "card-in",
+        "value": "card-in 0.2s var(--ease-out) both",
+        "purpose": "Safety card settles from 0.97; a plain fade under reduced motion."
+      },
+      {
+        "name": "backdrop-in",
+        "value": "fade-in 0.15s var(--ease-out) both",
+        "purpose": "Safety field fade."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97) over 150ms",
+        "purpose": "Button and tab press, motion-safe only."
+      },
+      {
+        "name": "theme-fade",
+        "value": "colour properties 0.3s var(--ease-out)",
+        "purpose": "The day/night switch crossfades colour only."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition 0.01ms",
+        "purpose": "prefers-reduced-motion: reduce stops everything; orb water and plates stay still."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Forest pill; every primary action except the one gold moon.",
+      "html": "<button class=\"ds-btn-primary\">Save my check-in</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; min-height:56px; padding:0 32px; border-radius:9999px; font-family: var(--font-sans); font-size: 18px; font-weight: 600; transition: color .15s cubic-bezier(0.23,1,0.32,1), background-color .15s cubic-bezier(0.23,1,0.32,1), transform .15s cubic-bezier(0.23,1,0.32,1); cursor:pointer; background: var(--color-tide-deep); color: var(--color-white); border: none; } .ds-btn-primary:hover { background: var(--color-navy); } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Moon Button",
+      "kind": "button",
+      "refersTo": "button-moon",
+      "description": "Gold pill with ink text; the single landing primary only.",
+      "html": "<a class=\"ds-btn-moon\" href=\"#\">Start today</a>",
+      "css": ".ds-btn-moon { display:inline-flex; align-items:center; justify-content:center; min-height:56px; padding:0 32px; border-radius:9999px; font-family: var(--font-sans); font-size: 18px; font-weight: 600; transition: color .15s cubic-bezier(0.23,1,0.32,1), background-color .15s cubic-bezier(0.23,1,0.32,1), transform .15s cubic-bezier(0.23,1,0.32,1); cursor:pointer; text-decoration:none; background: var(--color-gold); color: #1b2a22; box-shadow: 0 2px 4px rgb(27 42 34 / 0.12), 0 12px 28px -14px rgb(27 42 34 / 0.45); } .ds-btn-moon:hover { background: #d8ab43; } .ds-btn-moon:active { transform: scale(0.97); } .ds-btn-moon:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "2px ink stroke; fills with ink on hover.",
+      "html": "<button class=\"ds-btn-outline\">Not now</button>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; min-height:56px; padding:0 32px; border-radius:9999px; font-family: var(--font-sans); font-size: 18px; font-weight: 600; transition: color .15s cubic-bezier(0.23,1,0.32,1), background-color .15s cubic-bezier(0.23,1,0.32,1), transform .15s cubic-bezier(0.23,1,0.32,1); cursor:pointer; background: transparent; color: var(--color-navy); border: 2px solid var(--color-navy); } .ds-btn-outline:hover { background: var(--color-navy); color: var(--color-white); } .ds-btn-outline:active { transform: scale(0.97); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "2px ink stroke on paper, 56px tall, 16px corners.",
+      "html": "<label class=\"ds-label\">Email<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\"></label>",
+      "css": ".ds-label { display:block; font-family: var(--font-sans); font-size:18px; font-weight:600; color: var(--color-navy); } .ds-input { display:block; margin-top:8px; width:100%; min-height:56px; padding:0 16px; border:2px solid var(--color-navy); border-radius:16px; background: var(--color-white); color: var(--color-navy); font: inherit; font-weight:400; caret-color: var(--color-tide-deep); } .ds-input:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Paper Surface",
+      "kind": "card",
+      "refersTo": "paper-surface",
+      "description": "Health facts on paper: Paper shadow, ink/10 ring, hairline rows; linked rows end in a chevron.",
+      "html": "<div class=\"ds-paper\"><a class=\"ds-row\" href=\"#\"><span><span class=\"ds-row-title\">Weekly mood check</span><span class=\"ds-row-sub\">Ten short questions, about two minutes.</span></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a><a class=\"ds-row\" href=\"#\"><span><span class=\"ds-row-title\">Your visits</span><span class=\"ds-row-sub\">Nothing booked yet.</span></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a></div>",
+      "css": ".ds-paper { background: var(--color-white); color: var(--color-navy); border-radius:16px; box-shadow: 0 0 0 1px rgb(27 42 34 / 0.1), 0 1px 2px rgb(27 42 34 / 0.06), 0 8px 24px -12px rgb(27 42 34 / 0.18); overflow:hidden; font-family: var(--font-sans); } .ds-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 20px; color:inherit; text-decoration:none; transition: background-color .15s cubic-bezier(0.23,1,0.32,1); } .ds-row + .ds-row { border-top:1px solid rgb(27 42 34 / 0.1); } .ds-row:hover { background: rgb(236 226 202 / 0.5); } .ds-row svg { flex-shrink:0; color: rgb(27 42 34 / 0.6); transition: transform .15s cubic-bezier(0.23,1,0.32,1); } .ds-row:hover svg { transform: translateX(2px); } .ds-row-title { display:block; font-size:18px; font-weight:600; } .ds-row-sub { display:block; margin-top:2px; font-size:16px; color: rgb(27 42 34 / 0.8); } .ds-row:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Top Navigation",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "Header with mark and wordmark; md+ tabs with a forest underline on the active tab (phones use the bottom bar).",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\"><svg viewBox=\"0 0 32 32\" width=\"32\" height=\"32\" aria-hidden=\"true\"><circle cx=\"16\" cy=\"12\" r=\"7\" fill=\"#c99a2e\"/><path d=\"M3 21 C7 18.5 11 18.5 16 21 S25 23.5 29 21\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path d=\"M6 26 C9.5 24 12.5 24 16 26 S22.5 28 26 26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"0.55\"/></svg>Tidewell</a><ul><li><a href=\"#\" aria-current=\"page\">Check in</a></li><li><a href=\"#\">My tide</a></li><li><a href=\"#\">Care</a></li><li><a href=\"#\">Ask</a></li></ul></header>",
+      "css": ".ds-nav { font-family: var(--font-sans); color: var(--color-navy); background: var(--color-foam); padding: 0 20px; } .ds-brand { display:flex; align-items:center; gap:8px; height:64px; font-family: var(--font-display); font-size:24px; font-weight:600; color: var(--color-navy); text-decoration:none; } .ds-brand svg { color: var(--color-tide-deep); } .ds-nav ul { display:flex; gap:4px; list-style:none; margin:0; padding:0; border-bottom:1px solid rgb(27 42 34 / 0.1); } .ds-nav li a { display:inline-flex; align-items:center; min-height:48px; padding:0 16px; margin-bottom:-1px; border-bottom:2px solid transparent; font-size:16px; font-weight:600; color: rgb(27 42 34 / 0.7); text-decoration:none; transition: color .15s, border-color .15s; } .ds-nav li a:hover { color: var(--color-navy); border-bottom-color: rgb(27 42 34 / 0.25); } .ds-nav li a[aria-current=\"page\"] { color: var(--color-navy); border-bottom-color: var(--color-tide-deep); } .ds-nav a:focus-visible { outline:none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); border-radius:6px; }"
+    },
+    {
+      "name": "Back Link",
+      "kind": "custom",
+      "description": "The way back from a sub-screen, top left, naming its destination.",
+      "html": "<a class=\"ds-back\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"m15 6-6 6 6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>Care</a>",
+      "css": ".ds-back { display:inline-flex; align-items:center; gap:4px; min-height:44px; padding-right:8px; font-family: var(--font-sans); font-size:18px; font-weight:600; color: rgb(27 42 34 / 0.85); text-decoration:none; border-radius:6px; transition: color .15s; } .ds-back svg { transition: transform .15s cubic-bezier(0.23,1,0.32,1); } .ds-back:hover { color: var(--color-navy); } .ds-back:hover svg { transform: translateX(-2px); } .ds-back:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-foam), 0 0 0 6px var(--color-navy); }"
+    },
+    {
+      "name": "Voice Orb",
+      "kind": "custom",
+      "description": "The moon as the voice button: gold disc, paper ring, forest water that moves only while recording or busy.",
+      "html": "<button class=\"ds-orb\" aria-label=\"Tap to talk\"><span class=\"ds-orb-water\"></span><span class=\"ds-orb-mic\"><svg viewBox=\"0 0 24 24\" width=\"28\" height=\"28\" aria-hidden=\"true\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M5 11a7 7 0 0 0 14 0M12 18v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg></span></button>",
+      "css": ".ds-orb { position:relative; width:192px; height:192px; border-radius:50%; overflow:hidden; border:none; padding:0; background: var(--color-gold); box-shadow: 0 0 0 4px var(--color-white), 0 2px 4px rgb(27 42 34 / 0.08), 0 18px 40px -18px rgb(27 42 34 / 0.32); cursor:pointer; transition: transform .15s cubic-bezier(0.23,1,0.32,1); } .ds-orb:active { transform: scale(0.95); } .ds-orb-water { position:absolute; inset:58% 0 0 0; background: var(--color-tide-deep); border-top-left-radius: 40% 12px; border-top-right-radius: 60% 18px; } .ds-orb-mic { position:absolute; left:50%; top:50%; width:80px; height:80px; margin:-40px 0 0 -40px; border-radius:50%; background: var(--color-white); color:#1b2a22; display:flex; align-items:center; justify-content:center; } .ds-orb:focus-visible { outline:none; box-shadow: 0 0 0 4px var(--color-white), 0 0 0 8px var(--color-navy); }"
+    },
+    {
+      "name": "Safety Card (call today)",
+      "kind": "card",
+      "refersTo": "urgent-today-field",
+      "description": "Fixed-wording safety card on the forest field; the emergency tier uses the crimson field and a crimson headline.",
+      "html": "<div class=\"ds-urgent-field\"><div class=\"ds-urgent\" role=\"alertdialog\" aria-labelledby=\"ds-u-t\"><h1 id=\"ds-u-t\">Call your care team today</h1><p>What you just described is a warning sign after birth that should be checked today.</p><a class=\"ds-urgent-btn ds-solid\" href=\"#\">Maternal Mental Health Hotline</a><a class=\"ds-urgent-btn ds-line\" href=\"#\">Call or text 988</a></div></div>",
+      "css": ".ds-urgent-field { background: var(--color-tide-deep); padding:16px; display:flex; justify-content:center; } .ds-urgent { width:100%; max-width:448px; background: var(--color-white); color: var(--color-navy); border-radius:16px; padding:24px; font-family: var(--font-sans); } .ds-urgent h1 { margin:0; font-family: var(--font-display); font-size:36px; font-weight:600; line-height:1.25; } .ds-urgent p { margin:12px 0 24px; font-size:18px; line-height:1.625; } .ds-urgent-btn { display:flex; align-items:center; justify-content:center; min-height:56px; margin-top:12px; padding:0 16px; border-radius:12px; font-size:18px; font-weight:600; text-decoration:none; } .ds-solid { background: var(--color-navy); color: var(--color-white); } .ds-line { border:2px solid var(--color-navy); color: var(--color-navy); } .ds-urgent-btn:focus-visible { outline:none; box-shadow: 0 0 0 2px var(--color-white), 0 0 0 6px var(--color-tide); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night-Feed Picture Book",
+    "overview": "Tidewell is the picture book a parent is awake inside at 3 a.m.: a quiet room, a window, and the moon that pulls the tide. Two fields carry the world. Warm ivory paper is the page, deep forest green is the night outside. Muted gold is the moon. Editorial gouache plates (pigment edges, paper grain, a terracotta lamp and blanket) add the warmth. They stay sophisticated, never cartoonish, and they never carry information.\n\nThe illustration and the information are kept apart. Anything a tired person has to read and act on (check-ins, the tide chart, care advice, clinician summaries, safety messages) sits on plain paper surfaces with hairline dividers, set in Atkinson Hyperlegible Next at a generous size. Alegreya, upright and large, sets the headings. The landing page plays the world at full volume, an open spread with the plate on one page and the words on the other. The signed-in app keeps the same materials at a lower volume: one content column, paper cards, the moon as the voice button.\n\nToken names are historical and kept on purpose so every component inherits the world: `navy` is ink, `tide` is mid forest, `tide-deep` is forest, `tide-light` is gold on dark fields, `foam` is the ivory page, `sand` is deeper ivory, `white` is paper. Read tokens by role, not by name.",
+    "keyCharacteristics": [
+      "Two fields (ivory paper, forest night); gold is the moon only.",
+      "Gouache plates for warmth; health facts never sit on illustration.",
+      "Large, legible type; the type scale rises with urgency.",
+      "Status said in sentences, never in badges.",
+      "One mark everywhere: a gold moon over two tide lines.",
+      "Night mode is the same room with the lamp off, not an inversion."
+    ],
+    "rules": [
+      {
+        "name": "The One Moon Rule",
+        "body": "Gold is the moon: the mark, the plates, the voice orb, and at most one primary action per page (the landing \"Start today\"). Gold never marks status, a category, or a count. Every other primary action is forest.",
+        "section": "colors"
+      },
+      {
+        "name": "The Lamp Stays in the Picture Rule",
+        "body": "Terracotta lives in illustrations. If it appears on a control, a badge, or a status line, it is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Reds Rule",
+        "body": "Crimson means call 911 now. \"Call today\" is forest, never amber or red.",
+        "section": "colors"
+      },
+      {
+        "name": "The Urgency Scale Rule",
+        "body": "Type size follows how much it matters. A routine status is a 20px sentence; elevated risk in Care, a red circle status, and the safety cards move up to display-face 30 to 36px headlines. Never shrink an urgent message to fit.",
+        "section": "typography"
+      },
+      {
+        "name": "The Legible Floor Rule",
+        "body": "Body copy is 18px. Nothing a parent must act on goes below 16px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper Rule",
+        "body": "Health facts sit on paper: background `white`, Paper shadow, an ink/10 ring, 16px corners, and hairline dividers (`navy/10`) between rows. Never put them on an illustration or a tinted card.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** read tokens by role: `navy` is ink, `tide-deep` is forest, `foam` is the ivory page, `white` is paper.",
+      "**Do** put every health fact on a paper surface (paper fill, Paper shadow, ink/10 ring, 16px corners) with hairline dividers between rows.",
+      "**Do** say status in a full sentence, and raise the type size as urgency rises.",
+      "**Do** use forest for primary actions in the app, and keep gold for the moon and the single landing primary.",
+      "**Do** keep one 768px content column for every app screen, and open each sub-screen with a BackLink.",
+      "**Do** draw icons as inline SVG with 2px round strokes in currentColor.",
+      "**Do** let illustrations dim at night and stay still under reduced motion.",
+      "**Do** keep Atkinson's slashed zero."
+    ],
+    "donts": [
+      "**Don't** use badges, pills, or coloured dots to carry status.",
+      "**Don't** use gold or terracotta for status, categories, or warnings.",
+      "**Don't** put an eyebrow or kicker label above headings.",
+      "**Don't** use border-left accent stripes on cards or callouts.",
+      "**Don't** use unicode symbols or emoji as icons.",
+      "**Don't** set information on top of illustration.",
+      "**Don't** use zero-blur offset shadows.",
+      "**Don't** reword the safety cards or put generated text in them.",
+      "**Don't** invert colours for night mode; dark surfaces have their own layers."
+    ]
+  }
+}

@@ -67,7 +67,7 @@ export default function AppleHealthSettings({ patientId }: { patientId: string }
   const synced = ago(status?.last_sync);
   return (
     <section id="apple-health" aria-labelledby="ah-title" className="scroll-mt-20">
-      <h2 id="ah-title" className="font-display text-2xl">Connect Apple Health</h2>
+      <h2 id="ah-title" className="font-display text-2xl font-semibold">Connect Apple Health</h2>
       <p className="mt-2 max-w-[50ch] text-lg leading-relaxed">
         Send sleep, blood pressure and resting heart rate from your iPhone, so you don&apos;t have to type them.
         It uses the Health Auto Export app on your iPhone; the guide walks you through it once.
@@ -101,7 +101,7 @@ export default function AppleHealthSettings({ patientId }: { patientId: string }
       {error && <p role="alert" className="mt-3 text-lg text-alert">{error}</p>}
 
       {code && (
-        <div className="mt-5 space-y-4 rounded-3xl bg-white p-5 ring-1 ring-navy/10 motion-safe:animate-reply-in">
+        <div className="mt-5 space-y-4 rounded-2xl bg-white p-5 shadow-paper ring-1 ring-navy/10 motion-safe:animate-reply-in">
           <p className="text-base font-semibold text-alert">
             Copy the code now: it is shown only once. Treat it like a password.
           </p>

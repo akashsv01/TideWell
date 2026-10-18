@@ -38,9 +38,12 @@ function wavePath({ amp, cycles, top }: WaveLayer) {
 export default function Waves({
   layers,
   className = "",
+  still = false,
 }: {
   layers: WaveLayer[];
   className?: string;
+  /** Draw the layers without drifting (the idle voice button stays still). */
+  still?: boolean;
 }) {
   return (
     <div aria-hidden="true" className={`pointer-events-none overflow-hidden ${className}`}>
@@ -50,7 +53,7 @@ export default function Waves({
           viewBox="0 0 2000 200"
           preserveAspectRatio="none"
           focusable="false"
-          className="wave-layer absolute bottom-0 left-0 h-full w-[200%] motion-safe:animate-drift"
+          className={`wave-layer absolute bottom-0 left-0 h-full w-[200%] ${still ? "" : "motion-safe:animate-drift"}`}
           style={{
             animationDuration: `${layer.seconds}s`,
             animationDirection: layer.reverse ? "reverse" : "normal",

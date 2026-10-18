@@ -90,7 +90,7 @@ export default function PlaceBooking({
 
   if (booked) {
     return (
-      <div role="status" className="mt-4 rounded-2xl bg-[#e3f1e8] p-4 text-[#2f5d3f] motion-safe:animate-reply-in">
+      <div role="status" className="mt-4 rounded-2xl bg-white p-4 shadow-paper ring-2 ring-tide-deep/40 motion-safe:animate-reply-in">
         <p className="text-lg font-semibold">Booked: {whenLabel(booked)}</p>
         <p className="mt-1 text-base">
           It&apos;s in Your upcoming visits. Call {place.phone ?? "the clinic"} to confirm; times here are illustrative.

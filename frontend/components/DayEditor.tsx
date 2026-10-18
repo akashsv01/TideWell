@@ -65,8 +65,8 @@ function draftFromPoint(p: TrendPoint | undefined): Draft {
 export default function DayEditor(props: Props) {
   if (props.demo) {
     return (
-      <section id="log" aria-labelledby="log-title" className="rounded-3xl bg-sand/70 p-6">
-        <h2 id="log-title" className="font-display text-2xl">
+      <section id="log" aria-labelledby="log-title" className="scroll-mt-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10 sm:p-8">
+        <h2 id="log-title" className="font-display text-2xl font-semibold">
           Log or edit a day
         </h2>
         <p className="mt-3 text-lg leading-relaxed">
@@ -145,8 +145,8 @@ function DayEditorForm({
   }
 
   return (
-    <section id="log" aria-labelledby="log-title" className="rounded-3xl bg-sand/70 p-6">
-      <h2 id="log-title" className="font-display text-2xl">
+    <section id="log" aria-labelledby="log-title" className="scroll-mt-6 rounded-2xl bg-white p-6 shadow-paper ring-1 ring-navy/10 sm:p-8">
+      <h2 id="log-title" className="font-display text-2xl font-semibold">
         Log or edit a day
       </h2>
       <p className="mt-2 text-lg text-navy/85">Add or correct the numbers for one day. Voice check-ins still work as usual.</p>
@@ -200,11 +200,11 @@ function DayEditorForm({
         <fieldset>
           <legend className="text-base font-semibold">Headache</legend>
           <div className="mt-2 flex gap-3">
-            <label className={`flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 text-lg font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] ${headache ? "border-tide-deep bg-tide-deep text-white" : "border-navy/25 bg-white"}`}>
+            <label className={`flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 text-lg font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-navy has-[:focus-visible]:ring-offset-2 ${headache ? "border-tide-deep bg-tide-deep text-white" : "border-navy/25 bg-white"}`}>
               <input type="radio" name={`${ids}-head`} checked={headache} onChange={() => setHeadache(true)} className="sr-only" />
               Yes
             </label>
-            <label className={`flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 text-lg font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] ${!headache ? "border-tide-deep bg-tide-deep text-white" : "border-navy/25 bg-white"}`}>
+            <label className={`flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 text-lg font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:active:scale-[0.97] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-navy has-[:focus-visible]:ring-offset-2 ${!headache ? "border-tide-deep bg-tide-deep text-white" : "border-navy/25 bg-white"}`}>
               <input type="radio" name={`${ids}-head`} checked={!headache} onChange={() => setHeadache(false)} className="sr-only" />
               No
             </label>

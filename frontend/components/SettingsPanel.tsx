@@ -47,17 +47,17 @@ export default function SettingsPanel() {
 
   return (
     <div className="space-y-14">
-      <h1 className="font-display text-4xl leading-tight">Settings</h1>
+      <h1 className="font-display text-4xl font-semibold leading-tight">Settings</h1>
 
-      <section aria-labelledby="details-title" className="motion-safe:animate-section-in">
-        <h2 id="details-title" className="font-display text-2xl">
+      <section aria-labelledby="details-title">
+        <h2 id="details-title" className="font-display text-2xl font-semibold">
           Your details
         </h2>
         <div className="mt-3">{patientId && <ProfileEditor patientId={patientId} demo={demo} />}</div>
       </section>
 
       <section aria-labelledby="voice-title">
-        <h2 id="voice-title" className="font-display text-2xl">
+        <h2 id="voice-title" className="font-display text-2xl font-semibold">
           Voice
         </h2>
         <div className="mt-3 flex items-center justify-between gap-4">
@@ -87,7 +87,7 @@ export default function SettingsPanel() {
       </section>
 
       <section aria-labelledby="help-title">
-        <h2 id="help-title" className="font-display text-2xl">
+        <h2 id="help-title" className="font-display text-2xl font-semibold">
           Get help now
         </h2>
         <p className="mt-2 text-lg leading-relaxed">
@@ -113,7 +113,7 @@ export default function SettingsPanel() {
       {!demo && patientId && <CircleSettings patientId={patientId} />}
 
       <section aria-labelledby="account-title">
-        <h2 id="account-title" className="font-display text-2xl">
+        <h2 id="account-title" className="font-display text-2xl font-semibold">
           Account
         </h2>
         {demo ? (
@@ -156,7 +156,7 @@ export default function SettingsPanel() {
 
       {!demo && (
         <section aria-labelledby="data-title">
-          <h2 id="data-title" className="font-display text-2xl">
+          <h2 id="data-title" className="font-display text-2xl font-semibold">
             Your data
           </h2>
           <p className="mt-2 max-w-[46ch] text-lg leading-relaxed">
@@ -169,7 +169,7 @@ export default function SettingsPanel() {
               </button>
             )}
             {(del === "confirm" || del === "deleting") && (
-              <div className="rounded-3xl bg-sand/70 p-5 motion-safe:animate-reply-in">
+              <div className="rounded-2xl bg-white p-5 shadow-paper ring-2 ring-alert/30 motion-safe:animate-reply-in">
                 <p className="text-lg font-semibold">Delete everything Tidewell has about you?</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
@@ -192,7 +192,7 @@ export default function SettingsPanel() {
               </div>
             )}
             {del === "error" && (
-              <div role="alert" className="rounded-3xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
+              <div role="alert" className="rounded-2xl bg-white p-5 text-lg text-alert ring-2 ring-alert/30">
                 <p>We couldn&apos;t delete your data. Please try again.</p>
                 <button type="button" onClick={() => setDel("confirm")} className={`mt-3 ${btnOutline}`}>
                   Try again
