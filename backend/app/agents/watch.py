@@ -4,10 +4,11 @@ Runs after every saved check-in, daily-log edit and mood check, and every 30 min
 (main.py), so a patient who stops checking in is noticed too. Detection is deterministic and uses the
 agreed thresholds (clinical_assets/thresholds.md, guidelines.json); Gemini only writes the clinician
 note, and only when something needs action (amber/red), which keeps it explainable and cheap.
-Amber or red hands off to the Booking agent. It never diagnoses.
+EPDS results affect the current mood tier for seven days; older results remain in history. Amber or
+red hands off to the Booking agent. It never diagnoses.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -24,6 +25,7 @@ NEXT_STEP = {
     "amber": "Recommend a visit within 1-3 days and offer times",
     "red": "Urgent care now (911 / emergency room)",
 }
+EPDS_TIER_MAX_AGE = timedelta(days=7)
 
 
 def _vals(points: list[dict], key: str) -> list:
@@ -63,9 +65,9 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
 
     # Depression / anxiety (mh-06, mh-07, thresholds.md section 5)
     tier, why = "green", []
-    if last_epds:
-        age = (datetime.now(timezone.utc) - last_epds["time"]).days
-        if last_epds["item10"] and age <= 7:
+    now = datetime.now(timezone.utc)
+    if _epds_is_current(last_epds, now):
+        if last_epds["item10"]:
             tier, why = "amber", ["Mood check mentioned thoughts of self-harm this week"]
         mood = 30 - last_epds["score"]  # what the parent sees; the EPDS total is in brackets for clinicians
         if last_epds["score"] >= 13:
@@ -114,6 +116,13 @@ def assess(profile: dict, points: list[dict], last_epds: Optional[dict], last_ch
 
 def overall(tiers: list[dict]) -> str:
     return max((t["tier"] for t in tiers), key=RANK.get, default="green")
+
+
+def _epds_is_current(last_epds: Optional[dict], now: datetime) -> bool:
+    if not last_epds:
+        return False
+    age = now - last_epds["time"]
+    return timedelta(0) <= age <= EPDS_TIER_MAX_AGE
 
 
 def _note(tiers: list[dict], profile: dict) -> str:

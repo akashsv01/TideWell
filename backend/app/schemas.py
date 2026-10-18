@@ -20,7 +20,7 @@ class Profile(BaseModel):
     gestation_weeks: Optional[int] = Field(default=None, ge=20, le=45)
     delivery_method: DeliveryMethod
     feeding_type: FeedingType
-    history_mental_health: bool = False  # prior depression or anxiety -> always at least "watch"
+    history_mental_health: Optional[bool] = None  # None means the patient is unsure or prefers not to say.
     history_pregnancy_complications: list[str] = Field(default_factory=list, max_length=10)
     language_preference: Literal["en", "es"] = "en"
     support_person_name: Optional[str] = Field(default=None, max_length=80)

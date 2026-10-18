@@ -67,7 +67,7 @@ class Overview(BaseModel):
     day_postpartum: int
     delivery_method: str
     feeding_type: Optional[str] = None
-    history_mental_health: bool = False
+    history_mental_health: Optional[bool] = None
     history_pregnancy_complications: list[str] = Field(default_factory=list)
     epds_due: bool = False
     last_epds_score: Optional[int] = None

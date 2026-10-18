@@ -93,6 +93,8 @@ def patient_context(pid: Optional[UUID]) -> Optional[str]:
         lines.append("Pregnancy complications: " + ", ".join(c["pregnancy_complications"]) + ".")
     if c.get("history_mental_health"):
         lines.append("Has a history of depression or anxiety.")
+    elif c.get("history_mental_health") is None:
+        lines.append("History of depression or anxiety was not reported.")
     feeding = c.get("feeding_type") or ("breastfeeding" if c.get("breastfeeding") else "formula")
     lines.append({"breastfeeding": "Breastfeeding.", "formula": "Formula feeding.",
                   "mixed": "Mixed breast and formula feeding."}.get(feeding, "") or "")

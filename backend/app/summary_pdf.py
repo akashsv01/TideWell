@@ -43,7 +43,9 @@ def build(profile: dict, points: list[dict], tiers: list[dict], appointments: li
     out += [Paragraph("Patient", h2), Table([
         ["Name", profile.get("name") or "–", "Postpartum day", str(profile["day_postpartum"])],
         ["Birth", f"{method}, {profile['delivery_date']:%b %d, %Y}", "Weeks at birth", _v(profile.get("gestation_weeks"))],
-        ["Feeding", feeding, "Depression/anxiety history", "Yes" if profile.get("history_mental_health") else "No"],
+        ["Feeding", feeding, "Depression/anxiety history",
+         "Yes" if profile.get("history_mental_health") is True
+         else "No" if profile.get("history_mental_health") is False else "Not reported"],
         ["Pregnancy", hist, "", ""],
     ], colWidths=[1.1 * inch, 2.6 * inch, 1.7 * inch, 1.6 * inch], style=TableStyle([
         ("FONTSIZE", (0, 0), (-1, -1), 9), ("TEXTCOLOR", (0, 0), (-1, -1), NAVY),

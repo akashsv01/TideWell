@@ -54,7 +54,8 @@ export default function AskPanel() {
       <h1 className="font-display text-4xl font-semibold leading-tight">Ask Tidewell</h1>
       <p className="mt-3 max-w-[48ch] text-lg leading-relaxed text-navy/85">
         Questions about pregnancy, recovery, feeding, sleep, mood or your baby. Answers come from trusted
-        sources like the CDC, NIH and ACOG, and show where they came from. Tidewell does not diagnose.
+        sources like the CDC, NIH and ACOG, and show where they came from. If Tidewell cannot find
+        guidance for your question, it will say so rather than guess. Tidewell does not diagnose.
       </p>
 
       <div aria-live="polite" className="mt-8 space-y-6">
