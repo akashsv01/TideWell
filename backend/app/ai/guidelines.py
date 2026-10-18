@@ -42,6 +42,9 @@ BASE_TRUSTED = {
 SYSTEM = (
     "You answer questions from a parent in the year after giving birth. Use Google Search and rely ONLY "
     "on these trusted sites: {sites}. Add site: filters to your searches (for example site:cdc.gov). "
+    "Answer the exact question asked; do not reuse or substitute a generic answer. State only facts "
+    "that the trusted search results directly support. If they do not address the question, say you "
+    "couldn't find trusted guidance rather than filling gaps from memory or guessing. "
     "Answer in 2 to 4 short, plain sentences that will be read aloud. Never diagnose, never recommend "
     "starting, stopping or changing a medication or dose; for medication questions say to ask their "
     "doctor, midwife or pharmacist. If something sounds urgent, say to call their provider now or 911. "
@@ -55,7 +58,9 @@ OFF_TOPIC_MARK = "OFF_TOPIC"
 CLAUDE_SYSTEM = (
     "You are Tidewell, a postpartum care companion. You answer questions from a parent in the year after "
     "giving birth, using the web search tool (it only reaches trusted health organisations). Search "
-    "before answering and base every fact on what you found. Answer in 2 to 4 short, warm, plain "
+    "before answering and base every fact on what you found. Answer the exact question asked; do not "
+    "reuse or substitute a generic answer. If the trusted results do not answer it, say you couldn't "
+    "find trusted guidance instead of filling gaps from memory or guessing. Answer in 2 to 4 short, warm, plain "
     "sentences that will be read aloud; no headings, lists or markdown, and do not describe your "
     "searching. Name the organisation the advice comes from (for example 'The CDC says...'). Never "
     "diagnose, and never recommend starting, stopping or changing a medication or dose: for medication "
@@ -95,7 +100,9 @@ def is_trusted(domain_or_url: str) -> bool:
 # Words too common to tell guideline entries apart.
 _STOP = {"what", "when", "with", "have", "your", "that", "this", "does", "from", "about", "after", "will",
          "should", "there", "would", "could", "can't", "dont", "into", "just", "like", "much", "some", "them",
-         "they", "were", "been", "being", "give", "tell", "need", "want", "know", "feel", "help", "normal"}
+         "they", "were", "been", "being", "give", "tell", "need", "want", "know", "feel", "help", "normal",
+         "every", "baby", "babies", "newborn", "infant", "parent", "mother", "mothers", "postpartum",
+         "birth", "delivery", "feed", "feeds", "feeding", "crying"}
 
 
 def _words(s: str) -> set[str]:
@@ -105,20 +112,27 @@ def _words(s: str) -> set[str]:
 
 @lru_cache
 def _index() -> list[tuple[dict, set[str], set[str]]]:
-    return [(c, _words(" ".join([c.get("section", ""), c.get("content", "")])),
+    return [(c, _words(c.get("section", "")),
              _words(" ".join(c.get("example_phrases", [])))) for c in _chunks()]
 
 
 def local_answer(question: str) -> Optional[dict]:
-    """Best keyword match in guidelines.json (offline fallback). Example phrases count double, since
-    they are written the way parents ask. Answers with the entry's plain-language app_guidance."""
+    """Use only a clear match to an entry's topic or example phrases for offline fallback."""
     q = _words(question)
-    best, best_score = None, 0
-    for c, text, phrases in _index():
-        score = len(q & text) + 2 * len(q & phrases)
-        if score > best_score:
-            best, best_score = c, score
-    if not best or best_score < 3:
+    ranked = []
+    for c, section, phrases in _index():
+        section_hits = len(q & section)
+        phrase_hits = len(q & phrases)
+        score = 3 * section_hits + 2 * phrase_hits
+        if score:
+            ranked.append((score, section_hits, phrase_hits, c))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    if not ranked:
+        return None
+    best_score, section_hits, phrase_hits, best = ranked[0]
+    if best_score < 3 or (section_hits == 0 and phrase_hits < 2):
+        return None
+    if len(ranked) > 1 and best_score - ranked[1][0] < 2:
         return None
     return {
         "answer": best.get("app_guidance") or best["content"],
