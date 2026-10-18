@@ -90,24 +90,37 @@ def is_trusted(domain_or_url: str) -> bool:
     return any(d == t or d.endswith("." + t) for t in trusted_domains())
 
 
+# Words too common to tell guideline entries apart.
+_STOP = {"what", "when", "with", "have", "your", "that", "this", "does", "from", "about", "after", "will",
+         "should", "there", "would", "could", "can't", "dont", "into", "just", "like", "much", "some", "them",
+         "they", "were", "been", "being", "give", "tell", "need", "want", "know", "feel", "help", "normal"}
+
+
 def _words(s: str) -> set[str]:
-    return {w for w in re.findall(r"[a-z]{4,}", s.lower())}
+    """Word stems (first 5 letters), so "calm" / "calming" and "exercise" / "exercises" match."""
+    return {w[:5] for w in re.findall(r"[a-z']{4,}", s.lower()) if w not in _STOP}
+
+
+@lru_cache
+def _index() -> list[tuple[dict, set[str], set[str]]]:
+    return [(c, _words(" ".join([c.get("section", ""), c.get("content", "")])),
+             _words(" ".join(c.get("example_phrases", [])))) for c in _chunks()]
 
 
 def local_answer(question: str) -> Optional[dict]:
-    """Best keyword match in guidelines.json (offline fallback)."""
+    """Best keyword match in guidelines.json (offline fallback). Example phrases count double, since
+    they are written the way parents ask. Answers with the entry's plain-language app_guidance."""
     q = _words(question)
     best, best_score = None, 0
-    for c in _chunks():
-        text = " ".join([c.get("section", ""), c.get("content", ""), " ".join(c.get("example_phrases", []))])
-        score = len(q & _words(text))
+    for c, text, phrases in _index():
+        score = len(q & text) + 2 * len(q & phrases)
         if score > best_score:
             best, best_score = c, score
-    if not best or best_score < 2:
+    if not best or best_score < 3:
         return None
     return {
-        "answer": best["content"],
-        "citations": [_cite(f'{best["source"]}: {best["section"]}', best["url"])],
+        "answer": best.get("app_guidance") or best["content"],
+        "citations": [_cite(f'{best["source"]}: {best["section"]}', best["url"], best["content"])],
         "source": "curated",
     }
 

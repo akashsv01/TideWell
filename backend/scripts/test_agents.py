@@ -70,6 +70,9 @@ with TestClient(app) as c:
     a = c.post("/ask", headers=H, json={"patient_id": pid, "question": "How much bleeding is normal two weeks after birth?"}).json()
     check("Ask: on-topic answer has trusted citations", a.get("source") in ("web", "curated") and a.get("citations"), a)
     print("    answer source:", a.get("source"), [x.get("site") for x in a.get("citations", [])])
+    for q in ("Give me calming exercises", "How is postpartum depression treated?"):
+        a = c.post("/ask", headers=H, json={"patient_id": pid, "question": q}).json()
+        check(f"Ask: cited answer for {q!r}", a.get("source") in ("web", "curated") and a.get("citations"), a)
     check("cleanup", c.delete(f"/patients/{pid}", headers=H).status_code == 204)
 
 print("\nALL PASS" if ok else "\nSOME FAILED")

@@ -117,6 +117,7 @@ export default function CheckinPanel() {
       <UrgentCard
         level={result.red_flag_level ?? "emergency"}
         supportAlerted={Boolean(result.support_alerted)}
+        onBack={() => setResult(null)}
       />
     );
 

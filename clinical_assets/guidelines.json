@@ -689,5 +689,151 @@
     ],
     "content": "Postpartum depression and anxiety are not a person's fault and not a sign of weakness or poor parenting. Asking for help benefits both parent and baby. Practical supports include childcare help to allow rest, protecting sleep where possible, and telling a provider how things have been.",
     "app_guidance": "This is not your fault, and it doesn't mean you're a bad parent. Asking for help is a good step for you and your baby. Is there someone who could watch the baby so you can rest? Tell your provider how you've been feeling."
+  },
+  {
+    "id": "care-01",
+    "source": "NIH National Center for Complementary and Integrative Health - Relaxation Techniques",
+    "url": "https://www.nccih.nih.gov/health/relaxation-techniques-what-you-need-to-know",
+    "section": "Calming and Relaxation Exercises",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "give me calming exercises",
+      "how can I calm down",
+      "breathing exercises for anxiety",
+      "I feel stressed, what can I do",
+      "help me relax",
+      "relaxation techniques"
+    ],
+    "content": "Relaxation techniques bring on the body's relaxation response: slower breathing, lower blood pressure and a slower heart rate, the opposite of the stress response. Options include slow, deep (diaphragmatic) breathing; progressive muscle relaxation, tensing and then releasing one muscle group at a time; guided imagery, picturing a calm place or scene; and practices such as meditation, yoga and tai chi. They are generally considered safe for healthy people.",
+    "app_guidance": "Here is one to try now, from the NIH: breathe in slowly through your nose so your belly rises, then breathe out even more slowly, for a few minutes. You can also tense one group of muscles, like your shoulders, for a few seconds and then let go, working down your body, or picture a calm place in detail. If stress or worry is with you most days, tell your care team, because support and treatment help."
+  },
+  {
+    "id": "care-02",
+    "source": "NIMH - Perinatal Depression; ACOG - Postpartum Depression FAQ",
+    "url": "https://www.acog.org/womens-health/faqs/postpartum-depression",
+    "section": "How Postpartum Depression Is Treated",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review; medication details are information only, never advice",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "what is the treatment for postpartum depression",
+      "how is postpartum depression treated",
+      "what treatments are there",
+      "does therapy help",
+      "what is zuranolone",
+      "can I take antidepressants while breastfeeding",
+      "what kind of therapy helps"
+    ],
+    "content": "With treatment, most women with perinatal depression feel better (NIMH). Treatment usually means talk therapy, medication, or both. Evidence-based therapies include cognitive behavioral therapy (changing unhelpful thoughts and behaviours) and interpersonal therapy (relationships and support). ACOG notes antidepressants may take 3 to 4 weeks to help and pass into breast milk at generally very low levels, and that zuranolone, taken by mouth for 14 days, is the first FDA-approved pill for postpartum depression in adults. A provider helps choose the right option, including around breastfeeding.",
+    "app_guidance": "Postpartum depression is treatable, and with treatment most people feel better. The usual options are talk therapy, such as cognitive behavioural or interpersonal therapy, medicine, or both. ACOG says some medicines take a few weeks to work, and there is also a newer 14-day pill approved for postpartum depression. Your doctor or midwife can go through which fits you, including if you're breastfeeding. I can't recommend or change any medicine."
+  },
+  {
+    "id": "care-03",
+    "source": "Postpartum Support International - Get Help",
+    "url": "https://postpartum.net/get-help/",
+    "section": "Support Groups and Finding a Specialist",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "are there support groups",
+      "where can I find a therapist",
+      "I want to talk to other moms",
+      "find a postpartum therapist",
+      "peer support",
+      "online support group"
+    ],
+    "content": "Postpartum Support International (PSI) runs free online support groups led by trained facilitators (over 50 groups), a directory of perinatal mental health professionals in the US and Canada, more than 400 local Support Navigators who connect parents with local providers and groups, a peer mentor program, and expert chats. Its HelpLine is 1-800-944-4773.",
+    "app_guidance": "You don't have to do this alone. Postpartum Support International has free online support groups with other parents, a directory of therapists who specialise in the year after birth, and local volunteers who can connect you with help. You can reach them at 1-800-944-4773 or postpartum.net."
+  },
+  {
+    "id": "care-04",
+    "source": "ACOG - Exercise After Pregnancy FAQ",
+    "url": "https://www.acog.org/womens-health/faqs/exercise-after-pregnancy",
+    "section": "Exercise After Birth",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "when can I start exercising",
+      "can I exercise after birth",
+      "how much exercise after pregnancy",
+      "exercise after c-section",
+      "kegel exercises",
+      "can I go for a walk"
+    ],
+    "content": "After a healthy pregnancy and vaginal birth it is usually safe to start exercising a few days after birth, or when you feel ready; after a cesarean birth or complications, ask your ob-gyn first. Aim for at least 150 minutes of moderate activity a week, for example three 10-minute walks a day, plus muscle-strengthening on 2 days. Kegel exercises tone the pelvic floor. Exercise can boost energy, improve sleep, relieve stress and may help prevent postpartum depression. Stop if you feel pain.",
+    "app_guidance": "ACOG says that after an uncomplicated vaginal birth you can usually start gentle exercise like walking within a few days, when you feel ready. After a C-section, check with your doctor first. Build up to about 150 minutes a week, even 10-minute walks count, and stop if anything hurts."
+  },
+  {
+    "id": "care-05",
+    "source": "ACOG - Breastfeeding Your Baby FAQ",
+    "url": "https://www.acog.org/womens-health/faqs/breastfeeding-your-baby",
+    "section": "Latching and How Often to Feed",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "how often should I breastfeed",
+      "how do I get my baby to latch",
+      "breastfeeding hurts",
+      "is my baby hungry",
+      "how many times a day should baby feed",
+      "is my baby getting enough breast milk"
+    ],
+    "content": "To latch, cup the breast, stroke the baby's lower lip with the nipple, wait for a wide open mouth, then bring the baby to the breast aiming the nipple at the roof of the mouth. If it hurts or the mouth is not wide open, break the suction with a clean finger and try again. Early hunger cues are alertness, bent arms, fists and fingers to the mouth; crying is a late sign. In the first weeks most babies feed 8 to 12 times in 24 hours. The more milk is removed, the more milk you make.",
+    "app_guidance": "In the first weeks most babies feed 8 to 12 times a day, about every 2 to 3 hours, and it's best to offer the breast when your baby brings fingers to the mouth, before crying. If a feed hurts, ACOG suggests gently breaking the suction with a clean finger and re-latching with your baby's mouth wide open. If pain keeps going or you're worried about milk, a lactation consultant or your care team can help."
+  },
+  {
+    "id": "care-06",
+    "source": "ACOG - Preeclampsia and High Blood Pressure During Pregnancy FAQ",
+    "url": "https://www.acog.org/womens-health/faqs/preeclampsia-and-high-blood-pressure-during-pregnancy",
+    "section": "Blood Pressure Care After Birth",
+    "tier": "WATCH",
+    "category": "baseline",
+    "action": "contact_provider_same_day",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "how is high blood pressure treated after birth",
+      "do I need blood pressure medicine",
+      "how often should I check my blood pressure",
+      "why is my blood pressure high after delivery",
+      "treatment for postpartum preeclampsia"
+    ],
+    "content": "Blood pressure often goes up in the weeks after childbirth. People with high blood pressure in pregnancy are usually asked to check their blood pressure at home for 1 to 2 weeks after delivery, and may need to restart blood pressure medication or have the dose adjusted by their ob-gyn. Readings of 140/90 or higher, or symptoms such as a bad headache or vision changes, need a call to the provider.",
+    "app_guidance": "Blood pressure often rises in the first weeks after birth, so ACOG advises checking it at home if you had high blood pressure in pregnancy. Treatment, like starting or adjusting medicine, is decided by your doctor, so share your readings with them. If you see 140 over 90 or higher, or get a bad headache or vision changes, call your provider now."
+  },
+  {
+    "id": "care-07",
+    "source": "ACOG - Postpartum Birth Control FAQ",
+    "url": "https://www.acog.org/womens-health/faqs/postpartum-birth-control",
+    "section": "Birth Control After Birth",
+    "tier": "GREEN",
+    "category": "baseline",
+    "action": "reassure",
+    "verification": "primary page text checked 2026-10-17 (paraphrased); needs clinician review",
+    "ready_to_ingest": true,
+    "example_phrases": [
+      "when can I get pregnant again",
+      "what birth control can I use while breastfeeding",
+      "can I get pregnant before my period comes back",
+      "when should I start birth control",
+      "IUD after birth"
+    ],
+    "content": "Ovulation can return within a few weeks of birth if not breastfeeding, and usually by about 6 months if breastfeeding, so pregnancy is possible before the first period. All birth control methods are safe while breastfeeding, though a few are not recommended in the first weeks because of a very small risk to milk supply. IUDs can be placed right after a vaginal or cesarean birth or at the postpartum visit. Experts recommend waiting 18 months after giving birth before getting pregnant again.",
+    "app_guidance": "You can get pregnant again before your period returns, sometimes within a few weeks of birth. ACOG says all birth control methods are safe while breastfeeding, though a few are best avoided in the first weeks, and an IUD can even be placed right after birth. Experts suggest waiting 18 months before the next pregnancy; your provider can help you pick a method."
   }
 ]

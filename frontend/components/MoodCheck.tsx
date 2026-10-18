@@ -83,7 +83,7 @@ export default function MoodCheck() {
     }
   }
 
-  if (urgent) return <UrgentCard level={urgent} />;
+  if (urgent) return <UrgentCard level={urgent} onBack={() => { setUrgent(null); if (result) setPhase("done"); }} />;
 
   if (phase === "error") {
     return (

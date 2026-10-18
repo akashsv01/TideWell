@@ -111,7 +111,7 @@ function DayEditorForm({
   const [error, setError] = useState<string | null>(null);
   const [flag, setFlag] = useState<RedFlagLevel | null>(null);
 
-  if (flag) return <UrgentCard level={flag} />;
+  if (flag) return <UrgentCard level={flag} onBack={() => setFlag(null)} />;
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();

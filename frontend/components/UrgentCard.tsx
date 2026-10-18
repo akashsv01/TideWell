@@ -13,12 +13,14 @@ type Props = {
   level?: RedFlagLevel;
   /** Show the "support person notified" line only when consent was given and the SMS went out. */
   supportAlerted?: boolean;
+  /** Return to the screen behind the card (the help stays one tap away if they need it again). */
+  onBack?: () => void;
 };
 
 const btn =
   "flex min-h-14 items-center justify-center rounded-xl px-4 text-center text-lg font-semibold focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2";
 
-export default function UrgentCard({ level = "emergency", supportAlerted = false }: Props) {
+export default function UrgentCard({ level = "emergency", supportAlerted = false, onBack }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const emergency = level === "emergency";
 
@@ -27,6 +29,14 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
   useEffect(() => {
     dialogRef.current?.focus();
   }, []);
+
+  // Escape works like the Back button.
+  useEffect(() => {
+    if (!onBack) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onBack();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onBack]);
 
   return (
     <div
@@ -109,6 +119,16 @@ export default function UrgentCard({ level = "emergency", supportAlerted = false
               </>
             )}
           </div>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-lg font-semibold text-navy underline underline-offset-4 hover:bg-navy/5 focus:outline-none focus-visible:ring-4 focus-visible:ring-tide"
+            >
+              <span aria-hidden="true">←</span> Go back
+            </button>
+          )}
 
           {supportAlerted && (
             <p className="mt-5 text-base text-navy">We have also let your support person know.</p>
