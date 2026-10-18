@@ -3,5 +3,5 @@
 // (No inline boot script: React 19 reports any <script> rendered by a component as an error.)
 
 export const NIGHT_KEY = "tidewell.night";
-export const NIGHT_PAGE = "#07131f";
-export const DAY_PAGE = "#f4f9f9";
+export const NIGHT_PAGE = "#101a15";
+export const DAY_PAGE = "#f7f1e4";

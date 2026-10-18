@@ -1,0 +1,124 @@
+{
+  "title": "Choose Tidewell's visual world",
+  "question": "The roll assigned the bedtime picture-book room. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Night-Feed Picture Book",
+      "kicker": "THE ROLL",
+      "lineage": "American bedtime picture books: flat gouache rooms, a window, the moon",
+      "thesis": "Tidewell as the picture book you are awake inside at 3 a.m.: one quiet room, and the moon that pulls the tide.",
+      "palette": ["#1f4a3c", "#c8482f", "#f3c84b", "#0f1c22", "#e7efe4"],
+      "materials": ["flat gouache colour fields", "cut-paper shapes", "a moon as the mark"],
+      "viewport": "A room-green wall with a night window; the voice button is the moon rising over a tide line; the headline and Start tonight sit on the wall like a page of the book.",
+      "risk": "Can turn childish if the lettering goes cute; must evoke the picture-book tradition, never copy any book's art.",
+      "raised": [
+        {"from": "phosphor-terminal", "raise": "Status in sentences, not badges: 'Your blood pressure has been above 140/90', never four 'Visit soon' pills."},
+        {"from": "industrial-quote-grammar", "raise": "Plain literal labels: every place named for what it is (Check in, Your tide, Visits), no product jargon like 'Watch agent'."},
+        {"from": "coffeehouse-identity", "raise": "One mark used everywhere: the moon over a tide line, in the nav, on the voice button and the favicon."},
+        {"from": "variety-telop", "raise": "Type scale tied to urgency: the more it matters, the bigger and plainer it is set."},
+        {"from": "hypercard-stack", "raise": "Every state addressable with an obvious way back."}
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "The Receiving Blanket",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "the striped hospital swaddle blanket every new parent is handed",
+      "thesis": "The first thing that held your baby: white flannel with the familiar pink and blue stripes, now holding you.",
+      "palette": ["#f6f5f1", "#e48aa0", "#5e95c9", "#203040"],
+      "materials": ["brushed flannel texture", "woven stripe bands", "folded corners"],
+      "viewport": "A wide flannel field; three stripe bands frame the headline and become the tide chart bands below.",
+      "risk": "Familiar baby-pastel territory, and pink/blue carry gender connotations the brand would need to neutralise."
+    },
+    {
+      "id": "challenger-blue-hour",
+      "label": "Blue-Hour Window",
+      "verdict": "competitive",
+      "lineage": "the city at night seen from a nursery window",
+      "thesis": "3 a.m. through the window: cobalt sky, amber streetlights, and a silver dawn line that means the night is ending.",
+      "palette": ["#16244a", "#f2a43a", "#c9d3dc", "#0b0f1a"],
+      "materials": ["night sky gradients", "lit window grids", "reflections"],
+      "viewport": "A skyline band under a cobalt sky; check-in time sets the hour of the scene; dawn silver marks a good night.",
+      "case": "Holds the 3 a.m. audience scene well, loses on clarity: a city says nothing about recovery after birth.",
+      "risk": "Urban-only imagery, and a dark scene by day feels wrong."
+    },
+    {
+      "id": "challenger-quote-grammar",
+      "label": "Stockroom Quote Labels",
+      "verdict": "declined",
+      "lineage": "industrial streetwear labelling",
+      "thesis": "Every zone named in straight quotes over hazard stripes.",
+      "palette": ["#ffffff", "#111111", "#ff6a13"],
+      "materials": ["hazard stripes", "zip-tie tags"],
+      "viewport": "Quoted caps labels on white cotton.",
+      "risk": "Hazard stripes read as alarm to an exhausted parent.",
+      "case": "Loses both axes: hype and hazard are wrong for postpartum care.",
+      "kept": "Literal labels: every place named plainly for what it is."
+    },
+    {
+      "id": "challenger-coffeehouse",
+      "label": "Earthy Woodcut Identity",
+      "verdict": "declined",
+      "lineage": "nineties coffeehouse identities",
+      "thesis": "A stamped woodcut sun over torn kraft paper.",
+      "palette": ["#b5522f", "#6b7a3a", "#d9a441"],
+      "materials": ["kraft paper", "torn edges"],
+      "viewport": "A woodcut mark centred over torn-paper sections.",
+      "risk": "Dated craft-store feel.",
+      "case": "Loses both axes: nostalgic retail, not a health companion.",
+      "kept": "One stamped mark used consistently everywhere."
+    },
+    {
+      "id": "challenger-telop",
+      "label": "Variety-Show Captions",
+      "verdict": "declined",
+      "lineage": "Japanese variety telop",
+      "thesis": "Captions sized to the emotion of speech.",
+      "palette": ["#ffd400", "#e60012", "#ffffff"],
+      "materials": ["outlined type", "drop shadows"],
+      "viewport": "Free-placed outlined captions over the frame.",
+      "risk": "Loud and comic at 3 a.m.",
+      "case": "Loses both axes: too loud for a tired, worried reader.",
+      "kept": "Scale mapped to intensity: urgency sets the type size."
+    },
+    {
+      "id": "challenger-hypercard",
+      "label": "HyperCard Stack",
+      "verdict": "declined",
+      "lineage": "HyperCard shoebox stacks",
+      "thesis": "Black-and-white cards linked by painted buttons.",
+      "palette": ["#000000", "#ffffff"],
+      "materials": ["one-bit dither", "pixel menus"],
+      "viewport": "A fixed card with painted buttons.",
+      "risk": "Retro-computing novelty.",
+      "case": "Loses both axes: one-bit retro says nothing about care.",
+      "kept": "Every state addressable, with an obvious way back."
+    },
+    {
+      "id": "challenger-phosphor",
+      "label": "Phosphor Terminal",
+      "verdict": "declined",
+      "lineage": "green-phosphor terminals",
+      "thesis": "A breathing cursor and a scrolling transcript.",
+      "palette": ["#0a0f0a", "#39ff6a"],
+      "materials": ["scanline glow", "monospace"],
+      "viewport": "One continuous transcript on dark glass.",
+      "risk": "Cold, technical, and unreadable for many.",
+      "case": "Loses both axes: a machine room is the opposite of reassurance.",
+      "kept": "System states print themselves as sentences rather than chrome."
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code"},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A calm wellness app: soft teal, rounded white cards, friendly sans, executed impeccably.",
+    "palette": ["#f5f8f8", "#0f766e", "#1f2937"],
+    "materials": ["rounded cards", "soft shadows", "line icons"],
+    "viewport": "Headline and a phone mockup side by side, feature cards below.",
+    "risk": "Indistinguishable from every other wellness app by design."
+  },
+  "steer": true
+}

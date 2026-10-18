@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { switchToDemo } from "@/lib/api";
 import { startDemo, useSession } from "@/lib/session";
-import { btnPrimary, focusRing } from "@/lib/ui";
+import { btnMoon, focusRing } from "@/lib/ui";
 
 // Welcome-page buttons: create an account, sign in, or look around as the demo parent.
 export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "dark" }) {
@@ -21,14 +21,14 @@ export default function WelcomeActions({ tone = "light" }: { tone?: "light" | "d
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
       {session?.kind === "user" ? (
-        <Link href="/home" className={btnPrimary}>
+        <Link href="/home" className={btnMoon}>
           Continue to check-in
         </Link>
       ) : (
-        <Link href="/register" className={btnPrimary}>
-          Get started
+        <Link href="/register" className={btnMoon}>
+          Start tonight
         </Link>
       )}
       {!session && (

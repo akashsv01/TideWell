@@ -12,3 +12,7 @@ const buttonBase =
 
 export const btnPrimary = `${buttonBase} bg-tide-deep text-white hover:bg-navy ${focusRing}`;
 export const btnOutline = `${buttonBase} border-2 border-navy text-navy hover:bg-navy hover:text-white ${focusRing}`;
+
+/** The moon: the one primary action on a page of the picture book (landing). Ink text on gold
+ *  stays dark in night mode on purpose (contrast 5.9:1). */
+export const btnMoon = `${buttonBase} bg-gold text-[#1b2a22] shadow-[0_2px_4px_rgb(27_42_34/0.12),0_12px_28px_-14px_rgb(27_42_34/0.45)] hover:bg-[#d8ab43] ${focusRing}`;

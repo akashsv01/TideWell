@@ -29,11 +29,11 @@ import type { Overview, TrendPoint } from "@/lib/types";
 import { focusRing } from "@/lib/ui";
 
 // Chart colors. Teal and amber were checked together for color-blind separation.
-const TEAL = "#06909a";
-const AMBER = "#c4761b";
+const TEAL = "#2d5a48"; // forest (matches --color-chart-teal)
+const AMBER = "#b3801f"; // gold (matches --color-chart-amber)
 const GRID = "rgba(11,37,69,0.12)";
-const AXIS = { fill: "#0b2545", fontSize: 13 } as const;
-const AXIS_LIGHT = { fill: "#e3f1f2", fontSize: 13 } as const;
+const AXIS = { fill: "#1b2a22", fontSize: 13 } as const;
+const AXIS_LIGHT = { fill: "#efe7d5", fontSize: 13 } as const;
 
 const xAxisProps = {
   dataKey: "day",
@@ -211,7 +211,7 @@ export default function Dashboard() {
           className="relative h-8"
           layers={[
             { color: "#13828a", amp: 8, cycles: 3, top: 110, seconds: 30, opacity: 0.5 },
-            { color: "#0b2545", amp: 8, cycles: 2, top: 130, seconds: 22, reverse: true },
+            { color: "#1b2a22", amp: 8, cycles: 2, top: 130, seconds: 22, reverse: true },
           ]}
         />
         <div className="-mt-px px-5 pb-6 sm:px-8">
@@ -232,8 +232,8 @@ export default function Dashboard() {
               <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6fd0d4" stopOpacity={0.55} />
-                    <stop offset="100%" stopColor="#6fd0d4" stopOpacity={0.04} />
+                    <stop offset="0%" stopColor="#d9b75c" stopOpacity={0.55} />
+                    <stop offset="100%" stopColor="#d9b75c" stopOpacity={0.04} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.14)" />
@@ -245,12 +245,12 @@ export default function Dashboard() {
                   type="monotone"
                   dataKey={moodKey}
                   name="Mood"
-                  stroke="#6fd0d4"
+                  stroke="#d9b75c"
                   strokeWidth={3}
                   fill={`url(#${gradientId})`}
                   connectNulls={epdsMode}
-                  dot={epdsMode ? { r: 5, fill: "#6fd0d4", stroke: "#0b2545", strokeWidth: 2 } : showDots(moodN)}
-                  activeDot={{ r: 6, fill: "#6fd0d4", stroke: "#0b2545", strokeWidth: 2 }}
+                  dot={epdsMode ? { r: 5, fill: "#d9b75c", stroke: "#1b2a22", strokeWidth: 2 } : showDots(moodN)}
+                  activeDot={{ r: 6, fill: "#d9b75c", stroke: "#1b2a22", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -304,9 +304,9 @@ export default function Dashboard() {
               <YAxis domain={[60, 160]} ticks={[60, 90, 120, 150]} tick={AXIS} tickLine={false} axisLine={false} />
               <ReferenceLine
                 y={140}
-                stroke="#0b2545"
+                stroke="#1b2a22"
                 strokeDasharray="5 4"
-                label={{ value: "140", position: "insideTopLeft", fill: "#0b2545", fontSize: 13, dy: -14 }}
+                label={{ value: "140", position: "insideTopLeft", fill: "#1b2a22", fontSize: 13, dy: -14 }}
               />
               {/* BP is measured every few days, not daily: join the readings and mark each one. */}
               <Tooltip content={<ChartTip units={{ "Top number": " mmHg", "Bottom number": " mmHg" }} />} {...tipMotion} />
@@ -319,7 +319,7 @@ export default function Dashboard() {
                 strokeWidth={2.5}
                 connectNulls
                 dot={{ r: 3.5 }}
-                activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                activeDot={{ r: 6, stroke: "#f7f1e4", strokeWidth: 2 }}
               />
               <Line
                 {...drawIn}
@@ -330,7 +330,7 @@ export default function Dashboard() {
                 strokeWidth={2.5}
                 connectNulls
                 dot={{ r: 3.5 }}
-                activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                activeDot={{ r: 6, stroke: "#f7f1e4", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -443,7 +443,7 @@ export default function Dashboard() {
                   strokeWidth={2.5}
                   connectNulls={false}
                   dot={showDots(painN)}
-                  activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                  activeDot={{ r: 6, stroke: "#f7f1e4", strokeWidth: 2 }}
                 />
                 {hasIncision && (
                   <Line
@@ -455,7 +455,7 @@ export default function Dashboard() {
                     strokeWidth={2.5}
                     connectNulls={false}
                     dot={showDots(valued(points, "incision_pain"))}
-                    activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                    activeDot={{ r: 6, stroke: "#f7f1e4", strokeWidth: 2 }}
                   />
                 )}
               </LineChart>
@@ -486,7 +486,7 @@ export default function Dashboard() {
                   strokeWidth={2.5}
                   connectNulls
                   dot={showDots(hrN)}
-                  activeDot={{ r: 6, stroke: "#f4f9f9", strokeWidth: 2 }}
+                  activeDot={{ r: 6, stroke: "#f7f1e4", strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>

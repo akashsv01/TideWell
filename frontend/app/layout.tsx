@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource/young-serif";
+import "@fontsource-variable/alegreya";
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./globals.css";
 import NightMode from "@/components/NightMode";

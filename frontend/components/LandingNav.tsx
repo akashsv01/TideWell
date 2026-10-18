@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { logout } from "@/lib/api";
 import { clearSession, useSession } from "@/lib/session";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Mark } from "@/components/plates/Gouache";
 import { focusRing } from "@/lib/ui";
 
 const pill =
@@ -26,7 +27,8 @@ export default function LandingNav() {
 
   return (
     <header className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
-      <Link href="/" className={`rounded-md font-display text-2xl text-tide-deep ${focusRing}`}>
+      <Link href="/" className={`flex items-center gap-2 rounded-md font-display text-2xl font-semibold text-navy ${focusRing}`}>
+        <Mark className="size-8 text-tide-deep" />
         Tidewell
       </Link>
       <nav aria-label="Account" className="flex items-center gap-3">
@@ -58,7 +60,7 @@ export default function LandingNav() {
               Sign in
             </Link>
             <Link href="/register" className={solid}>
-              Get started
+              Start tonight
             </Link>
           </>
         )}
